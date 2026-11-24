@@ -47,13 +47,11 @@
       font-family: 'Cinzel', serif;
     }
 
-    /* Símbolos temáticos do XEKER */
     .sym-club { color: #34d399; font-weight: 800; }
     .sym-spade { color: #60a5fa; font-weight: 800; }
     .sym-diamond { color: #fbbf24; font-weight: 800; }
     .sym-heart { color: #f87171; font-weight: 800; }
 
-    /* Carta sem naipe: valor exibido apenas 1 vez, centralizado */
     .xeker-card {
       background: linear-gradient(155deg, var(--parchment-top) 0%, var(--parchment-bot) 100%);
       border: 1.5px solid #9e7923;
@@ -78,7 +76,6 @@
       transform: translateY(-2px) scale(0.97);
     }
 
-    /* Verso de carta oculta (mão oculta em Passa e Joga / On-line) */
     .xeker-card-back {
       background: linear-gradient(145deg, #1d2233 0%, #0f111a 100%);
       border: 1.5px solid rgba(212, 175, 55, 0.55);
@@ -90,7 +87,6 @@
       box-shadow: 0 3px 8px rgba(0, 0, 0, 0.55);
     }
 
-    /* Visual Dark Luxury dourado do menu inicial */
     .luxury-menu-canvas {
       position: relative;
       background:
@@ -143,7 +139,6 @@
       animation: starTwinkle 3.2s ease-in-out infinite;
     }
 
-    /* Tabuleiro 8x8 responsivo */
     .xeker-board {
       width: min(100%, 47dvh);
       max-width: 100%;
@@ -190,7 +185,6 @@
       box-shadow: inset 0 0 0 2px #60a5fa;
     }
 
-    /* Peças */
     .piece-token {
       width: 86%;
       height: 86%;
@@ -257,7 +251,6 @@
       justify-content: center;
     }
 
-    /* Modais */
     .xeker-modal {
       position: fixed;
       inset: 0;
@@ -281,13 +274,9 @@
   </style>
 </head>
 <body>
-  <!-- Banner de erro caso ocorra exceção inesperada -->
   <div id="error-toast" class="hidden fixed top-2 left-2 right-2 z-[100] rounded-xl bg-red-950 border border-red-400 text-red-100 px-3 py-2 text-xs font-semibold shadow-xl"></div>
 
-  <!-- Tela Principal do Jogo -->
   <div id="game-shell" class="w-full max-w-[460px] mx-auto h-[100dvh] flex flex-col justify-between bg-[#09090b] border-x border-[#d4af37]/25 overflow-hidden">
-
-    <!-- Topo: Título, Ouro (♦), Cartas, Relógios 30:00, Regras e Menu -->
     <header class="shrink-0 flex items-center justify-between gap-1 px-2 py-1 bg-[#111217] border-b border-[#d4af37]/25">
       <span class="font-display font-extrabold text-sm tracking-widest text-[#f3d678]">XEKER</span>
 
@@ -317,7 +306,6 @@
       </div>
     </header>
 
-    <!-- Faixa Superior: Flop de 3 Cartas + Ações (♣) + Comprar Carta (3♦ / 0♣) -->
     <section class="shrink-0 flex items-center justify-between gap-1.5 px-2 py-1 bg-[#111217]/90 border-b border-white/10">
       <div class="flex items-center gap-1">
         <span class="text-[10px] font-bold uppercase tracking-wider text-[#d4af37] mr-0.5">Flop</span>
@@ -336,14 +324,11 @@
       </div>
     </section>
 
-    <!-- Centro: Tabuleiro 8x8 -->
     <main class="flex-1 min-h-0 px-1.5 py-0.5 flex items-center justify-center">
       <div id="board-grid" class="xeker-board"></div>
     </main>
 
-    <!-- Inferior: Habilidades da Peça Selecionada, Menu de 3 Opções, Fim de Turno, Mão e Mensagens -->
     <section class="shrink-0 flex flex-col gap-1 px-2 pt-1 pb-1.5 bg-[#111217] border-t border-[#d4af37]/25">
-      <!-- Info de habilidades da peça selecionada -->
       <div id="piece-info-card" class="px-2 py-1 rounded-xl bg-[#161820]/95 border border-[#d4af37]/30 text-[10px] leading-tight text-zinc-300 min-h-[38px] flex flex-col justify-center">
         <span class="text-zinc-400">Toque em uma peça para ver suas habilidades.</span>
       </div>
@@ -358,71 +343,50 @@
         </button>
       </div>
 
-      <!-- Mão do jogador -->
       <div id="hand-container" class="flex items-center gap-1.5 overflow-x-auto py-0.5 min-h-[48px]"></div>
 
-      <!-- Barra de status/eventos -->
       <div id="status-bar" class="px-2.5 py-1 rounded-lg bg-black/50 border border-white/10 text-[11px] text-zinc-200 truncate">
         Bem-vindo ao XEKER.
       </div>
     </section>
   </div>
 
-  <!-- MODAL MENU PRINCIPAL (ESTILO DARK LUXURY DOURADO) -->
+  <!-- MODAL MENU PRINCIPAL -->
   <div id="menu-modal" class="xeker-modal open">
     <div class="luxury-menu-canvas w-full max-w-[392px] max-h-[95dvh] rounded-3xl px-5 py-4 flex flex-col items-center justify-between text-center">
-
-      <!-- Arco superior de estrelas e constelações douradas -->
       <svg viewBox="0 0 340 56" class="w-full max-w-[330px] h-11 shrink-0 overflow-visible" aria-hidden="true">
         <g fill="#f3d678" class="star-twinkle">
           <path d="M170 4 L172 10 L178 12 L172 14 L170 20 L168 14 L162 12 L168 10 Z" />
           <circle cx="96" cy="22" r="1.4" />
           <circle cx="244" cy="22" r="1.4" />
-          <path d="M118 14 L119.3 17.7 L123 19 L119.3 20.3 L118 24 L116.7 20.3 L113 19 L116.7 17.7 Z" />
-          <path d="M222 14 L223.3 17.7 L227 19 L223.3 20.3 L222 24 L220.7 20.3 L217 19 L220.7 17.7 Z" />
-        </g>
-        <g fill="#fff6cc" opacity="0.85">
-          <circle cx="62" cy="34" r="1.2" />
-          <circle cx="278" cy="34" r="1.2" />
-          <circle cx="144" cy="10" r="1.1" />
-          <circle cx="196" cy="10" r="1.1" />
-          <path d="M78 24 L78.8 26.2 L81 27 L78.8 27.8 L78 30 L77.2 27.8 L75 27 L77.2 26.2 Z" />
-          <path d="M262 24 L262.8 26.2 L265 27 L262.8 27.8 L262 30 L261.2 27.8 L259 27 L261.2 26.2 Z" />
         </g>
       </svg>
 
-      <!-- 3 Cartas Metálicas Douradas (10 Torre, J Bispo, A Cavalo) -->
       <div class="flex items-center justify-center gap-2 my-1 shrink-0">
         <div class="gold-foil-card w-[74px] h-[104px] rounded-xl -rotate-[8deg] translate-y-1.5 flex flex-col items-center justify-between py-1.5 px-1.5">
           <span class="self-start text-xs font-black leading-none tracking-tight">10</span>
-          <span class="text-3xl leading-none drop-shadow-[0_1px_1px_rgba(255,255,255,0.65)]">♖</span>
+          <span class="text-3xl leading-none">♖</span>
           <span class="h-2"></span>
         </div>
-
         <div class="gold-foil-card w-[80px] h-[112px] rounded-xl -translate-y-1 z-10 flex flex-col items-center justify-between py-1.5 px-1.5">
           <span class="self-start text-xs font-black leading-none">J</span>
-          <span class="text-4xl leading-none drop-shadow-[0_1px_1px_rgba(255,255,255,0.65)]">♗</span>
+          <span class="text-4xl leading-none">♗</span>
           <span class="h-2"></span>
         </div>
-
         <div class="gold-foil-card w-[74px] h-[104px] rounded-xl rotate-[8deg] translate-y-1.5 flex flex-col items-center justify-between py-1.5 px-1.5">
           <span class="self-start text-xs font-black leading-none">A</span>
-          <span class="text-3xl leading-none drop-shadow-[0_1px_1px_rgba(255,255,255,0.65)]">♘</span>
+          <span class="text-3xl leading-none">♘</span>
           <span class="h-2"></span>
         </div>
       </div>
 
-      <!-- Título Metálico Dourado XEKER -->
       <div class="my-1.5 shrink-0">
-        <h1 class="font-display font-black text-3xl sm:text-4xl tracking-[0.22em] metallic-gold-title">
-          XEKER
-        </h1>
+        <h1 class="font-display font-black text-3xl sm:text-4xl tracking-[0.22em] metallic-gold-title">XEKER</h1>
         <p class="text-[11px] tracking-wider uppercase text-amber-200/75 font-semibold mt-0.5">
           Xadrez &amp; Pôquer Tático · 1v1
         </p>
       </div>
 
-      <!-- Seletor de Modo & Botões Principais -->
       <div class="w-full space-y-2 my-1.5 shrink-0">
         <div class="grid grid-cols-3 gap-1.5">
           <button type="button" id="btn-select-bot" class="py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95">
@@ -445,31 +409,7 @@
         </button>
       </div>
 
-      <!-- Guirlanda de Estrelas Douradas + Silhuetas + 'design by XEKER' -->
       <div class="w-full pt-1 shrink-0">
-        <svg viewBox="0 0 340 52" class="w-full max-w-[330px] h-11 mx-auto overflow-visible" aria-hidden="true">
-          <path d="M18 32 Q 88 8, 170 36 Q 252 8, 322 32" fill="none" stroke="rgba(243,214,120,0.35)" stroke-width="1" stroke-dasharray="2 3" />
-          <path d="M36 16 Q 102 38, 170 14 Q 238 38, 304 16" fill="none" stroke="rgba(255,241,184,0.25)" stroke-width="0.9" stroke-dasharray="1.5 3.5" />
-          <g fill="#f3d678" class="star-twinkle">
-            <path d="M170 24 L172.2 31 L179 33 L172.2 35 L170 42 L167.8 35 L161 33 L167.8 31 Z" />
-            <path d="M88 14 L89.4 18.6 L94 20 L89.4 21.4 L88 26 L86.6 21.4 L82 20 L86.6 18.6 Z" />
-            <path d="M252 14 L253.4 18.6 L258 20 L253.4 21.4 L252 26 L250.6 21.4 L246 20 L250.6 18.6 Z" />
-          </g>
-          <g fill="#fff8dc" opacity="0.9">
-            <circle cx="38" cy="24" r="1.4" />
-            <circle cx="128" cy="24" r="1.3" />
-            <circle cx="212" cy="24" r="1.3" />
-            <circle cx="302" cy="24" r="1.4" />
-            <circle cx="62" cy="14" r="1" />
-            <circle cx="278" cy="14" r="1" />
-          </g>
-        </svg>
-
-        <div class="flex items-end justify-center gap-2 text-[#e7c252] text-base leading-none mt-0.5">
-          <span class="opacity-85">♖</span>
-          <span class="text-lg text-[#fff1b8]">♗</span>
-          <span class="opacity-85">♘</span>
-        </div>
         <div class="text-[11px] tracking-[0.12em] text-[#f3d678] font-semibold mt-1">
           criado por Rodrigo Nunes Paschoal
         </div>
@@ -477,7 +417,7 @@
     </div>
   </div>
 
-  <!-- MODAL LOBBY ON-LINE (SALA POR CÓDIGO + MATCHMAKING RANQUEADO GOOGLE) -->
+  <!-- MODAL LOBBY ON-LINE -->
   <div id="online-modal" class="xeker-modal">
     <div class="w-full max-w-[390px] max-h-[92dvh] overflow-y-auto rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl space-y-3 text-xs">
       <div class="flex items-center justify-between pb-2 border-b border-white/10">
@@ -485,7 +425,6 @@
         <button type="button" id="btn-close-online" class="px-2.5 py-1 rounded-lg bg-[#161820] border border-white/15 font-bold text-zinc-200 active:scale-95">✕</button>
       </div>
 
-      <!-- Seletor de Lobby: Ranqueada Google vs Sala por Código -->
       <div class="grid grid-cols-2 gap-1.5">
         <button type="button" id="tab-lobby-ranked" class="py-2 px-2 rounded-xl text-[11px] font-extrabold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95">
           🏆 Ranqueada (Google)
@@ -495,7 +434,6 @@
         </button>
       </div>
 
-      <!-- Painel Ranqueada com Conta Google + Matchmaking por Rating -->
       <div id="lobby-ranked-panel" class="space-y-2.5">
         <div id="google-auth-logged-out" class="p-3 rounded-xl bg-[#161820] border border-[#d4af37]/30 text-center space-y-2">
           <div class="font-bold text-[#f3d678]">Entre com sua Conta Google</div>
@@ -541,7 +479,6 @@
         </div>
       </div>
 
-      <!-- Painel Sala por Código (PeerJS P2P) -->
       <div id="lobby-casual-panel" class="hidden space-y-2.5">
         <div class="p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/25 space-y-2">
           <div class="font-bold text-[#f3d678]">Criar Sala (Joga de Brancas ♔)</div>
@@ -571,19 +508,17 @@
       </div>
 
       <div id="online-status-text" class="px-2.5 py-2 rounded-xl bg-black/50 border border-white/10 text-[11px] text-amber-200 min-h-[36px] flex items-center">
-        Entre com sua conta Google para ranqueada ou use Sala por Código.
+        Verificando sessão Google...
       </div>
     </div>
   </div>
 
-  <!-- MODAL COMBATE & RESUMO PÓS-COMBATE -->
+  <!-- DEMAIS MODAIS -->
   <div id="combat-modal" class="xeker-modal">
     <div class="w-full max-w-[400px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl max-h-[92dvh] overflow-y-auto">
       <h2 id="combat-heading" class="font-display font-bold text-base text-center text-[#f3d678] mb-2">⚔️ Combate de Pôquer</h2>
-
       <div class="text-[10px] uppercase tracking-wider text-center text-zinc-400 mb-1">Flop (3 Cartas)</div>
       <div id="combat-flop" class="flex justify-center gap-1.5 mb-3"></div>
-
       <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 mb-3 text-center">
         <div class="p-2 rounded-xl bg-[#161820] border border-[#d4af37]/30">
           <div id="combat-atk-glyph" class="text-2xl leading-none mb-1"></div>
@@ -597,26 +532,21 @@
           <div id="combat-def-sub" class="text-[11px] text-red-300 mt-1"></div>
         </div>
       </div>
-
       <div id="combat-body" class="space-y-2"></div>
     </div>
   </div>
 
-  <!-- MODAL DE PRIVACIDADE DO COMBATE ("PASSE PARA O JOGADOR X") -->
   <div id="combat-pass-modal" class="xeker-modal">
     <div class="w-full max-w-[360px] rounded-2xl bg-[#111217] border border-[#d4af37]/70 p-5 text-center shadow-2xl">
       <div class="text-3xl mb-2">🛡️</div>
-      <h2 id="combat-pass-heading" class="font-display font-bold text-lg text-[#f3d678] mb-1">Passe para o Jogador X</h2>
-      <p id="combat-pass-desc" class="text-xs text-zinc-300 mb-4">
-        Mantenha a mão do outro jogador oculta para escolher sua carta de combate com privacidade.
-      </p>
+      <h2 id="combat-pass-heading" class="font-display font-bold text-lg text-[#f3d678] mb-1">Passe para o Jogador</h2>
+      <p id="combat-pass-desc" class="text-xs text-zinc-300 mb-4"></p>
       <button type="button" id="btn-combat-pass-ok" class="w-full py-3 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold text-sm active:scale-95">
         Revelar Minhas Cartas
       </button>
     </div>
   </div>
 
-  <!-- MODAL PASSA E JOGA (TROCA DE TURNO LOCAL) -->
   <div id="pass-modal" class="xeker-modal">
     <div class="w-full max-w-[360px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-5 text-center shadow-2xl">
       <div class="text-3xl mb-2">🔄</div>
@@ -628,7 +558,6 @@
     </div>
   </div>
 
-  <!-- MODAL LIVRO DE REGRAS PAGINADO -->
   <div id="rules-modal" class="xeker-modal">
     <div class="w-full max-w-[410px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl text-xs flex flex-col">
       <div class="flex items-center justify-between pb-2 mb-2 border-b border-white/10">
@@ -638,22 +567,15 @@
         </div>
         <button type="button" id="btn-close-rules" class="px-2.5 py-1 rounded-lg bg-[#161820] border border-white/15 font-bold text-zinc-200 active:scale-95">✕</button>
       </div>
-
       <div id="rules-content" class="min-h-[290px] max-h-[62dvh] overflow-y-auto space-y-2 text-zinc-200 leading-relaxed pr-1"></div>
-
       <div class="flex items-center justify-between gap-2 pt-3 mt-2 border-t border-white/10">
-        <button type="button" id="btn-rules-prev" class="px-3 py-2 rounded-xl bg-[#161820] border border-white/15 font-bold text-zinc-200 active:scale-95 disabled:opacity-35">
-          Anterior
-        </button>
+        <button type="button" id="btn-rules-prev" class="px-3 py-2 rounded-xl bg-[#161820] border border-white/15 font-bold text-zinc-200 active:scale-95 disabled:opacity-35">Anterior</button>
         <span id="rules-page-label" class="text-[11px] font-bold text-[#f3d678]">Página 1 / 5</span>
-        <button type="button" id="btn-rules-next" class="px-3 py-2 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold active:scale-95">
-          Próxima
-        </button>
+        <button type="button" id="btn-rules-next" class="px-3 py-2 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold active:scale-95">Próxima</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL FIM DE PARTIDA -->
   <div id="gameover-modal" class="xeker-modal">
     <div class="w-full max-w-[370px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-5 text-center shadow-2xl">
       <div class="text-4xl mb-2">👑</div>
@@ -669,620 +591,66 @@
     (function () {
       'use strict';
 
-      function reportError(err) {
-        const el = document.getElementById('error-toast');
-        if (!el) return;
-        const msg = err && err.message ? err.message : String(err || 'Erro desconhecido');
-        el.textContent = 'Erro: ' + msg;
-        el.classList.remove('hidden');
-      }
-
-      window.addEventListener('error', (ev) => {
-        reportError(ev.error || ev.message);
-      });
+      const XEKER_FIREBASE_CONFIG = {
+        apiKey: "AIzaSyCxDrumqQH06FWXCMVICBIMSaJlkgh-OwM",
+        authDomain: "xeker-e5bc8.firebaseapp.com",
+        projectId: "xeker-e5bc8",
+        storageBucket: "xeker-e5bc8.firebasestorage.app",
+        messagingSenderId: "1046784254725",
+        appId: "1:1046784254725:web:0cbbd1a69be38b76c74d6c",
+        measurementId: "G-6WSW0WSY3F"
+      };
 
       const MAX_HAND_SIZE = 6;
       const INITIAL_CLOCK_SECONDS = 30 * 60;
-
       const RANK_TEXT = {
         1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7',
         8: '8', 9: '9', 10: '10', 11: 'J', 12: 'Q', 13: 'K'
       };
 
       const PIECE_DATA = {
-        P: {
-          name: 'Peão',
-          hp: 1,
-          reward: 2,
-          cardVal: 2,
-          cardLabel: 'Coringa (2 a 9)',
-          white: '♙',
-          black: '♟',
-          reachLabel: '1 casa em todas as 8 direções',
-          activeText: 'Sacrifica-se causando 1♥ a todos os inimigos no alcance (1 casa em 8 direções).',
-          passiveText: 'Promovido a Rainha ao cruzar o tabuleiro (linha 0 para Brancas, linha 7 para Pretas).'
-        },
-        R: {
-          name: 'Torre',
-          hp: 3,
-          reward: 4,
-          cardVal: 10,
-          cardLabel: '10',
-          white: '♖',
-          black: '♜',
-          reachLabel: 'Até 3 casas ortogonais',
-          activeText: 'Troca de posição com outra peça (aliada ou inimiga) no alcance (até 3 ortogonal).',
-          passiveText: 'Sofre 0♥ de dano ao defender com sucesso (em vez de 1♥).'
-        },
-        B: {
-          name: 'Bispo',
-          hp: 3,
-          reward: 4,
-          cardVal: 11,
-          cardLabel: 'J',
-          white: '♗',
-          black: '♝',
-          reachLabel: 'Até 3 casas diagonais',
-          activeText: 'Cura todas as peças aliadas no alcance (até 3 diagonal) em +1♥ (até o máx.).',
-          passiveText: 'Causa 2♥ de dano mesmo que o alvo se defenda com sucesso.'
-        },
-        Q: {
-          name: 'Rainha',
-          hp: 5,
-          reward: 6,
-          cardVal: 12,
-          cardLabel: 'Q',
-          white: '♕',
-          black: '♛',
-          reachLabel: 'Até 3 casas em todas as 8 direções',
-          activeText: 'Copia e executa a ativa de outra peça (aliada ou inimiga) no alcance da Rainha.',
-          passiveText: 'Cura-se em +1♥ ao abater peças (até o HP máximo).'
-        },
-        K: {
-          name: 'Rei',
-          hp: 7,
-          reward: 0,
-          cardVal: 13,
-          cardLabel: 'K',
-          white: '♔',
-          black: '♚',
-          reachLabel: 'Até 2 casas em todas as 8 direções',
-          activeText: 'Causa 2♥ de dano direto a uma peça inimiga no alcance (até 2 em 8 direções).',
-          passiveText: 'Não possui habilidade passiva.'
-        },
-        N: {
-          name: 'Cavalo',
-          hp: 3,
-          reward: 4,
-          cardVal: 1,
-          cardLabel: 'A',
-          white: '♘',
-          black: '♞',
-          reachLabel: 'Salto em L (2+1)',
-          activeText: 'Causa 1♥ de dano direto a uma peça inimiga no alcance (salto 2+1 em L).',
-          passiveText: 'Ignora obstáculos ao mover-se, atacar ou usar habilidade ativa.'
-        }
-      };
-
-      const COMBO_EFFECTS = {
-        0: 'Carta Alta: Sem efeito extra de combo.',
-        1: '1 Par: Cura a peça usada no combate em +2♥ (até o HP máximo).',
-        2: '2 Pares: Concede +4♦ de ouro ao vencedor do combo.',
-        3: 'Trinca: Causa +1♥ de dano extra.',
-        4: 'Sequência: Concede +1♣ (ação) e compra +1 carta.',
-        5: 'Full House: Causa +1♥ de dano extra e cura a peça usada em +2♥.',
-        6: 'Quadra: Abate imediato da peça adversária e concede +8♦ de ouro.'
+        P: { name: 'Peão', hp: 1, reward: 2, cardVal: 2, cardLabel: 'Coringa (2 a 9)', white: '♙', black: '♟', reachLabel: '1 casa em todas as 8 direções', activeText: 'Sacrifica-se causando 1♥ a todos os inimigos no alcance.', passiveText: 'Promovido a Rainha ao cruzar o tabuleiro.' },
+        R: { name: 'Torre', hp: 3, reward: 4, cardVal: 10, cardLabel: '10', white: '♖', black: '♜', reachLabel: 'Até 3 casas ortogonais', activeText: 'Troca de posição com outra peça no alcance.', passiveText: 'Sofre 0♥ de dano ao defender com sucesso.' },
+        B: { name: 'Bispo', hp: 3, reward: 4, cardVal: 11, cardLabel: 'J', white: '♗', black: '♝', reachLabel: 'Até 3 casas diagonais', activeText: 'Cura aliados no alcance em +1♥.', passiveText: 'Causa 2♥ mesmo se o alvo defender.' },
+        Q: { name: 'Rainha', hp: 5, reward: 6, cardVal: 12, cardLabel: 'Q', white: '♕', black: '♛', reachLabel: 'Até 3 casas em todas as 8 direções', activeText: 'Copia e executa a ativa de outra peça no alcance.', passiveText: 'Cura-se em +1♥ ao abater peças.' },
+        K: { name: 'Rei', hp: 7, reward: 0, cardVal: 13, cardLabel: 'K', white: '♔', black: '♚', reachLabel: 'Até 2 casas em todas as 8 direções', activeText: 'Causa 2♥ de dano direto a um inimigo no alcance.', passiveText: 'Sem passiva.' },
+        N: { name: 'Cavalo', hp: 3, reward: 4, cardVal: 1, cardLabel: 'A', white: '♘', black: '♞', reachLabel: 'Salto em L (2+1)', activeText: 'Causa 1♥ de dano direto a um inimigo no alcance.', passiveText: 'Ignora obstáculos.' }
       };
 
       const RULEBOOK_PAGES = [
-        {
-          title: '1. Objetivo, Relógios & Economia',
-          html: `
-            <p><strong class="text-[#f3d678]">Objetivo:</strong> Abater o <strong>Rei adversário (7♥)</strong> ou vencer quando o tempo do oponente zerar.</p>
-            <p><strong class="text-[#f3d678]">Relógios (30:00):</strong> Cada jogador tem 30:00. O relógio do jogador ativo corre apenas fora de modais/resumos e quando não está aguardando ação do Bot.</p>
-            <div class="p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/30 space-y-1">
-              <div class="font-bold text-[#f3d678]">Regras de Turno e Recursos:</div>
-              <p>• <strong>Ouro Inicial:</strong> Ambos os jogadores começam com <span class="sym-diamond">♦2</span>.</p>
-              <p>• <strong>Mão Inicial e Compra no Turno:</strong> Ambos os jogadores começam com <strong>3 cartas</strong> na mão; cada jogador recebe <strong>+1 carta a cada 2 turnos</strong> próprios (no 2º, 4º, 6º... turno de cada lado, máx. ${MAX_HAND_SIZE} cartas).</p>
-              <p>• <strong>Ações (<span class="sym-club">♣</span>):</strong> 2 ações por turno para mover/atacar. <strong>Cada peça faz no máximo 1 ação por turno.</strong></p>
-              <p>• <strong>Flop:</strong> 3 cartas comunitárias renovadas <strong>após cada embate</strong>.</p>
-              <p>• <strong>Comprar Carta:</strong> Custa <span class="sym-diamond">3♦</span> e <span class="sym-club">0♣</span> (puxa 1 carta do monte; máx. ${MAX_HAND_SIZE} na mão).</p>
-              <p>• <strong>Abates:</strong> Peão <span class="sym-diamond">+♦2</span> · Torre/Bispo/Cavalo <span class="sym-diamond">+♦4</span> · Rainha <span class="sym-diamond">+♦6</span> · Rei = Vitória.</p>
-            </div>
-          `
-        },
-        {
-          title: '2. Alcances, Vida & Habilidades Ativas (♠)',
-          html: `
-            <p class="text-[11px] text-zinc-300">Ativa (<span class="sym-spade">♠</span>) custa <span class="sym-diamond">1♦</span> e <span class="sym-club">0♣</span> (não gasta pontos de ação, mas conta como a jogada da peça no turno e impede outras ações dela no mesmo turno).</p>
-            <div class="space-y-1.5 text-[11px]">
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♟ Peão (1♥)</strong> · Alcance: 1 casa (8 direções)<br/>
-                <span class="sym-spade">♠</span> Sacrifica-se causando 1♥ a todos os inimigos no alcance.
-              </div>
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♜ Torre (3♥)</strong> · Alcance: até 3 ortogonal<br/>
-                <span class="sym-spade">♠</span> Troca de posição com outra peça (aliada ou inimiga) no alcance.
-              </div>
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♝ Bispo (3♥)</strong> · Alcance: até 3 diagonal<br/>
-                <span class="sym-spade">♠</span> Cura todas as peças aliadas no alcance em +1♥.
-              </div>
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♛ Rainha (5♥)</strong> · Alcance: até 3 (8 direções)<br/>
-                <span class="sym-spade">♠</span> Copia e executa a ativa de outra peça (aliada ou inimiga) no alcance.
-              </div>
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♚ Rei (7♥)</strong> · Alcance: até 2 (8 direções)<br/>
-                <span class="sym-spade">♠</span> Causa 2♥ de dano direto a 1 inimigo no alcance.
-              </div>
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♞ Cavalo (3♥)</strong> · Alcance: salto 2+1 em L<br/>
-                <span class="sym-spade">♠</span> Causa 1♥ de dano direto a 1 inimigo no alcance.
-              </div>
-            </div>
-          `
-        },
-        {
-          title: '3. Habilidades Passivas das Peças',
-          html: `
-            <div class="space-y-1.5 text-[11px]">
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♟ Peão:</strong> Promovido a Rainha ao cruzar para a última linha oposta.
-              </div>
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♜ Torre:</strong> Sofre 0♥ de dano ao defender com sucesso.
-              </div>
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♝ Bispo:</strong> Causa 2♥ de dano mesmo se o alvo defender com sucesso.
-              </div>
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♛ Rainha:</strong> Cura-se em +1♥ ao abater peças (até o HP máximo).
-              </div>
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♚ Rei:</strong> Não possui habilidade passiva.
-              </div>
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♞ Cavalo:</strong> Ignora obstáculos ao mover-se, atacar ou usar ativa.
-              </div>
-            </div>
-          `
-        },
-        {
-          title: '4. Baralho (39) & Cartas por Peças',
-          html: `
-            <p><strong class="text-[#f3d678]">Baralho (39 cartas):</strong> 3 cópias de cada valor de <strong>A</strong> a <strong>K</strong> (sem naipes e sem coringas no monte).</p>
-            <div class="p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/30 space-y-1 text-[11px]">
-              <div class="font-bold text-[#f3d678]">Cartas Representadas por Peças:</div>
-              <p>• <strong>Peão:</strong> Coringa, podendo assumir valor de <strong>2 a 9</strong>.</p>
-              <p>• <strong>Torre:</strong> <strong>10</strong></p>
-              <p>• <strong>Bispo:</strong> <strong>J</strong></p>
-              <p>• <strong>Rainha:</strong> <strong>Q</strong></p>
-              <p>• <strong>Rei:</strong> <strong>K</strong></p>
-              <p>• <strong>Cavalo:</strong> <strong>A</strong></p>
-            </div>
-            <p class="text-[11px] text-zinc-300">Na avaliação de pôquer, cada mão de 5 cartas usa: <strong>3 cartas do Flop + 1 carta da mão + carta da peça</strong>.</p>
-          `
-        },
-        {
-          title: '5. Combate & Bônus de Combos',
-          html: `
-            <div class="p-2 rounded-xl bg-[#161820] border border-[#d4af37]/30 space-y-1 text-[11px]">
-              <div class="font-bold text-[#f3d678]">Resolução do Combate:</div>
-              <p>• <strong>Ataque vence:</strong> Causa <strong>2♥</strong> ao defensor (+ bônus de combo).</p>
-              <p>• <strong>Defesa vence/empata:</strong> Causa <strong>1♥</strong> em ambas (Torre defensora sofre 0♥; Bispo ainda causa 2♥).</p>
-              <p>• <strong>Flop:</strong> Renovado após cada embate.</p>
-            </div>
-            <div class="p-2 rounded-xl bg-[#161820] border border-white/10 space-y-0.5 text-[11px]">
-              <div class="font-bold text-[#f3d678]">Bônus de Combos:</div>
-              <p>• <strong>1 Par:</strong> Cura a peça usada no combo em +2♥.</p>
-              <p>• <strong>2 Pares:</strong> Concede +<span class="sym-diamond">♦4</span> de ouro.</p>
-              <p>• <strong>Trinca:</strong> Causa +1♥ de dano extra.</p>
-              <p>• <strong>Sequência:</strong> Concede +<span class="sym-club">1♣</span> e compra +1 carta.</p>
-              <p>• <strong>Full House:</strong> Causa +1♥ de dano e cura a peça usada em +2♥.</p>
-              <p>• <strong>Quadra:</strong> Abate a peça inimiga e garante +<span class="sym-diamond">♦8</span> de ouro.</p>
-            </div>
-          `
-        }
+        { title: '1. Objetivo & Recursos', html: '<p>Abata o Rei adversário (7♥) ou vença no tempo. Comece com ♦2, ♣2 e 3 cartas.</p>' },
+        { title: '2. Habilidades Ativas (♠)', html: '<p>Ativas custam ♦1 e 0♣ e consomem a jogada da peça no turno.</p>' },
+        { title: '3. Passivas', html: '<p>Peão promove a Rainha; Torre sofre 0♥ ao defender; Bispo causa 2♥ na defesa; Rainha cura +1♥ ao abater; Cavalo ignora bloqueios.</p>' },
+        { title: '4. Baralho (39)', html: '<p>3 cópias de A a K. Combate avalia 3 do Flop + 1 da mão + carta da peça.</p>' },
+        { title: '5. Combate e Combos', html: '<p>Ataque vencedor causa 2♥; defesa/empate causa 1♥ em ambos (com exceções de Torre e Bispo).</p>' }
       ];
 
       let selectedMode = 'bot';
       let state = null;
-      let duelContext = null;
-      let pendingCombatPassAction = null;
       let rulesIdx = 0;
       let timerId = null;
 
-      /* Camada de rede On-line (PeerJS / WebRTC) */
-      const net = {
-        peer: null,
-        conn: null,
-        role: null,
-        roomCode: null,
-        connected: false,
-        pendingCombat: null,
-        lastSummary: null
+      const ranked = {
+        db: null,
+        auth: null,
+        user: null,
+        profile: { uid: null, displayName: 'Jogador', rating: 1000, wins: 0, losses: 0, status: 'idle', currentMatchId: null },
+        searching: false,
+        queueStartMs: 0,
+        queueTimerId: null,
+        userUnsub: null,
+        matchUnsub: null,
+        activeMatchId: null,
+        mySide: null,
+        eloAppliedForMatch: null,
+        lastMatchDoc: null
       };
 
-      function isOnlineMode() {
-        return Boolean(state && state.mode === 'online');
-      }
-
-      function myOnlineSide() {
-        if (!isOnlineMode()) return state ? state.turn : 'white';
-        return net.role === 'guest' ? 'black' : 'white';
-      }
-
-      function setOnlineStatus(msg) {
-        const el = document.getElementById('online-status-text');
-        if (el) el.textContent = msg;
-      }
-
-      function generateRoomCode() {
-        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-        let code = 'XK-';
-        for (let i = 0; i < 5; i++) {
-          code += chars[Math.floor(Math.random() * chars.length)];
-        }
-        return code;
-      }
-
-      function sendNet(payload) {
-        if (net.conn && net.conn.open) {
-          try {
-            net.conn.send(payload);
-          } catch (err) {
-            reportError(err);
-          }
-        }
-      }
-
-      function buildGuestSafeView() {
-        if (!state) return null;
-        return {
-          mode: 'online',
-          turn: state.turn,
-          round: state.round,
-          ownTurns: state.ownTurns,
-          actions: state.actions,
-          clocks: state.clocks,
-          board: state.board,
-          flop: state.flop,
-          status: document.getElementById('status-bar') ? document.getElementById('status-bar').textContent : '',
-          players: {
-            white: {
-              gold: state.players.white.gold,
-              handCount: state.players.white.hand.length
-            },
-            black: {
-              gold: state.players.black.gold,
-              hand: state.players.black.hand.slice()
-            }
-          },
-          pendingCombat: net.pendingCombat ? {
-            atkR: net.pendingCombat.atkR,
-            atkC: net.pendingCombat.atkC,
-            defR: net.pendingCombat.defR,
-            defC: net.pendingCombat.defC,
-            atkPiece: net.pendingCombat.atkPiece,
-            defPiece: net.pendingCombat.defPiece,
-            atkHandCount: net.pendingCombat.atkHandCount,
-            defHandCount: net.pendingCombat.defHandCount,
-            stage: net.pendingCombat.stage
-          } : null,
-          lastSummary: net.lastSummary,
-          gameOver: state.gameOver,
-          gameOverData: state.gameOverData || null
-        };
-      }
-
-      function syncOnlineState() {
-        if (!isOnlineMode() || net.role !== 'host' || !state) return;
-        sendNet({
-          type: 'state_sync',
-          view: buildGuestSafeView()
-        });
-      }
-
-      function applyGuestView(view) {
-        if (!view) return;
-        closeModal('menu-modal');
-        closeModal('online-modal');
-        const prevSummary = net.lastSummary;
-        state = {
-          mode: 'online',
-          turn: view.turn,
-          round: view.round,
-          ownTurns: view.ownTurns,
-          actions: view.actions,
-          clocks: view.clocks,
-          board: view.board,
-          deck: [],
-          discard: [],
-          flop: view.flop || [],
-          players: {
-            white: {
-              gold: view.players.white.gold,
-              hand: new Array(view.players.white.handCount || 0).fill(0)
-            },
-            black: {
-              gold: view.players.black.gold,
-              hand: view.players.black.hand || []
-            }
-          },
-          selected: null,
-          actionMode: null,
-          skillPhase: null,
-          copiedSkill: null,
-          gameOver: Boolean(view.gameOver),
-          gameOverData: view.gameOverData || null
-        };
-
-        if (view.status) {
-          setStatus(view.status);
-        }
-
-        net.pendingCombat = view.pendingCombat || null;
-        net.lastSummary = view.lastSummary || null;
-
-        if (net.pendingCombat && net.pendingCombat.stage === 'awaiting_defender' && net.pendingCombat.defPiece && net.pendingCombat.defPiece.color === 'black') {
-          closeModal('combat-pass-modal');
-          const flopEl = document.getElementById('combat-flop');
-          flopEl.innerHTML = '';
-          state.flop.forEach((v) => flopEl.appendChild(renderCard(v, 'w-9 h-12 rounded-md text-sm')));
-          const atkP = net.pendingCombat.atkPiece;
-          const defP = net.pendingCombat.defPiece;
-          document.getElementById('combat-heading').textContent = '⚔️ Combate de Pôquer';
-          document.getElementById('combat-atk-glyph').textContent = PIECE_DATA[atkP.type].white;
-          document.getElementById('combat-atk-info').textContent = `${PIECE_DATA[atkP.type].name} (${atkP.hp}♥)`;
-          document.getElementById('combat-atk-sub').innerHTML = `
-            <div>Carta jogada: <strong>oculta</strong></div>
-            <div class="text-[10px] text-amber-200">Peça: ${formatPieceRep(atkP)}</div>
-          `;
-          document.getElementById('combat-def-glyph').textContent = PIECE_DATA[defP.type].black;
-          document.getElementById('combat-def-info').textContent = `${PIECE_DATA[defP.type].name} (${defP.hp}♥)`;
-          document.getElementById('combat-def-sub').innerHTML = `
-            <div>Peça: ${formatPieceRep(defP)}</div>
-            <div class="text-[10px] text-red-300">Sua vez de defender</div>
-          `;
-          renderDefenderCardSelection(null, defP, state.players.black, (dIdx) => {
-            sendNet({ type: 'online_def_card', cardIdx: dIdx });
-          });
-        } else if (net.lastSummary && JSON.stringify(net.lastSummary) !== JSON.stringify(prevSummary)) {
-          const s = net.lastSummary;
-          const flopEl = document.getElementById('combat-flop');
-          flopEl.innerHTML = '';
-          state.flop.forEach((v) => flopEl.appendChild(renderCard(v, 'w-9 h-12 rounded-md text-sm')));
-          const atkP = s.atkPiece;
-          const defP = s.defPiece;
-          document.getElementById('combat-atk-glyph').textContent = atkP ? (atkP.color === 'white' ? PIECE_DATA[atkP.type].white : PIECE_DATA[atkP.type].black) : '⚔️';
-          document.getElementById('combat-atk-info').textContent = s.atkHeaderInfo || s.atkName;
-          document.getElementById('combat-def-glyph').textContent = defP ? (defP.color === 'white' ? PIECE_DATA[defP.type].white : PIECE_DATA[defP.type].black) : '🛡️';
-          document.getElementById('combat-def-info').textContent = s.defHeaderInfo || s.defName;
-          openModal('combat-modal');
-          showPostCombatSummary(s, () => {
-            closeModal('combat-modal');
-            sendNet({ type: 'online_summary_ack' });
-            renderAll();
-          });
-        } else if (!net.pendingCombat && !net.lastSummary) {
-          closeModal('combat-modal');
-        }
-
-        if (state.gameOver && state.gameOverData) {
-          document.getElementById('gameover-title').textContent = state.gameOverData.title;
-          document.getElementById('gameover-desc').textContent = state.gameOverData.desc;
-          openModal('gameover-modal');
-        }
-
-        renderAll();
-      }
-
-      function setupConnectionListeners(conn, role) {
-        net.conn = conn;
-        net.role = role;
-
-        conn.on('open', () => {
-          net.connected = true;
-          if (role === 'host') {
-            setOnlineStatus('Oponente conectado! Iniciando partida...');
-            closeModal('online-modal');
-            startMatch();
-          } else {
-            selectedMode = 'online';
-            syncModeButtons();
-            setOnlineStatus('Conectado à sala! Aguardando Brancas...');
-            closeModal('online-modal');
-            closeModal('menu-modal');
-            setStatus('Conectado à sala! Aguardando início da partida das Brancas (♔)...');
-          }
-        });
-
-        conn.on('data', (msg) => {
-          try {
-            if (!msg || !msg.type) return;
-
-            if (msg.type === 'state_sync' && net.role === 'guest') {
-              applyGuestView(msg.view);
-            } else if (msg.type === 'clock_sync' && net.role === 'guest') {
-              if (state && msg.clocks) {
-                state.clocks = msg.clocks;
-                refreshClocks();
-              }
-            } else if (msg.type === 'online_action' && net.role === 'host') {
-              handleGuestActionRequest(msg.action);
-            } else if (msg.type === 'online_atk_card' && net.role === 'host') {
-              handleGuestAttackerCard(msg.cardIdx);
-            } else if (msg.type === 'online_def_card' && net.role === 'host') {
-              handleGuestDefenderCard(msg.cardIdx);
-            } else if (msg.type === 'online_summary_ack' && net.role === 'host') {
-              net.lastSummary = null;
-              if (state && state.gameOver && state.gameOverData) {
-                endMatch(state.gameOverData.winnerSide, state.gameOverData.reason);
-              }
-              syncOnlineState();
-            }
-          } catch (err) {
-            reportError(err);
-          }
-        });
-
-        conn.on('close', () => {
-          net.connected = false;
-          setStatus('⚠️ Conexão on-line encerrada.');
-          setOnlineStatus('Conexão encerrada.');
-        });
-
-        conn.on('error', (err) => {
-          reportError(err);
-        });
-      }
-
-      function createOnlineRoom() {
-        try {
-          if (typeof Peer === 'undefined') {
-            setOnlineStatus('Biblioteca WebRTC indisponível no momento.');
-            return;
-          }
-          if (net.peer) {
-            try { net.peer.destroy(); } catch (_) {}
-          }
-          const code = generateRoomCode();
-          net.roomCode = code;
-          net.role = 'host';
-          net.connected = false;
-          setOnlineStatus('Criando sala on-line...');
-
-          const peer = new Peer(code);
-          net.peer = peer;
-
-          peer.on('open', (id) => {
-            document.getElementById('room-code-box').classList.remove('hidden');
-            document.getElementById('room-code-value').textContent = id;
-            setOnlineStatus('Sala criada. Envie o código para o oponente.');
-          });
-
-          peer.on('connection', (conn) => {
-            setupConnectionListeners(conn, 'host');
-          });
-
-          peer.on('error', (err) => {
-            setOnlineStatus('Erro ao criar sala: ' + (err && err.type ? err.type : err.message));
-          });
-        } catch (err) {
-          reportError(err);
-        }
-      }
-
-      function joinOnlineRoom() {
-        try {
-          if (typeof Peer === 'undefined') {
-            setOnlineStatus('Biblioteca WebRTC indisponível no momento.');
-            return;
-          }
-          const raw = (document.getElementById('input-join-code').value || '').trim().toUpperCase();
-          if (!raw) {
-            setOnlineStatus('Digite o código da sala.');
-            return;
-          }
-          if (net.peer) {
-            try { net.peer.destroy(); } catch (_) {}
-          }
-          net.roomCode = raw;
-          net.role = 'guest';
-          net.connected = false;
-          setOnlineStatus('Conectando à sala ' + raw + '...');
-
-          const peer = new Peer();
-          net.peer = peer;
-
-          peer.on('open', () => {
-            const conn = peer.connect(raw, { reliable: true });
-            setupConnectionListeners(conn, 'guest');
-          });
-
-          peer.on('error', (err) => {
-            setOnlineStatus('Falha ao entrar: ' + (err && err.type ? err.type : err.message));
-          });
-        } catch (err) {
-          reportError(err);
-        }
-      }
-
-      function handleGuestActionRequest(action) {
-        if (!state || state.gameOver || state.turn !== 'black' || !action) return;
-        if (action.kind === 'move') {
-          const p = state.board[action.fromR][action.fromC];
-          if (!p || p.color !== 'black' || p.acted || state.actions <= 0) return;
-          const reach = getReachInfo(action.fromR, action.fromC);
-          if (!reach.moves.some((m) => m.r === action.toR && m.c === action.toC)) return;
-          doMove(action.fromR, action.fromC, action.toR, action.toC);
-        } else if (action.kind === 'attack') {
-          const p = state.board[action.fromR][action.fromC];
-          if (!p || p.color !== 'black' || p.acted || state.actions <= 0) return;
-          const reach = getReachInfo(action.fromR, action.fromC);
-          if (!reach.attacks.some((a) => a.r === action.toR && a.c === action.toC)) return;
-          startCombat(action.fromR, action.fromC, action.toR, action.toC);
-        } else if (action.kind === 'skill') {
-          const p = state.board[action.fromR][action.fromC];
-          if (!p || p.color !== 'black' || p.acted || state.players.black.gold < 1) return;
-          executeActiveSkill(action.fromR, action.fromC, action.effType, action.toR, action.toC, Boolean(action.copiedFlag));
-        } else if (action.kind === 'buy') {
-          state.turn = 'black';
-          onBuyCard();
-        } else if (action.kind === 'end_turn') {
-          if (state.turn === 'black') {
-            onEndTurn();
-          }
-        }
-      }
-
-      function handleGuestAttackerCard(cardIdx) {
-        if (!net.pendingCombat || !duelContext) return;
-        const atkPlayer = state.players.black;
-        if (cardIdx < 0 || cardIdx >= atkPlayer.hand.length) return;
-        const chosenAtk = atkPlayer.hand.splice(cardIdx, 1)[0];
-        duelContext.atkCard = chosenAtk;
-
-        const defPiece = state.board[duelContext.defR][duelContext.defC];
-        const defPlayer = state.players.white;
-
-        if (defPlayer.hand.length === 0) {
-          settleCombat(chosenAtk, null);
-          return;
-        }
-
-        net.pendingCombat.stage = 'awaiting_defender';
-        net.pendingCombat.atkCard = chosenAtk;
-        syncOnlineState();
-
-        const flopEl = document.getElementById('combat-flop');
-        flopEl.innerHTML = '';
-        state.flop.forEach((v) => flopEl.appendChild(renderCard(v, 'w-9 h-12 rounded-md text-sm')));
-        const atkP = state.board[duelContext.atkR][duelContext.atkC];
-        document.getElementById('combat-heading').textContent = '⚔️ Combate de Pôquer';
-        document.getElementById('combat-atk-glyph').textContent = PIECE_DATA[atkP.type].black;
-        document.getElementById('combat-atk-info').textContent = `${PIECE_DATA[atkP.type].name} (${atkP.hp}♥)`;
-        document.getElementById('combat-atk-sub').innerHTML = `
-          <div>Carta jogada: <strong>oculta</strong></div>
-          <div class="text-[10px] text-amber-200">Peça: ${formatPieceRep(atkP)}</div>
-        `;
-        document.getElementById('combat-def-glyph').textContent = PIECE_DATA[defPiece.type].white;
-        document.getElementById('combat-def-info').textContent = `${PIECE_DATA[defPiece.type].name} (${defPiece.hp}♥)`;
-        document.getElementById('combat-def-sub').innerHTML = `
-          <div>Peça: ${formatPieceRep(defPiece)}</div>
-          <div class="text-[10px] text-red-300">Escolha sua carta</div>
-        `;
-        renderDefenderCardSelection(chosenAtk, defPiece, defPlayer);
-      }
-
-      function handleGuestDefenderCard(cardIdx) {
-        if (!duelContext || duelContext.atkCard === null || duelContext.atkCard === undefined) return;
-        const defPlayer = state.players.black;
-        if (cardIdx < 0 || cardIdx >= defPlayer.hand.length) return;
-        const chosenDef = defPlayer.hand.splice(cardIdx, 1)[0];
-        net.pendingCombat = null;
-        settleCombat(duelContext.atkCard, chosenDef);
+      function reportError(err) {
+        const el = document.getElementById('error-toast');
+        if (!el) return;
+        el.textContent = 'Erro: ' + (err && err.message ? err.message : String(err));
+        el.classList.remove('hidden');
       }
 
       function setStatus(msg) {
@@ -1290,27 +658,9 @@
         if (el) el.textContent = msg;
       }
 
-      function formatTime(sec) {
-        const clamped = Math.max(0, Math.floor(sec));
-        const mm = String(Math.floor(clamped / 60)).padStart(2, '0');
-        const ss = String(clamped % 60).padStart(2, '0');
-        return `${mm}:${ss}`;
-      }
-
-      function refreshClocks() {
-        const wEl = document.getElementById('val-clock-white');
-        const bEl = document.getElementById('val-clock-black');
-        if (!state) {
-          if (wEl) wEl.textContent = '30:00';
-          if (bEl) bEl.textContent = '30:00';
-          return;
-        }
-        if (wEl) wEl.textContent = formatTime(state.clocks.white);
-        if (bEl) bEl.textContent = formatTime(state.clocks.black);
-      }
-
-      function hasOpenModal() {
-        return Boolean(document.querySelector('.xeker-modal.open'));
+      function setOnlineStatus(msg) {
+        const el = document.getElementById('online-status-text');
+        if (el) el.textContent = msg;
       }
 
       function openModal(id) {
@@ -1324,57 +674,34 @@
       }
 
       function closeAllModals() {
-        document.querySelectorAll('.xeker-modal').forEach((el) => el.classList.remove('open'));
+        document.querySelectorAll('.xeker-modal').forEach((m) => m.classList.remove('open'));
       }
 
-      function openCombatPrivacyPass(sideColor, descriptionText, onRevealCallback) {
-        const label = sideColor === 'white' ? 'Jogador Brancas (♔)' : 'Jogador Pretas (♚)';
-        document.getElementById('combat-pass-heading').textContent = `Passe para ${label}`;
-        document.getElementById('combat-pass-desc').textContent = descriptionText;
-        pendingCombatPassAction = onRevealCallback;
-        openModal('combat-pass-modal');
+      function formatTime(sec) {
+        const c = Math.max(0, Math.floor(sec));
+        return `${String(Math.floor(c / 60)).padStart(2, '0')}:${String(c % 60).padStart(2, '0')}`;
       }
 
-      function startClock() {
-        if (timerId) clearInterval(timerId);
-        timerId = setInterval(() => {
-          try {
-            if (!state || state.gameOver) return;
-            if (isOnlineMode() && net.role === 'guest') return;
-            if (hasOpenModal()) return;
-            if (state.mode === 'bot' && state.turn === 'black') return;
-            if (isOnlineMode() && !net.connected) return;
-
-            const active = state.turn;
-            state.clocks[active] = Math.max(0, state.clocks[active] - 1);
-            refreshClocks();
-
-            if (isOnlineMode() && net.role === 'host') {
-              sendNet({ type: 'clock_sync', clocks: state.clocks });
-            }
-
-            if (state.clocks[active] <= 0) {
-              const winner = active === 'white' ? 'black' : 'white';
-              endMatch(winner, 'O tempo de 30:00 se esgotou.');
-            }
-          } catch (err) {
-            reportError(err);
-          }
-        }, 1000);
+      function refreshClocks() {
+        const w = document.getElementById('val-clock-white');
+        const b = document.getElementById('val-clock-black');
+        if (!state) {
+          if (w) w.textContent = '30:00';
+          if (b) b.textContent = '30:00';
+          return;
+        }
+        if (w) w.textContent = formatTime(state.clocks.white);
+        if (b) b.textContent = formatTime(state.clocks.black);
       }
 
       function createDeck() {
         const arr = [];
-        for (let val = 1; val <= 13; val++) {
-          for (let copy = 0; copy < 3; copy++) {
-            arr.push(val);
-          }
+        for (let v = 1; v <= 13; v++) {
+          for (let k = 0; k < 3; k++) arr.push(v);
         }
         for (let i = arr.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
-          const temp = arr[i];
-          arr[i] = arr[j];
-          arr[j] = temp;
+          [arr[i], arr[j]] = [arr[j], arr[i]];
         }
         return arr;
       }
@@ -1385,9 +712,7 @@
           state.deck = state.discard.splice(0, state.discard.length);
           for (let i = state.deck.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            const temp = state.deck[i];
-            state.deck[i] = state.deck[j];
-            state.deck[j] = temp;
+            [state.deck[i], state.deck[j]] = [state.deck[j], state.deck[i]];
           }
         }
         return state.deck.length > 0 ? state.deck.pop() : null;
@@ -1395,9 +720,7 @@
 
       function dealFlop() {
         if (!state) return;
-        if (state.flop.length > 0) {
-          state.discard.push(...state.flop);
-        }
+        if (state.flop.length > 0) state.discard.push(...state.flop);
         state.flop = [];
         for (let i = 0; i < 3; i++) {
           const c = drawCard();
@@ -1405,252 +728,52 @@
         }
       }
 
-      function maybeDrawEveryTwoOwnTurns(side) {
-        if (!state || !side) return null;
-        state.ownTurns[side] = (state.ownTurns[side] || 0) + 1;
-        if (state.ownTurns[side] % 2 !== 0) return null;
-
-        const hand = state.players[side].hand;
-        if (hand.length >= MAX_HAND_SIZE) return null;
-        const c = drawCard();
-        if (c !== null) {
-          hand.push(c);
-          return c;
-        }
-        return null;
-      }
-
-      function pokerRank(val) {
-        return val === 1 ? 14 : val;
-      }
-
-      function evaluateFixedRanks5(ranks) {
-        const counts = new Map();
-        for (const r of ranks) {
-          counts.set(r, (counts.get(r) || 0) + 1);
-        }
-
-        const sortedGroups = Array.from(counts.entries()).sort((a, b) => {
-          if (b[1] !== a[1]) return b[1] - a[1];
-          return b[0] - a[0];
-        });
-
-        const uniqueDesc = Array.from(counts.keys()).sort((a, b) => b - a);
-        let straight = false;
-        let straightTop = 0;
-
-        if (uniqueDesc.length === 5) {
-          if (uniqueDesc[0] - uniqueDesc[4] === 4) {
-            straight = true;
-            straightTop = uniqueDesc[0];
-          } else if (
-            uniqueDesc[0] === 14 &&
-            uniqueDesc[1] === 5 &&
-            uniqueDesc[2] === 4 &&
-            uniqueDesc[3] === 3 &&
-            uniqueDesc[4] === 2
-          ) {
-            straight = true;
-            straightTop = 5;
-          }
-        }
-
-        const fmt = (pr) => RANK_TEXT[pr === 14 ? 1 : pr];
-
-        if (sortedGroups[0][1] >= 4) {
-          const k = sortedGroups[1] ? fmt(sortedGroups[1][0]) : '';
-          return {
-            cat: 6,
-            name: `Quadra de ${fmt(sortedGroups[0][0])}${k ? ` (${k})` : ''}`,
-            tie: [sortedGroups[0][0], sortedGroups[1] ? sortedGroups[1][0] : 0]
-          };
-        }
-        if (sortedGroups[0][1] === 3 && sortedGroups[1] && sortedGroups[1][1] === 2) {
-          return {
-            cat: 5,
-            name: `Full House (${fmt(sortedGroups[0][0])} e ${fmt(sortedGroups[1][0])})`,
-            tie: [sortedGroups[0][0], sortedGroups[1][0]]
-          };
-        }
-        if (straight) {
-          return {
-            cat: 4,
-            name: `Sequência (maior ${fmt(straightTop)})`,
-            tie: [straightTop]
-          };
-        }
-        if (sortedGroups[0][1] === 3) {
-          const kickers = sortedGroups.slice(1).map((x) => x[0]).sort((a, b) => b - a);
-          return {
-            cat: 3,
-            name: `Trinca de ${fmt(sortedGroups[0][0])}`,
-            tie: [sortedGroups[0][0], ...kickers]
-          };
-        }
-        if (sortedGroups[0][1] === 2 && sortedGroups[1] && sortedGroups[1][1] === 2) {
-          const hi = Math.max(sortedGroups[0][0], sortedGroups[1][0]);
-          const lo = Math.min(sortedGroups[0][0], sortedGroups[1][0]);
-          const k = sortedGroups[2] ? sortedGroups[2][0] : 0;
-          return {
-            cat: 2,
-            name: `2 Pares (${fmt(hi)} e ${fmt(lo)})`,
-            tie: [hi, lo, k]
-          };
-        }
-        if (sortedGroups[0][1] === 2) {
-          const kickers = sortedGroups.slice(1).map((x) => x[0]).sort((a, b) => b - a);
-          return {
-            cat: 1,
-            name: `1 Par de ${fmt(sortedGroups[0][0])}`,
-            tie: [sortedGroups[0][0], ...kickers]
-          };
-        }
-        return {
-          cat: 0,
-          name: `Carta Alta (${fmt(uniqueDesc[0])})`,
-          tie: uniqueDesc
-        };
-      }
-
-      function comparePokerHands(h1, h2) {
-        if (h1.cat !== h2.cat) return h1.cat - h2.cat;
-        const len = Math.max(h1.tie.length, h2.tie.length);
-        for (let i = 0; i < len; i++) {
-          const v1 = h1.tie[i] || 0;
-          const v2 = h2.tie[i] || 0;
-          if (v1 !== v2) return v1 - v2;
-        }
-        return 0;
-      }
-
-      function evaluateCombatHand(cards4, piece) {
-        if (piece && piece.type === 'P') {
-          let best = null;
-          for (let wildVal = 2; wildVal <= 9; wildVal++) {
-            const ranks = [...cards4.map(pokerRank), wildVal];
-            const ev = evaluateFixedRanks5(ranks);
-            if (!best || comparePokerHands(ev, best) > 0) {
-              best = ev;
-            }
-          }
-          return best;
-        }
-        const ranks = [...cards4.map(pokerRank), pokerRank(piece ? piece.cardVal : 1)];
-        return evaluateFixedRanks5(ranks);
-      }
-
       function buildInitialBoard() {
         const grid = Array.from({ length: 8 }, () => Array(8).fill(null));
         const backRank = ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'];
-
         for (let col = 0; col < 8; col++) {
-          const bType = backRank[col];
-          grid[0][col] = {
-            id: `b_${bType}_${col}`,
-            color: 'black',
-            type: bType,
-            hp: PIECE_DATA[bType].hp,
-            maxHp: PIECE_DATA[bType].hp,
-            cardVal: PIECE_DATA[bType].cardVal,
-            acted: false
-          };
-          grid[1][col] = {
-            id: `b_P_${col}`,
-            color: 'black',
-            type: 'P',
-            hp: PIECE_DATA.P.hp,
-            maxHp: PIECE_DATA.P.hp,
-            cardVal: PIECE_DATA.P.cardVal,
-            acted: false
-          };
-
-          const wType = backRank[col];
-          grid[7][col] = {
-            id: `w_${wType}_${col}`,
-            color: 'white',
-            type: wType,
-            hp: PIECE_DATA[wType].hp,
-            maxHp: PIECE_DATA[wType].hp,
-            cardVal: PIECE_DATA[wType].cardVal,
-            acted: false
-          };
-          grid[6][col] = {
-            id: `w_P_${col}`,
-            color: 'white',
-            type: 'P',
-            hp: PIECE_DATA.P.hp,
-            maxHp: PIECE_DATA.P.hp,
-            cardVal: PIECE_DATA.P.cardVal,
-            acted: false
-          };
+          const bT = backRank[col];
+          grid[0][col] = { id: `b_${bT}_${col}`, color: 'black', type: bT, hp: PIECE_DATA[bT].hp, maxHp: PIECE_DATA[bT].hp, cardVal: PIECE_DATA[bT].cardVal, acted: false };
+          grid[1][col] = { id: `b_P_${col}`, color: 'black', type: 'P', hp: PIECE_DATA.P.hp, maxHp: PIECE_DATA.P.hp, cardVal: PIECE_DATA.P.cardVal, acted: false };
+          const wT = backRank[col];
+          grid[7][col] = { id: `w_${wT}_${col}`, color: 'white', type: wT, hp: PIECE_DATA[wT].hp, maxHp: PIECE_DATA[wT].hp, cardVal: PIECE_DATA[wT].cardVal, acted: false };
+          grid[6][col] = { id: `w_P_${col}`, color: 'white', type: 'P', hp: PIECE_DATA.P.hp, maxHp: PIECE_DATA.P.hp, cardVal: PIECE_DATA.P.cardVal, acted: false };
         }
         return grid;
       }
 
-      function startMatch() {
-        try {
-          if (selectedMode === 'online' && (!net.connected || net.role !== 'host')) {
-            openModal('online-modal');
-            return;
-          }
+      function isRankedMatch() {
+        return Boolean(state && state.mode === 'ranked' && state.rankedMatchId);
+      }
 
-          closeAllModals();
-          duelContext = null;
-          pendingCombatPassAction = null;
-          net.pendingCombat = null;
-          net.lastSummary = null;
-
-          state = {
-            mode: selectedMode,
-            turn: 'white',
-            round: 1,
-            ownTurns: { white: 1, black: 0 },
-            actions: 2,
-            clocks: {
-              white: INITIAL_CLOCK_SECONDS,
-              black: INITIAL_CLOCK_SECONDS
-            },
-            board: buildInitialBoard(),
-            deck: createDeck(),
-            discard: [],
-            flop: [],
-            players: {
-              white: { gold: 2, hand: [] },
-              black: { gold: 2, hand: [] }
-            },
-            selected: null,
-            actionMode: null,
-            skillPhase: null,
-            copiedSkill: null,
-            gameOver: false,
-            gameOverData: null
-          };
-
-          for (let i = 0; i < 3; i++) {
-            const wc = drawCard();
-            const bc = drawCard();
-            if (wc !== null) state.players.white.hand.push(wc);
-            if (bc !== null) state.players.black.hand.push(bc);
-          }
-
-          dealFlop();
-          startClock();
-
-          if (state.mode === 'online') {
-            setStatus('Partida on-line iniciada · Você é Brancas (♔).');
-          } else if (state.mode === 'bot') {
-            setStatus('Partida iniciada (Contra Bot) · Brancas (♣2, ♦2, 3 cartas).');
-          } else {
-            setStatus('Partida iniciada (Passa e Joga) · Brancas (♣2, ♦2, 3 cartas).');
-          }
-
-          renderAll();
-          if (state.mode === 'online' && net.role === 'host') {
-            syncOnlineState();
-          }
-        } catch (err) {
-          reportError(err);
+      function canControlCurrentTurn() {
+        if (!state || state.gameOver) return false;
+        if (isRankedMatch()) {
+          return state.turn === ranked.mySide;
         }
+        if (state.mode === 'bot') return state.turn === 'white';
+        return true;
+      }
+
+      async function pushRankedBoardSync() {
+        if (!isRankedMatch() || !ranked.db) return;
+        if (state.turn !== ranked.mySide && !state.gameOver) return;
+        try {
+          await ranked.db.collection('matches').doc(state.rankedMatchId).update({
+            turn: state.turn,
+            round: state.round,
+            actions: state.actions,
+            clocks: state.clocks,
+            boardJson: JSON.stringify(state.board),
+            flop: state.flop,
+            whiteGold: state.players.white.gold,
+            blackGold: state.players.black.gold,
+            whiteHandCount: state.players.white.hand.length,
+            blackHandCount: state.players.black.hand.length,
+            statusText: document.getElementById('status-bar').textContent,
+            updatedAt: Date.now()
+          });
+        } catch (_) {}
       }
 
       function insideBoard(r, c) {
@@ -1664,1832 +787,72 @@
         const allies = [];
         const enemies = [];
         const allPieces = [];
-
-        if (!piece) {
-          return { moves, attacks, allies, enemies, allPieces };
-        }
+        if (!piece) return { moves, attacks, allies, enemies, allPieces };
 
         if (piece.type === 'N') {
-          const lOffsets = [
-            [-2, -1], [-2, 1], [-1, -2], [-1, 2],
-            [1, -2], [1, 2], [2, -1], [2, 1]
-          ];
-          for (const [dr, dc] of lOffsets) {
-            const nr = r + dr;
-            const nc = c + dc;
+          const offsets = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+          for (const [dr, dc] of offsets) {
+            const nr = r + dr, nc = c + dc;
             if (!insideBoard(nr, nc)) continue;
             const occ = state.board[nr][nc];
-            if (!occ) {
-              moves.push({ r: nr, c: nc });
-            } else {
+            if (!occ) moves.push({ r: nr, c: nc });
+            else {
               allPieces.push({ r: nr, c: nc, piece: occ });
-              if (occ.color === piece.color) {
-                allies.push({ r: nr, c: nc, piece: occ });
-              } else {
-                attacks.push({ r: nr, c: nc });
-                enemies.push({ r: nr, c: nc, piece: occ });
-              }
+              if (occ.color === piece.color) allies.push({ r: nr, c: nc, piece: occ });
+              else { attacks.push({ r: nr, c: nc }); enemies.push({ r: nr, c: nc, piece: occ }); }
             }
           }
           return { moves, attacks, allies, enemies, allPieces };
         }
 
-        let dirs = [];
+        let dirs = [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]];
         let steps = 1;
-
-        if (piece.type === 'P') {
-          dirs = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
-          steps = 1;
-        } else if (piece.type === 'R') {
-          dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
-          steps = 3;
-        } else if (piece.type === 'B') {
-          dirs = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
-          steps = 3;
-        } else if (piece.type === 'Q') {
-          dirs = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
-          steps = 3;
-        } else if (piece.type === 'K') {
-          dirs = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
-          steps = 2;
-        }
+        if (piece.type === 'R') { dirs = [[-1,0],[1,0],[0,-1],[0,1]]; steps = 3; }
+        else if (piece.type === 'B') { dirs = [[-1,-1],[-1,1],[1,-1],[1,1]]; steps = 3; }
+        else if (piece.type === 'Q') { steps = 3; }
+        else if (piece.type === 'K') { steps = 2; }
 
         for (const [dr, dc] of dirs) {
           for (let s = 1; s <= steps; s++) {
-            const nr = r + dr * s;
-            const nc = c + dc * s;
+            const nr = r + dr * s, nc = c + dc * s;
             if (!insideBoard(nr, nc)) break;
             const occ = state.board[nr][nc];
-            if (!occ) {
-              moves.push({ r: nr, c: nc });
-            } else {
+            if (!occ) moves.push({ r: nr, c: nc });
+            else {
               allPieces.push({ r: nr, c: nc, piece: occ });
-              if (occ.color === piece.color) {
-                allies.push({ r: nr, c: nc, piece: occ });
-              } else {
-                attacks.push({ r: nr, c: nc });
-                enemies.push({ r: nr, c: nc, piece: occ });
-              }
+              if (occ.color === piece.color) allies.push({ r: nr, c: nc, piece: occ });
+              else { attacks.push({ r: nr, c: nc }); enemies.push({ r: nr, c: nc, piece: occ }); }
               break;
             }
           }
         }
-
         return { moves, attacks, allies, enemies, allPieces };
-      }
-
-      function endMatch(winnerColor, reason) {
-        if (!state) return;
-        state.gameOver = true;
-        const winnerName = winnerColor === 'white' ? '♔ Brancas' : '♚ Pretas';
-        const title = `Vitória das ${winnerName}`;
-        state.gameOverData = { title, desc: reason, winnerSide: winnerColor, reason };
-        document.getElementById('gameover-title').textContent = title;
-        document.getElementById('gameover-desc').textContent = reason;
-        renderAll();
-        if (isOnlineMode() && net.role === 'host') {
-          syncOnlineState();
-        }
-        openModal('gameover-modal');
-      }
-
-      function applyQueenAbatePassive(side) {
-        if (!state || state.gameOver) return 0;
-        let healed = 0;
-        for (let r = 0; r < 8; r++) {
-          for (let c = 0; c < 8; c++) {
-            const p = state.board[r][c];
-            if (p && p.color === side && p.type === 'Q' && p.hp > 0 && p.hp < p.maxHp) {
-              p.hp = Math.min(p.maxHp, p.hp + 1);
-              healed += 1;
-            }
-          }
-        }
-        return healed;
-      }
-
-      function handleAbatement(killerSide, victimPiece) {
-        if (!victimPiece) return false;
-        applyQueenAbatePassive(killerSide);
-        if (victimPiece.type === 'K') {
-          endMatch(killerSide, 'O Rei adversário foi abatido!');
-          return true;
-        }
-        const goldReward = PIECE_DATA[victimPiece.type].reward || 0;
-        if (goldReward > 0) {
-          state.players[killerSide].gold += goldReward;
-        }
-        return false;
-      }
-
-      function promotePawnIfCrossed(piece, r, c) {
-        if (!piece || piece.type !== 'P') return false;
-        const crossed = (piece.color === 'white' && r === 0) || (piece.color === 'black' && r === 7);
-        if (!crossed) return false;
-
-        piece.type = 'Q';
-        piece.cardVal = PIECE_DATA.Q.cardVal;
-        piece.maxHp = PIECE_DATA.Q.hp;
-        piece.hp = Math.max(piece.hp, PIECE_DATA.Q.hp);
-        setStatus(`♛ Peão cruzou o tabuleiro e foi promovido a Rainha (5♥)!`);
-        return true;
-      }
-
-      function finishPieceAction(piece) {
-        state.actions = Math.max(0, state.actions - 1);
-        if (piece) piece.acted = true;
-        state.selected = null;
-        state.actionMode = null;
-        state.skillPhase = null;
-        state.copiedSkill = null;
-      }
-
-      function finishPieceSkillAction(piece) {
-        if (piece) piece.acted = true;
-        state.selected = null;
-        state.actionMode = null;
-        state.skillPhase = null;
-        state.copiedSkill = null;
-      }
-
-      function doMove(fromR, fromC, toR, toC) {
-        const piece = state.board[fromR][fromC];
-        if (!piece) return;
-        state.board[toR][toC] = piece;
-        state.board[fromR][fromC] = null;
-        finishPieceAction(piece);
-        const promoted = promotePawnIfCrossed(piece, toR, toC);
-        if (!promoted) {
-          setStatus(`${PIECE_DATA[piece.type].name} moveu-se.`);
-        }
-        renderAll();
-        if (isOnlineMode() && net.role === 'host') {
-          syncOnlineState();
-        }
-      }
-
-      function renderCard(val, classes) {
-        const card = document.createElement('div');
-        card.className = `xeker-card ${classes}`;
-        card.textContent = RANK_TEXT[val];
-        return card;
-      }
-
-      function renderCardBack(classes) {
-        const back = document.createElement('div');
-        back.className = `xeker-card-back ${classes}`;
-        back.textContent = 'X';
-        return back;
-      }
-
-      function formatPieceRep(piece) {
-        if (!piece) return '';
-        if (piece.type === 'P') return 'Peão (2-9)';
-        return RANK_TEXT[piece.cardVal];
-      }
-
-      function showPostCombatSummary(summary, onDoneOverride = null) {
-        document.getElementById('combat-heading').textContent = '📋 Resumo do Combate';
-        document.getElementById('combat-atk-sub').innerHTML = `
-          <div>Carta usada: <strong>${summary.atkCard !== null && summary.atkCard !== undefined ? RANK_TEXT[summary.atkCard] : 'Oculta'}</strong> · Peça: <strong>${summary.atkRep}</strong></div>
-          <div class="text-[10px] text-amber-200">${summary.atkHand ? summary.atkHand.name : ''}</div>
-        `;
-        document.getElementById('combat-def-sub').innerHTML = `
-          <div>Carta usada: <strong>${summary.defCard !== null && summary.defCard !== undefined ? RANK_TEXT[summary.defCard] : '—'}</strong> · Peça: <strong>${summary.defRep}</strong></div>
-          <div class="text-[10px] text-red-200">${summary.defHand ? summary.defHand.name : ''}</div>
-        `;
-
-        const body = document.getElementById('combat-body');
-        body.innerHTML = `
-          <div class="p-2.5 rounded-xl bg-[#d4af37]/15 border border-[#d4af37]/50 text-center">
-            <div class="text-xs font-extrabold text-[#f3d678]">${summary.winnerLabel}</div>
-            <div class="text-[11px] font-bold text-white mt-0.5">Combo Vencedor: ${summary.winHand ? summary.winHand.name : ''}</div>
-            <div class="text-[11px] text-amber-100 mt-1">${COMBO_EFFECTS[summary.winHand ? summary.winHand.cat : 0] || ''}</div>
-          </div>
-          <div class="p-2.5 rounded-xl bg-[#161820] border border-white/10 space-y-1 text-[11px]">
-            <div class="flex justify-between gap-2">
-              <span class="text-zinc-300">Atacante (${summary.atkName}):</span>
-              <span class="font-bold text-right ${summary.atkDmg > 0 ? 'text-red-400' : 'text-emerald-300'}">${summary.atkResultText}</span>
-            </div>
-            <div class="flex justify-between gap-2">
-              <span class="text-zinc-300">Defensor (${summary.defName}):</span>
-              <span class="font-bold text-right ${summary.defDmg > 0 ? 'text-red-400' : 'text-emerald-300'}">${summary.defResultText}</span>
-            </div>
-            ${summary.extraInfo ? `<div class="text-center font-bold text-[#f3d678] pt-1 border-t border-white/10">${summary.extraInfo}</div>` : ''}
-          </div>
-          <button type="button" id="btn-combat-done" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold text-xs shadow active:scale-95">
-            Continuar
-          </button>
-        `;
-
-        document.getElementById('btn-combat-done').addEventListener('click', () => {
-          if (typeof onDoneOverride === 'function') {
-            onDoneOverride();
-            return;
-          }
-          closeModal('combat-modal');
-          duelContext = null;
-          net.lastSummary = null;
-          if (summary.winnerSideEnd) {
-            endMatch(summary.winnerSideEnd, 'O Rei adversário foi abatido!');
-            return;
-          }
-          renderAll();
-          if (isOnlineMode() && net.role === 'host') {
-            syncOnlineState();
-          }
-        });
-      }
-
-      function settleCombat(atkCard, defCard) {
-        if (!duelContext) return;
-        const atkPiece = state.board[duelContext.atkR][duelContext.atkC];
-        const defPiece = state.board[duelContext.defR][duelContext.defC];
-        if (!atkPiece || !defPiece) {
-          closeModal('combat-modal');
-          duelContext = null;
-          renderAll();
-          return;
-        }
-
-        const atkSnap = { ...atkPiece };
-        const defSnap = { ...defPiece };
-        const atkName = PIECE_DATA[atkPiece.type].name;
-        const defName = PIECE_DATA[defPiece.type].name;
-        const cards4 = [...state.flop, atkCard];
-        const defCards4 = [...state.flop, defCard];
-
-        const atkHand = evaluateCombatHand(cards4, atkPiece);
-        const defHand = evaluateCombatHand(defCards4, defPiece);
-        const cmp = comparePokerHands(atkHand, defHand);
-
-        const attackWon = cmp > 0;
-        const winSide = attackWon ? 'atk' : 'def';
-        const winHand = attackWon ? atkHand : defHand;
-        const winColor = attackWon ? atkPiece.color : defPiece.color;
-        const winPiece = attackWon ? atkPiece : defPiece;
-
-        let atkDmg = 0;
-        let defDmg = 0;
-        let extraActions = 0;
-        let healedHp = 0;
-        const extras = [];
-
-        if (attackWon) {
-          defDmg = 2;
-          if (winHand.cat === 3 || winHand.cat === 5) {
-            defDmg += 1;
-          }
-        } else {
-          atkDmg = 1;
-          defDmg = defPiece.type === 'R' ? 0 : 1;
-
-          if (atkPiece.type === 'B') {
-            defDmg = Math.max(defDmg, 2);
-            extras.push('Passiva do Bispo: 2♥ mesmo na defesa');
-          }
-          if (defPiece.type === 'R') {
-            extras.push('Passiva da Torre: 0♥ ao defender');
-          }
-          if (winHand.cat === 3 || winHand.cat === 5) {
-            atkDmg += 1;
-          }
-        }
-
-        if (winHand.cat === 1) {
-          const before = winPiece.hp;
-          winPiece.hp = Math.min(winPiece.maxHp, winPiece.hp + 2);
-          healedHp = winPiece.hp - before;
-        } else if (winHand.cat === 2) {
-          state.players[winColor].gold += 4;
-          extras.push('+♦4 (2 Pares)');
-        } else if (winHand.cat === 4) {
-          extraActions += 1;
-          if (state.players[winColor].hand.length < MAX_HAND_SIZE) {
-            const extraC = drawCard();
-            if (extraC !== null) state.players[winColor].hand.push(extraC);
-          }
-          extras.push('+1♣ e +1 carta (Sequência)');
-        } else if (winHand.cat === 5) {
-          const before = winPiece.hp;
-          winPiece.hp = Math.min(winPiece.maxHp, winPiece.hp + 2);
-          healedHp = winPiece.hp - before;
-        } else if (winHand.cat === 6) {
-          if (winSide === 'atk') {
-            defDmg = defPiece.hp + 99;
-          } else {
-            atkDmg = atkPiece.hp + 99;
-          }
-          state.players[winColor].gold += 8;
-          extras.push('Abate imediato + ♦8 (Quadra)');
-        }
-
-        const actualAtkDmg = Math.min(atkPiece.hp, Math.max(0, atkDmg));
-        const actualDefDmg = Math.min(defPiece.hp, Math.max(0, defDmg));
-
-        atkPiece.hp -= atkDmg;
-        defPiece.hp -= defDmg;
-
-        const atkDead = atkPiece.hp <= 0;
-        const defDead = defPiece.hp <= 0;
-
-        let winnerSideEnd = null;
-
-        if (defDead) {
-          state.board[duelContext.defR][duelContext.defC] = null;
-          const qHeal = applyQueenAbatePassive(atkPiece.color);
-          if (qHeal > 0) extras.push(`Passiva da Rainha: +${qHeal}♥`);
-          if (defPiece.type === 'K') {
-            winnerSideEnd = atkPiece.color;
-          } else {
-            const rwd = PIECE_DATA[defPiece.type].reward || 0;
-            state.players[atkPiece.color].gold += rwd;
-            extras.push(`Abate de ${defName}: +♦${rwd}`);
-          }
-        }
-
-        if (!winnerSideEnd && atkDead) {
-          state.board[duelContext.atkR][duelContext.atkC] = null;
-          const qHeal = applyQueenAbatePassive(defPiece.color);
-          if (qHeal > 0) extras.push(`Passiva da Rainha: +${qHeal}♥`);
-          if (atkPiece.type === 'K') {
-            winnerSideEnd = defPiece.color;
-          } else {
-            const rwd = PIECE_DATA[atkPiece.type].reward || 0;
-            state.players[defPiece.color].gold += rwd;
-            extras.push(`Abate de ${atkName}: +♦${rwd}`);
-          }
-        }
-
-        if (!winnerSideEnd) {
-          if (defDead && !atkDead) {
-            state.board[duelContext.defR][duelContext.defC] = atkPiece;
-            state.board[duelContext.atkR][duelContext.atkC] = null;
-            promotePawnIfCrossed(atkPiece, duelContext.defR, duelContext.defC);
-          } else if (atkDead && !defDead) {
-            state.board[duelContext.atkR][duelContext.atkC] = defPiece;
-            state.board[duelContext.defR][duelContext.defC] = null;
-            promotePawnIfCrossed(defPiece, duelContext.atkR, duelContext.atkC);
-          }
-        }
-
-        if (atkCard !== null && atkCard !== undefined) state.discard.push(atkCard);
-        if (defCard !== null && defCard !== undefined) state.discard.push(defCard);
-        dealFlop();
-
-        if (extraActions > 0 && state.turn === winColor) {
-          state.actions += extraActions;
-        }
-
-        finishPieceAction(atkPiece);
-
-        const atkParts = [`Dano: -${actualAtkDmg}♥`];
-        if (winSide === 'atk' && healedHp > 0) atkParts.push(`+${healedHp}♥ cura`);
-        atkParts.push(atkDead ? 'ABATIDO' : `Restante: ${Math.max(0, atkPiece.hp)}♥`);
-
-        const defParts = [`Dano: -${actualDefDmg}♥`];
-        if (winSide === 'def' && healedHp > 0) defParts.push(`+${healedHp}♥ cura`);
-        defParts.push(defDead ? 'ABATIDO' : `Restante: ${Math.max(0, defPiece.hp)}♥`);
-
-        const winnerLabel = attackWon
-          ? `⚔️ Vencedor: Atacante (${atkPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'})`
-          : `🛡️ Vencedor: Defensor (${defPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'})`;
-
-        setStatus(`${winnerLabel} · ${winHand.name} · Flop renovado`);
-
-        const summaryData = {
-          atkCard,
-          defCard,
-          atkPiece: atkSnap,
-          defPiece: defSnap,
-          atkHeaderInfo: `${atkName} (${atkSnap.hp}♥)`,
-          defHeaderInfo: `${defName} (${defSnap.hp}♥)`,
-          atkRep: formatPieceRep(atkPiece),
-          defRep: formatPieceRep(defPiece),
-          atkHand,
-          defHand,
-          winHand,
-          winnerLabel,
-          atkName,
-          defName,
-          atkDmg: actualAtkDmg,
-          defDmg: actualDefDmg,
-          atkResultText: atkParts.join(' · '),
-          defResultText: defParts.join(' · '),
-          extraInfo: extras.join(' · '),
-          winnerSideEnd
-        };
-
-        renderAll();
-
-        if (isOnlineMode() && net.role === 'host') {
-          if (winnerSideEnd) {
-            state.gameOver = true;
-            state.gameOverData = {
-              title: `Vitória das ${winnerSideEnd === 'white' ? '♔ Brancas' : '♚ Pretas'}`,
-              desc: 'O Rei adversário foi abatido!',
-              winnerSide: winnerSideEnd,
-              reason: 'O Rei adversário foi abatido!'
-            };
-          }
-          net.lastSummary = summaryData;
-          syncOnlineState();
-        }
-
-        openModal('combat-modal');
-        showPostCombatSummary(summaryData);
-      }
-
-      function pickBotCard(hand, piece) {
-        if (hand.length <= 1) return 0;
-        let bestI = 0;
-        let bestEval = null;
-        hand.forEach((cVal, idx) => {
-          const ev = evaluateCombatHand([...state.flop, cVal], piece);
-          if (!bestEval || comparePokerHands(ev, bestEval) > 0) {
-            bestEval = ev;
-            bestI = idx;
-          }
-        });
-        return bestI;
-      }
-
-      function renderAttackerCardSelection(atkR, atkC, defR, defC, atkPiece, defPiece, atkPlayer, defPlayer, onSelectOverride = null) {
-        const body = document.getElementById('combat-body');
-        body.innerHTML = `<div class="text-xs font-bold text-[#f3d678] text-center">Atacante (${atkPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'}): escolha 1 carta da mão</div>`;
-
-        const atkCardsRow = document.createElement('div');
-        atkCardsRow.className = 'flex justify-center gap-1.5 flex-wrap';
-
-        atkPlayer.hand.forEach((cVal, idx) => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'xeker-card w-11 h-14 rounded-lg text-sm';
-          btn.textContent = RANK_TEXT[cVal];
-          btn.addEventListener('click', () => {
-            if (typeof onSelectOverride === 'function') {
-              onSelectOverride(idx);
-              return;
-            }
-            const chosenAtk = atkPlayer.hand.splice(idx, 1)[0];
-            duelContext.atkCard = chosenAtk;
-            document.getElementById('combat-atk-sub').innerHTML = `
-              <div>Carta jogada: <strong>oculta</strong></div>
-              <div class="text-[10px] text-amber-200">Peça: ${formatPieceRep(atkPiece)}</div>
-            `;
-
-            if (state.mode === 'bot' && defPiece.color === 'black') {
-              const bIdx = pickBotCard(defPlayer.hand, defPiece);
-              const chosenDef = defPlayer.hand.splice(bIdx, 1)[0];
-              settleCombat(chosenAtk, chosenDef);
-            } else if (state.mode === 'pvp') {
-              body.innerHTML = `<div class="text-xs text-zinc-400 text-center py-2">Aguardando transição privada para o defensor...</div>`;
-              openCombatPrivacyPass(
-                defPiece.color,
-                'Passe o dispositivo para o defensor escolher sua carta de defesa sem ver a mão do atacante.',
-                () => {
-                  renderDefenderCardSelection(chosenAtk, defPiece, defPlayer);
-                }
-              );
-            } else {
-              renderDefenderCardSelection(chosenAtk, defPiece, defPlayer);
-            }
-          });
-          atkCardsRow.appendChild(btn);
-        });
-
-        body.appendChild(atkCardsRow);
-        openModal('combat-modal');
-      }
-
-      function renderDefenderCardSelection(chosenAtk, defPiece, defPlayer, onSelectOverride = null) {
-        const body = document.getElementById('combat-body');
-        body.innerHTML = `<div class="text-xs font-bold text-red-300 text-center">Defensor (${defPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'}): escolha 1 carta para defender</div>`;
-        const defCardsRow = document.createElement('div');
-        defCardsRow.className = 'flex justify-center gap-1.5 flex-wrap';
-        defPlayer.hand.forEach((dVal, dIdx) => {
-          const dBtn = document.createElement('button');
-          dBtn.type = 'button';
-          dBtn.className = 'xeker-card w-11 h-14 rounded-lg text-sm';
-          dBtn.textContent = RANK_TEXT[dVal];
-          dBtn.addEventListener('click', () => {
-            if (typeof onSelectOverride === 'function') {
-              onSelectOverride(dIdx);
-              return;
-            }
-            const chosenDef = defPlayer.hand.splice(dIdx, 1)[0];
-            settleCombat(chosenAtk, chosenDef);
-          });
-          defCardsRow.appendChild(dBtn);
-        });
-        body.appendChild(defCardsRow);
-        openModal('combat-modal');
-      }
-
-      function startCombat(atkR, atkC, defR, defC) {
-        const atkPiece = state.board[atkR][atkC];
-        const defPiece = state.board[defR][defC];
-        if (!atkPiece || !defPiece) return;
-
-        const atkPlayer = state.players[atkPiece.color];
-        const defPlayer = state.players[defPiece.color];
-
-        if (atkPlayer.hand.length === 0) {
-          setStatus('⚠️ Sem cartas na mão para atacar.');
-          return;
-        }
-
-        document.getElementById('combat-heading').textContent = '⚔️ Combate de Pôquer';
-
-        const flopEl = document.getElementById('combat-flop');
-        flopEl.innerHTML = '';
-        state.flop.forEach((v) => flopEl.appendChild(renderCard(v, 'w-9 h-12 rounded-md text-sm')));
-
-        document.getElementById('combat-atk-glyph').textContent = atkPiece.color === 'white' ? PIECE_DATA[atkPiece.type].white : PIECE_DATA[atkPiece.type].black;
-        document.getElementById('combat-atk-info').textContent = `${PIECE_DATA[atkPiece.type].name} (${atkPiece.hp}♥)`;
-        document.getElementById('combat-atk-sub').innerHTML = `
-          <div>Peça: ${formatPieceRep(atkPiece)}</div>
-          <div class="text-[10px] text-zinc-400">Mão: ${atkPlayer.hand.length} oculta(s)</div>
-        `;
-
-        document.getElementById('combat-def-glyph').textContent = defPiece.color === 'white' ? PIECE_DATA[defPiece.type].white : PIECE_DATA[defPiece.type].black;
-        document.getElementById('combat-def-info').textContent = `${PIECE_DATA[defPiece.type].name} (${defPiece.hp}♥)`;
-        document.getElementById('combat-def-sub').innerHTML = `
-          <div>Peça: ${formatPieceRep(defPiece)}</div>
-          <div class="text-[10px] text-zinc-400">Mão: ${defPlayer.hand.length} oculta(s)</div>
-        `;
-
-        if (defPlayer.hand.length === 0) {
-          const used = atkPlayer.hand.pop();
-          state.discard.push(used);
-          dealFlop();
-          duelContext = { atkR, atkC, defR, defC, atkCard: used };
-          const dmg = 2;
-          const actualDmg = Math.min(defPiece.hp, dmg);
-          defPiece.hp -= dmg;
-          const dead = defPiece.hp <= 0;
-          const extras = ['Flop renovado'];
-          let winnerSideEnd = null;
-          if (dead) {
-            state.board[defR][defC] = atkPiece;
-            state.board[atkR][atkC] = null;
-            const qH = applyQueenAbatePassive(atkPiece.color);
-            if (qH > 0) extras.push(`Rainha +${qH}♥`);
-            if (defPiece.type === 'K') {
-              winnerSideEnd = atkPiece.color;
-            } else {
-              const rwd = PIECE_DATA[defPiece.type].reward || 0;
-              state.players[atkPiece.color].gold += rwd;
-              extras.push(`+♦${rwd}`);
-            }
-            if (!winnerSideEnd) promotePawnIfCrossed(atkPiece, defR, defC);
-          }
-          finishPieceAction(atkPiece);
-          renderAll();
-          if (isOnlineMode() && net.role === 'host') {
-            syncOnlineState();
-          }
-          openModal('combat-modal');
-          showPostCombatSummary({
-            atkCard: used,
-            defCard: null,
-            atkRep: formatPieceRep(atkPiece),
-            defRep: formatPieceRep(defPiece),
-            atkHand: { cat: 0, name: 'Ataque Direto' },
-            defHand: { cat: 0, name: 'Sem Cartas' },
-            winHand: { cat: 0, name: 'Ataque Direto' },
-            winnerLabel: `⚔️ Vencedor: Atacante (${atkPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'})`,
-            atkName: PIECE_DATA[atkPiece.type].name,
-            defName: PIECE_DATA[defPiece.type].name,
-            atkDmg: 0,
-            defDmg: actualDmg,
-            atkResultText: `Dano: 0♥ · Restante: ${atkPiece.hp}♥`,
-            defResultText: `Dano: -${actualDmg}♥ · ${dead ? 'ABATIDO' : `Restante: ${defPiece.hp}♥`}`,
-            extraInfo: extras.join(' · '),
-            winnerSideEnd
-          });
-          return;
-        }
-
-        duelContext = { atkR, atkC, defR, defC, atkCard: null };
-
-        if (isOnlineMode() && net.role === 'host') {
-          if (atkPiece.color === 'white') {
-            net.pendingCombat = {
-              atkR, atkC, defR, defC,
-              atkPiece: { ...atkPiece },
-              defPiece: { ...defPiece },
-              atkHandCount: atkPlayer.hand.length,
-              defHandCount: defPlayer.hand.length,
-              stage: 'awaiting_attacker'
-            };
-            syncOnlineState();
-            renderAttackerCardSelection(atkR, atkC, defR, defC, atkPiece, defPiece, atkPlayer, defPlayer);
-          } else {
-            net.pendingCombat = {
-              atkR, atkC, defR, defC,
-              atkPiece: { ...atkPiece },
-              defPiece: { ...defPiece },
-              atkHandCount: atkPlayer.hand.length,
-              defHandCount: defPlayer.hand.length,
-              stage: 'awaiting_attacker'
-            };
-            syncOnlineState();
-            document.getElementById('combat-body').innerHTML = `<div class="text-xs text-amber-200 text-center py-2">Aguardando atacante (Pretas) escolher sua carta...</div>`;
-            openModal('combat-modal');
-          }
-          return;
-        }
-
-        if (state.mode === 'pvp') {
-          document.getElementById('combat-body').innerHTML = `<div class="text-xs text-zinc-400 text-center py-2">Preparando transição privada para o atacante...</div>`;
-          openCombatPrivacyPass(
-            atkPiece.color,
-            'Passe o dispositivo para o atacante escolher sua carta de combate sem expor as mãos.',
-            () => {
-              renderAttackerCardSelection(atkR, atkC, defR, defC, atkPiece, defPiece, atkPlayer, defPlayer);
-            }
-          );
-        } else {
-          renderAttackerCardSelection(atkR, atkC, defR, defC, atkPiece, defPiece, atkPlayer, defPlayer);
-        }
-      }
-
-      function getValidSkillTargets(sr, sc, skillType, copiedSkill) {
-        const reach = getReachInfo(sr, sc);
-        if (skillType === 'Q' && !copiedSkill) {
-          return reach.allPieces.filter((entry) => entry.piece && entry.piece.type !== 'Q');
-        }
-        const effective = copiedSkill || skillType;
-        if (effective === 'B') return reach.allies;
-        if (effective === 'R') return reach.allPieces;
-        return reach.enemies;
-      }
-
-      function executeActiveSkill(userR, userC, skillType, targetR, targetC, isCopied = false) {
-        const userPiece = state.board[userR][userC];
-        const player = state.players[state.turn];
-        if (!userPiece || userPiece.acted || player.gold < 1) return;
-
-        if (skillType === 'Q' && !isCopied) {
-          const sourcePiece = state.board[targetR][targetC];
-          if (!sourcePiece || (targetR === userR && targetC === userC) || sourcePiece.type === 'Q') {
-            setStatus('⚠️ Escolha outra peça válida no alcance da Rainha.');
-            return;
-          }
-          const copied = sourcePiece.type;
-          if (copied === 'P' || copied === 'B') {
-            executeActiveSkill(userR, userC, copied, userR, userC, true);
-            return;
-          }
-          state.copiedSkill = copied;
-          state.skillPhase = 'copied_target';
-          setStatus(`♛ Rainha copiou ativa de ${PIECE_DATA[copied].name}: escolha o alvo no alcance.`);
-          renderAll();
-          return;
-        }
-
-        if (skillType === 'P') {
-          const reach = getReachInfo(userR, userC);
-          if (reach.enemies.length === 0) {
-            setStatus('⚠️ Nenhum inimigo no alcance para a ativa do Peão.');
-            return;
-          }
-          player.gold -= 1;
-          state.board[userR][userC] = null;
-
-          let hitCount = 0;
-          let endNow = false;
-          for (const item of reach.enemies) {
-            const enemy = state.board[item.r][item.c];
-            if (!enemy) continue;
-            enemy.hp -= 1;
-            hitCount += 1;
-            if (enemy.hp <= 0) {
-              state.board[item.r][item.c] = null;
-              if (handleAbatement(state.turn, enemy)) {
-                endNow = true;
-                break;
-              }
-            }
-          }
-          finishPieceSkillAction(userPiece);
-          if (!endNow) {
-            setStatus(`♠ ${isCopied ? 'Rainha (Peão)' : 'Peão'} sacrificou-se causando 1♥ a ${hitCount} inimigo(s) (♦1 · 0♣).`);
-          }
-          renderAll();
-          if (isOnlineMode() && net.role === 'host') syncOnlineState();
-          return;
-        }
-
-        if (skillType === 'B') {
-          const reach = getReachInfo(userR, userC);
-          if (reach.allies.length === 0) {
-            setStatus('⚠️ Nenhum aliado no alcance do Bispo.');
-            return;
-          }
-          player.gold -= 1;
-          let healedCount = 0;
-          for (const item of reach.allies) {
-            const ally = state.board[item.r][item.c];
-            if (!ally) continue;
-            const prev = ally.hp;
-            ally.hp = Math.min(ally.maxHp, ally.hp + 1);
-            if (ally.hp > prev) healedCount += 1;
-          }
-          finishPieceSkillAction(userPiece);
-          setStatus(`♠ ${isCopied ? 'Rainha (Bispo)' : 'Bispo'} curou +1♥ em ${healedCount} aliado(s) no alcance (♦1 · 0♣).`);
-          renderAll();
-          if (isOnlineMode() && net.role === 'host') syncOnlineState();
-          return;
-        }
-
-        if (skillType === 'R') {
-          const targetPiece = state.board[targetR][targetC];
-          if (!targetPiece || (targetR === userR && targetC === userC)) {
-            setStatus('⚠️ Escolha outra peça no alcance para trocar de posição.');
-            return;
-          }
-          player.gold -= 1;
-          state.board[targetR][targetC] = userPiece;
-          state.board[userR][userC] = targetPiece;
-          finishPieceSkillAction(userPiece);
-          setStatus(`♠ ${isCopied ? 'Rainha (Torre)' : 'Torre'} trocou de posição com ${PIECE_DATA[targetPiece.type].name} (♦1 · 0♣).`);
-          renderAll();
-          if (isOnlineMode() && net.role === 'host') syncOnlineState();
-          return;
-        }
-
-        const enemy = state.board[targetR][targetC];
-        if (!enemy || enemy.color === userPiece.color) {
-          setStatus('⚠️ Escolha um inimigo no alcance.');
-          return;
-        }
-
-        const dmg = skillType === 'K' ? 2 : 1;
-        player.gold -= 1;
-        enemy.hp -= dmg;
-        let ended = false;
-        if (enemy.hp <= 0) {
-          state.board[targetR][targetC] = null;
-          ended = handleAbatement(state.turn, enemy);
-        }
-        finishPieceSkillAction(userPiece);
-        if (!ended) {
-          setStatus(`♠ ${isCopied ? `Rainha (${PIECE_DATA[skillType].name})` : PIECE_DATA[userPiece.type].name} causou ${dmg}♥ em ${PIECE_DATA[enemy.type].name} (♦1 · 0♣).`);
-        }
-        renderAll();
-        if (isOnlineMode() && net.role === 'host') syncOnlineState();
-      }
-
-      function onActiveSkillClick() {
-        if (!state || state.gameOver || !state.selected) return;
-        const { r, c } = state.selected;
-        const piece = state.board[r][c];
-        const player = state.players[state.turn];
-        if (!piece || piece.color !== state.turn) return;
-        if (isOnlineMode() && state.turn !== myOnlineSide()) return;
-
-        if (state.skillPhase) {
-          state.skillPhase = null;
-          state.copiedSkill = null;
-          setStatus('Habilidade ativa cancelada.');
-          renderAll();
-          return;
-        }
-
-        if (piece.acted) {
-          setStatus('⚠️ Esta peça já realizou sua jogada neste turno.');
-          return;
-        }
-        if (player.gold < 1) {
-          setStatus('⚠️ Requer ♦1 para usar habilidade ativa.');
-          return;
-        }
-
-        state.actionMode = null;
-        state.copiedSkill = null;
-
-        const targets = getValidSkillTargets(r, c, piece.type, null);
-        if (targets.length === 0) {
-          setStatus(`⚠️ Nenhum alvo válido no alcance para a ativa de ${PIECE_DATA[piece.type].name}.`);
-          renderAll();
-          return;
-        }
-
-        if (piece.type === 'P' || piece.type === 'B') {
-          if (isOnlineMode() && net.role === 'guest') {
-            sendNet({
-              type: 'online_action',
-              action: { kind: 'skill', fromR: r, fromC: c, effType: piece.type, toR: r, toC: c, copiedFlag: false }
-            });
-            state.selected = null;
-            renderAll();
-            return;
-          }
-          executeActiveSkill(r, c, piece.type, r, c, false);
-          return;
-        }
-
-        if (piece.type === 'Q') {
-          state.skillPhase = 'copy_target';
-          setStatus('♛ Rainha: toque em uma peça destacada em azul para copiar a ativa.');
-          renderAll();
-          return;
-        }
-
-        if (piece.type === 'R') {
-          state.skillPhase = 'swap_target';
-          setStatus('♜ Torre: toque em uma peça destacada em azul para trocar de posição.');
-          renderAll();
-          return;
-        }
-
-        state.skillPhase = 'enemy_target';
-        const dmgVal = piece.type === 'K' ? 2 : 1;
-        setStatus(`♠ ${PIECE_DATA[piece.type].name}: toque em um inimigo azul (${dmgVal}♥ de dano).`);
-        renderAll();
-      }
-
-      function onTileTap(r, c) {
-        if (!state || state.gameOver) return;
-        if (state.mode === 'bot' && state.turn === 'black') return;
-        if (isOnlineMode() && state.turn !== myOnlineSide()) return;
-
-        if (state.selected && state.skillPhase) {
-          const { r: sr, c: sc } = state.selected;
-          const sel = state.board[sr][sc];
-          if (sel) {
-            const validTargets = getValidSkillTargets(sr, sc, sel.type, state.copiedSkill);
-            if (validTargets.some((t) => t.r === r && t.c === c)) {
-              const effType = state.copiedSkill || sel.type;
-              const copiedFlag = Boolean(state.copiedSkill);
-              if (isOnlineMode() && net.role === 'guest') {
-                sendNet({
-                  type: 'online_action',
-                  action: { kind: 'skill', fromR: sr, fromC: sc, effType, toR: r, toC: c, copiedFlag }
-                });
-                state.selected = null;
-                state.actionMode = null;
-                state.skillPhase = null;
-                state.copiedSkill = null;
-                renderAll();
-                return;
-              }
-              executeActiveSkill(sr, sc, effType, r, c, copiedFlag);
-              return;
-            }
-          }
-          setStatus('⚠️ Selecione um alvo destacado em azul.');
-          return;
-        }
-
-        if (state.selected && state.actionMode) {
-          const { r: sr, c: sc } = state.selected;
-          const sel = state.board[sr][sc];
-          if (sel && sel.color === state.turn && !sel.acted && state.actions > 0) {
-            const reach = getReachInfo(sr, sc);
-            if (state.actionMode === 'move' && reach.moves.some((m) => m.r === r && m.c === c)) {
-              if (isOnlineMode() && net.role === 'guest') {
-                sendNet({
-                  type: 'online_action',
-                  action: { kind: 'move', fromR: sr, fromC: sc, toR: r, toC: c }
-                });
-                state.selected = null;
-                state.actionMode = null;
-                renderAll();
-                return;
-              }
-              doMove(sr, sc, r, c);
-              return;
-            }
-            if (state.actionMode === 'attack' && reach.attacks.some((a) => a.r === r && a.c === c)) {
-              if (isOnlineMode() && net.role === 'guest') {
-                sendNet({
-                  type: 'online_action',
-                  action: { kind: 'attack', fromR: sr, fromC: sc, toR: r, toC: c }
-                });
-                state.selected = null;
-                state.actionMode = null;
-                renderAll();
-                return;
-              }
-              startCombat(sr, sc, r, c);
-              return;
-            }
-          }
-        }
-
-        const tappedPiece = state.board[r][c];
-        if (tappedPiece && tappedPiece.color === state.turn) {
-          if (tappedPiece.acted) {
-            setStatus(`⚠️ ${PIECE_DATA[tappedPiece.type].name} já agiu neste turno.`);
-            return;
-          }
-          state.selected = { r, c };
-          state.actionMode = null;
-          state.skillPhase = null;
-          state.copiedSkill = null;
-          setStatus(`${PIECE_DATA[tappedPiece.type].name} selecionado: escolha Mover, Atacar ou Ativa.`);
-          renderAll();
-          return;
-        }
-
-        state.selected = null;
-        state.actionMode = null;
-        state.skillPhase = null;
-        state.copiedSkill = null;
-        renderAll();
-      }
-
-      function onSelectActionMode(mode) {
-        if (!state || state.gameOver || !state.selected) return;
-        state.skillPhase = null;
-        state.copiedSkill = null;
-        state.actionMode = state.actionMode === mode ? null : mode;
-        if (!state.actionMode) {
-          setStatus('Ação desmarcada.');
-        } else {
-          setStatus(mode === 'move' ? 'Escolha uma casa livre destacada.' : 'Escolha um inimigo em vermelho para atacar.');
-        }
-        renderAll();
-      }
-
-      function onBuyCard() {
-        if (!state || state.gameOver) return;
-        if (state.mode === 'bot' && state.turn === 'black') return;
-        if (isOnlineMode() && state.turn !== myOnlineSide()) return;
-
-        if (isOnlineMode() && net.role === 'guest') {
-          sendNet({ type: 'online_action', action: { kind: 'buy' } });
-          return;
-        }
-
-        const player = state.players[state.turn];
-
-        if (player.gold < 3) {
-          setStatus('⚠️ Requer ♦3 de ouro para comprar carta.');
-          return;
-        }
-        if (player.hand.length >= MAX_HAND_SIZE) {
-          setStatus(`⚠️ Mão cheia (máximo de ${MAX_HAND_SIZE} cartas).`);
-          return;
-        }
-        const drawn = drawCard();
-        if (drawn === null) {
-          setStatus('⚠️ Sem cartas disponíveis no monte.');
-          return;
-        }
-
-        player.gold -= 3;
-        player.hand.push(drawn);
-        setStatus(`🃏 Comprou carta [${RANK_TEXT[drawn]}] por ♦3 e 0♣.`);
-        renderAll();
-        if (isOnlineMode() && net.role === 'host') {
-          syncOnlineState();
-        }
-      }
-
-      function onEndTurn() {
-        if (!state || state.gameOver) return;
-        if (isOnlineMode() && state.turn !== myOnlineSide()) return;
-
-        if (isOnlineMode() && net.role === 'guest') {
-          sendNet({ type: 'online_action', action: { kind: 'end_turn' } });
-          return;
-        }
-
-        state.selected = null;
-        state.actionMode = null;
-        state.skillPhase = null;
-        state.copiedSkill = null;
-
-        for (let r = 0; r < 8; r++) {
-          for (let c = 0; c < 8; c++) {
-            const p = state.board[r][c];
-            if (p) p.acted = false;
-          }
-        }
-
-        if (state.turn === 'white') {
-          state.turn = 'black';
-          state.actions = 2;
-          const bCard = maybeDrawEveryTwoOwnTurns('black');
-          const bDrawMsg = bCard !== null ? ` · Pretas receberam +1 carta [${RANK_TEXT[bCard]}]` : '';
-
-          if (state.mode === 'bot') {
-            setStatus(`Turno das Pretas (Bot) · ♣2${bDrawMsg}`);
-            renderAll();
-            setTimeout(executeBotTurn, 420);
-          } else if (state.mode === 'online') {
-            setStatus(`Turno das Pretas · ♣2${bDrawMsg}`);
-            renderAll();
-            if (net.role === 'host') syncOnlineState();
-          } else {
-            document.getElementById('pass-heading').textContent = 'Vez das Pretas (♚)';
-            setStatus(`Turno das Pretas · ♣2${bDrawMsg}`);
-            renderAll();
-            openModal('pass-modal');
-          }
-        } else {
-          state.turn = 'white';
-          state.round += 1;
-          state.actions = 2;
-          const wCard = maybeDrawEveryTwoOwnTurns('white');
-          const wDrawMsg = wCard !== null ? ` · Brancas receberam +1 carta [${RANK_TEXT[wCard]}]` : '';
-
-          if (state.mode === 'pvp') {
-            document.getElementById('pass-heading').textContent = 'Vez das Brancas (♔)';
-            setStatus(`Rodada ${state.round} · Brancas · ♣2${wDrawMsg}`);
-            renderAll();
-            openModal('pass-modal');
-          } else {
-            setStatus(`Rodada ${state.round} · Brancas · ♣2${wDrawMsg}`);
-            renderAll();
-            if (isOnlineMode() && net.role === 'host') syncOnlineState();
-          }
-        }
-      }
-
-      let botBoughtThisTurn = false;
-
-      function scoreBotAttack(atkPiece, atkCardVal, defPiece) {
-        const atkHand = evaluateCombatHand([...state.flop, atkCardVal], atkPiece);
-        let score = (defPiece.type === 'K' ? 95 : 40) + atkHand.cat * 14 + (PIECE_DATA[defPiece.type].reward || 0) * 3;
-        if (defPiece.hp <= 2) score += 16;
-        if (atkHand.cat === 0 && defPiece.hp > 2 && atkPiece.type !== 'B') score -= 12;
-        return score;
-      }
-
-      function finalizeBotTurnIfReady() {
-        if (!state || state.gameOver || state.turn !== 'black') return;
-        botBoughtThisTurn = false;
-        onEndTurn();
-      }
-
-      function executeBotTurn() {
-        if (!state || state.gameOver || state.turn !== 'black') return;
-        const bot = state.players.black;
-
-        if (!botBoughtThisTurn && bot.gold >= 3 && bot.hand.length < 2) {
-          const c = drawCard();
-          if (c !== null) {
-            bot.gold -= 3;
-            bot.hand.push(c);
-            botBoughtThisTurn = true;
-            setStatus(`🤖 Bot comprou carta [${RANK_TEXT[c]}] por ♦3.`);
-          }
-        }
-
-        let choice = null;
-        let bestScore = -999;
-
-        for (let r = 0; r < 8; r++) {
-          for (let c = 0; c < 8; c++) {
-            const p = state.board[r][c];
-            if (!p || p.color !== 'black' || p.acted) continue;
-            const reach = getReachInfo(r, c);
-
-            if (bot.gold >= 1) {
-              if (p.type === 'K' && reach.enemies.length > 0) {
-                const target = reach.enemies.slice().sort((a, b) => a.piece.hp - b.piece.hp)[0];
-                const sc = target.piece.hp <= 2 ? 140 : 55;
-                if (sc > bestScore) {
-                  bestScore = sc;
-                  choice = { kind: 'skill', r, c, tr: target.r, tc: target.c };
-                }
-              } else if ((p.type === 'N' || p.type === 'Q') && reach.enemies.length > 0) {
-                const killable = reach.enemies.find((e) => e.piece.hp <= 1);
-                if (killable && 100 > bestScore) {
-                  bestScore = 100;
-                  choice = { kind: 'skill', r, c, tr: killable.r, tc: killable.c };
-                }
-              } else if (p.type === 'B' && reach.allies.some((a) => a.piece.hp < a.piece.maxHp)) {
-                if (50 > bestScore) {
-                  bestScore = 50;
-                  choice = { kind: 'skill', r, c, tr: r, tc: c };
-                }
-              }
-            }
-
-            if (state.actions > 0 && reach.attacks.length > 0 && bot.hand.length > 0) {
-              const cIdx = pickBotCard(bot.hand, p);
-              for (const atkT of reach.attacks) {
-                const defP = state.board[atkT.r][atkT.c];
-                const sc = scoreBotAttack(p, bot.hand[cIdx], defP);
-                if (sc > bestScore) {
-                  bestScore = sc;
-                  choice = { kind: 'attack', r, c, tr: atkT.r, tc: atkT.c, cIdx };
-                }
-              }
-            }
-
-            if (state.actions > 0) {
-              for (const m of reach.moves) {
-                const sc = (m.r - r) * 5 + (3.5 - Math.abs(3.5 - m.c));
-                if (sc > bestScore) {
-                  bestScore = sc;
-                  choice = { kind: 'move', r, c, tr: m.r, tc: m.c };
-                }
-              }
-            }
-          }
-        }
-
-        if (!choice) {
-          finalizeBotTurnIfReady();
-          return;
-        }
-
-        if (choice.kind === 'skill') {
-          const p = state.board[choice.r][choice.c];
-          executeActiveSkill(choice.r, choice.c, p.type, choice.tr, choice.tc, false);
-          if (!state.gameOver) {
-            setTimeout(executeBotTurn, 380);
-          }
-          return;
-        }
-
-        if (choice.kind === 'attack') {
-          const atkPiece = state.board[choice.r][choice.c];
-          const defPiece = state.board[choice.tr][choice.tc];
-          const defPlayer = state.players.white;
-          const chosenAtk = bot.hand.splice(choice.cIdx, 1)[0];
-
-          duelContext = { atkR: choice.r, atkC: choice.c, defR: choice.tr, defC: choice.tc, atkCard: chosenAtk };
-
-          document.getElementById('combat-heading').textContent = '⚔️ Combate de Pôquer (Bot Atacando)';
-          const flopEl = document.getElementById('combat-flop');
-          flopEl.innerHTML = '';
-          state.flop.forEach((v) => flopEl.appendChild(renderCard(v, 'w-9 h-12 rounded-md text-sm')));
-
-          document.getElementById('combat-atk-glyph').textContent = PIECE_DATA[atkPiece.type].black;
-          document.getElementById('combat-atk-info').textContent = `${PIECE_DATA[atkPiece.type].name} (${atkPiece.hp}♥)`;
-          document.getElementById('combat-atk-sub').innerHTML = `
-            <div>Carta jogada: <strong>oculta</strong></div>
-            <div class="text-[10px] text-amber-200">Peça: ${formatPieceRep(atkPiece)}</div>
-          `;
-
-          document.getElementById('combat-def-glyph').textContent = PIECE_DATA[defPiece.type].white;
-          document.getElementById('combat-def-info').textContent = `${PIECE_DATA[defPiece.type].name} (${defPiece.hp}♥)`;
-          document.getElementById('combat-def-sub').innerHTML = `
-            <div>Peça: ${formatPieceRep(defPiece)}</div>
-            <div class="text-[10px] text-red-300">Sua defesa</div>
-          `;
-
-          renderAll();
-
-          if (defPlayer.hand.length === 0) {
-            settleCombat(chosenAtk, null);
-            const origDone = document.getElementById('btn-combat-done').onclick;
-            document.getElementById('btn-combat-done').addEventListener('click', () => {
-              if (!state.gameOver) setTimeout(executeBotTurn, 250);
-            }, { once: true });
-            return;
-          }
-
-          renderDefenderCardSelection(chosenAtk, defPiece, defPlayer, (dIdx) => {
-            const chosenDef = defPlayer.hand.splice(dIdx, 1)[0];
-            settleCombat(chosenAtk, chosenDef);
-            const doneBtn = document.getElementById('btn-combat-done');
-            doneBtn.addEventListener('click', () => {
-              closeModal('combat-modal');
-              duelContext = null;
-              if (state.gameOver && state.gameOverData) {
-                endMatch(state.gameOverData.winnerSide, state.gameOverData.reason);
-                return;
-              }
-              renderAll();
-              setTimeout(executeBotTurn, 250);
-            }, { once: true });
-          });
-          return;
-        }
-
-        doMove(choice.r, choice.c, choice.tr, choice.tc);
-        if (!state.gameOver) {
-          setTimeout(executeBotTurn, 360);
-        }
-      }
-
-      function renderAll() {
-        if (!state) return;
-
-        document.getElementById('val-gold-white').textContent = String(state.players.white.gold);
-        document.getElementById('val-gold-black').textContent = String(state.players.black.gold);
-        document.getElementById('val-cards-white').textContent = String(state.players.white.hand.length);
-        document.getElementById('val-cards-black').textContent = String(state.players.black.hand.length);
-        document.getElementById('val-actions').textContent = String(state.actions);
-        refreshClocks();
-
-        const wHud = document.getElementById('hud-white');
-        const bHud = document.getElementById('hud-black');
-        wHud.className = `flex items-center gap-1 px-1.5 py-1 rounded-lg text-[11px] font-bold border ${state.turn === 'white' ? 'bg-[#d4af37]/15 border-[#d4af37]' : 'bg-[#161820] border-white/10'}`;
-        bHud.className = `flex items-center gap-1 px-1.5 py-1 rounded-lg text-[11px] font-bold border ${state.turn === 'black' ? 'bg-[#d4af37]/15 border-[#d4af37]' : 'bg-[#161820] border-white/10'}`;
-
-        const activePlayer = state.players[state.turn];
-        const mySide = myOnlineSide();
-        const canActOnMyTurn = !state.gameOver && (!isOnlineMode() || state.turn === mySide);
-
-        document.getElementById('btn-draw-card').disabled =
-          !canActOnMyTurn ||
-          activePlayer.gold < 3 ||
-          activePlayer.hand.length >= MAX_HAND_SIZE ||
-          (!isOnlineMode() && state.deck.length === 0 && state.discard.length === 0);
-
-        const flopEl = document.getElementById('flop-container');
-        flopEl.innerHTML = '';
-        state.flop.forEach((v) => {
-          flopEl.appendChild(renderCard(v, 'w-8 h-10 rounded-md text-xs'));
-        });
-
-        let moveList = [];
-        let attackList = [];
-        let skillList = [];
-
-        if (state.selected) {
-          const selPiece = state.board[state.selected.r][state.selected.c];
-          const reach = getReachInfo(state.selected.r, state.selected.c);
-          if (state.skillPhase && selPiece) {
-            skillList = getValidSkillTargets(state.selected.r, state.selected.c, selPiece.type, state.copiedSkill).map((x) => ({ r: x.r, c: x.c }));
-          } else if (state.actionMode === 'move') {
-            moveList = reach.moves;
-          } else if (state.actionMode === 'attack') {
-            attackList = reach.attacks;
-          }
-        }
-
-        const boardEl = document.getElementById('board-grid');
-        boardEl.innerHTML = '';
-        for (let r = 0; r < 8; r++) {
-          for (let c = 0; c < 8; c++) {
-            const tile = document.createElement('div');
-            tile.className = `tile ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
-
-            if (state.selected && state.selected.r === r && state.selected.c === c) {
-              tile.classList.add('selected');
-            }
-            if (moveList.some((m) => m.r === r && m.c === c)) tile.classList.add('can-move');
-            if (attackList.some((a) => a.r === r && a.c === c)) tile.classList.add('can-attack');
-            if (skillList.some((s) => s.r === r && s.c === c)) tile.classList.add('can-skill');
-
-            const piece = state.board[r][c];
-            if (piece) {
-              const info = PIECE_DATA[piece.type];
-              const token = document.createElement('div');
-              token.className = `piece-token ${piece.color} ${piece.acted ? 'acted' : ''}`;
-
-              const rankBadge = document.createElement('span');
-              rankBadge.className = 'piece-badge-rank';
-              rankBadge.textContent = piece.type === 'P' ? '2-9' : RANK_TEXT[piece.cardVal];
-
-              const glyph = document.createElement('span');
-              glyph.className = 'piece-glyph';
-              glyph.textContent = piece.color === 'white' ? info.white : info.black;
-
-              const hpBadge = document.createElement('span');
-              hpBadge.className = 'piece-badge-hp';
-              hpBadge.textContent = String(Math.max(0, piece.hp));
-
-              token.appendChild(rankBadge);
-              token.appendChild(glyph);
-              token.appendChild(hpBadge);
-              tile.appendChild(token);
-            }
-
-            tile.addEventListener('click', () => onTileTap(r, c));
-            boardEl.appendChild(tile);
-          }
-        }
-
-        const menuBox = document.getElementById('piece-menu');
-        const infoCard = document.getElementById('piece-info-card');
-        if (!state.selected) {
-          menuBox.innerHTML = '<span class="text-[11px] text-zinc-400">Toque em uma peça aliada</span>';
-          if (infoCard) {
-            infoCard.innerHTML = '<span class="text-zinc-400">Selecione uma peça no tabuleiro para ver <strong class="text-[#f3d678]">♠ Ativa</strong>, <strong class="text-amber-200">Passiva</strong> e <strong class="text-zinc-200">Alcance</strong>.</span>';
-          }
-        } else {
-          const piece = state.board[state.selected.r][state.selected.c];
-          if (!piece) {
-            menuBox.innerHTML = '<span class="text-[11px] text-zinc-400">Toque em uma peça aliada</span>';
-            if (infoCard) {
-              infoCard.innerHTML = '<span class="text-zinc-400">Selecione uma peça no tabuleiro para ver <strong class="text-[#f3d678]">♠ Ativa</strong>, <strong class="text-amber-200">Passiva</strong> e <strong class="text-zinc-200">Alcance</strong>.</span>';
-            }
-          } else {
-            const pInfo = PIECE_DATA[piece.type];
-            if (infoCard) {
-              const copiedTag = state.copiedSkill ? ` [${PIECE_DATA[state.copiedSkill].name}]` : '';
-              infoCard.innerHTML = `
-                <div class="flex items-center justify-between gap-2 text-[10px]">
-                  <span class="font-bold text-[#f3d678] shrink-0">${pInfo.name} · ${piece.hp}/${pInfo.hp}♥ · ${pInfo.cardLabel}</span>
-                  <span class="text-zinc-400 truncate">${pInfo.reachLabel}</span>
-                </div>
-                <div class="truncate text-[10px] text-zinc-200"><span class="sym-spade">♠</span> ${pInfo.activeText}${copiedTag}</div>
-                <div class="truncate text-[10px] text-amber-200/90">Passiva: ${pInfo.passiveText}</div>
-              `;
-            }
-            const info = PIECE_DATA[piece.type];
-            const reach = getReachInfo(state.selected.r, state.selected.c);
-            const canDo = canActOnMyTurn && state.actions > 0 && piece.color === state.turn && !piece.acted;
-            const canMove = canDo && reach.moves.length > 0;
-            const canAttack = canDo && reach.attacks.length > 0 && activePlayer.hand.length > 0;
-            const hasSkill = getValidSkillTargets(state.selected.r, state.selected.c, piece.type, null).length > 0;
-            const canSkill = Boolean(state.skillPhase) || (canActOnMyTurn && piece.color === state.turn && !piece.acted && activePlayer.gold >= 1 && hasSkill);
-
-            menuBox.innerHTML = `
-              <span class="text-xs font-bold text-[#f3d678] truncate pr-1">${info.name}</span>
-              <div class="flex items-center gap-1">
-                <button type="button" id="act-move" class="px-2 py-1 rounded-lg text-[11px] font-bold border ${state.actionMode === 'move' ? 'bg-emerald-500/25 border-emerald-400 text-emerald-200' : 'bg-[#111217] border-white/15 text-zinc-200'} disabled:opacity-35" ${canMove ? '' : 'disabled'}>
-                  Mover
-                </button>
-                <button type="button" id="act-attack" class="px-2 py-1 rounded-lg text-[11px] font-bold border ${state.actionMode === 'attack' ? 'bg-red-500/25 border-red-400 text-red-200' : 'bg-[#111217] border-white/15 text-zinc-200'} disabled:opacity-35" ${canAttack ? '' : 'disabled'}>
-                  Atacar
-                </button>
-                <button type="button" id="act-skill" class="px-2 py-1 rounded-lg text-[11px] font-bold border ${state.skillPhase ? 'bg-blue-500/25 border-blue-400 text-blue-200' : 'bg-blue-500/10 border-blue-400/40 text-blue-200'} disabled:opacity-35" ${canSkill ? '' : 'disabled'}>
-                  <span class="sym-spade">♠</span> Ativa
-                </button>
-              </div>
-            `;
-
-            document.getElementById('act-move').addEventListener('click', () => onSelectActionMode('move'));
-            document.getElementById('act-attack').addEventListener('click', () => onSelectActionMode('attack'));
-            document.getElementById('act-skill').addEventListener('click', onActiveSkillClick);
-          }
-        }
-
-        const handBox = document.getElementById('hand-container');
-        handBox.innerHTML = '';
-
-        const passTurnOpen = document.getElementById('pass-modal').classList.contains('open');
-        const combatModalOpen = document.getElementById('combat-modal').classList.contains('open');
-        const combatPassOpen = document.getElementById('combat-pass-modal').classList.contains('open');
-
-        if (isOnlineMode()) {
-          const myHand = state.players[mySide].hand;
-          if (myHand.length === 0) {
-            handBox.innerHTML = '<span class="text-xs text-zinc-500">Sem cartas na mão.</span>';
-          } else {
-            myHand.forEach((v) => {
-              if (v === 0) {
-                handBox.appendChild(renderCardBack('w-11 h-14 shrink-0 rounded-lg text-base'));
-              } else {
-                handBox.appendChild(renderCard(v, 'w-11 h-14 shrink-0 rounded-lg text-base'));
-              }
-            });
-          }
-        } else if (state.mode === 'pvp' && (passTurnOpen || combatModalOpen || combatPassOpen)) {
-          if (activePlayer.hand.length === 0) {
-            handBox.innerHTML = '<span class="text-xs text-zinc-500">Sem cartas na mão.</span>';
-          } else {
-            activePlayer.hand.forEach(() => {
-              handBox.appendChild(renderCardBack('w-11 h-14 shrink-0 rounded-lg text-base'));
-            });
-          }
-        } else {
-          const handToShow = (state.mode === 'bot' && state.turn === 'black')
-            ? state.players.white.hand
-            : activePlayer.hand;
-
-          if (handToShow.length === 0) {
-            handBox.innerHTML = '<span class="text-xs text-zinc-500">Sem cartas na mão.</span>';
-          } else {
-            handToShow.forEach((v) => {
-              handBox.appendChild(renderCard(v, 'w-11 h-14 shrink-0 rounded-lg text-base'));
-            });
-          }
-        }
-      }
-
-      function renderRulebookPage() {
-        const total = RULEBOOK_PAGES.length;
-        if (rulesIdx < 0) rulesIdx = 0;
-        if (rulesIdx >= total) rulesIdx = total - 1;
-
-        const page = RULEBOOK_PAGES[rulesIdx];
-        document.getElementById('rules-title').textContent = page.title;
-        document.getElementById('rules-counter').textContent = `Página ${rulesIdx + 1} de ${total}`;
-        document.getElementById('rules-page-label').textContent = `Página ${rulesIdx + 1} / ${total}`;
-        document.getElementById('rules-content').innerHTML = page.html;
-
-        document.getElementById('btn-rules-prev').disabled = rulesIdx === 0;
-        document.getElementById('btn-rules-next').textContent = rulesIdx === total - 1 ? 'Fechar' : 'Próxima';
-      }
-
-      function openRulebook() {
-        rulesIdx = 0;
-        renderRulebookPage();
-        openModal('rules-modal');
-      }
-
-      function syncModeButtons() {
-        const botBtn = document.getElementById('btn-select-bot');
-        const pvpBtn = document.getElementById('btn-select-pvp');
-        const onlineBtn = document.getElementById('btn-select-online');
-
-        const activeCls = 'py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95';
-        const idleCls = 'py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-black border-[#d4af37]/35 text-[#e7c252]/85 active:scale-95';
-
-        botBtn.className = selectedMode === 'bot' ? activeCls : idleCls;
-        pvpBtn.className = selectedMode === 'pvp' ? activeCls : idleCls;
-        onlineBtn.className = selectedMode === 'online' ? activeCls : idleCls;
-      }
-
-      function bindEvents() {
-        document.getElementById('btn-select-bot').addEventListener('click', () => {
-          selectedMode = 'bot';
-          syncModeButtons();
-        });
-        document.getElementById('btn-select-pvp').addEventListener('click', () => {
-          selectedMode = 'pvp';
-          syncModeButtons();
-        });
-        document.getElementById('btn-select-online').addEventListener('click', () => {
-          selectedMode = 'online';
-          syncModeButtons();
-          openModal('online-modal');
-        });
-
-        document.getElementById('btn-close-online').addEventListener('click', () => closeModal('online-modal'));
-        document.getElementById('btn-create-room').addEventListener('click', createOnlineRoom);
-        document.getElementById('btn-join-room').addEventListener('click', joinOnlineRoom);
-        document.getElementById('btn-copy-room').addEventListener('click', () => {
-          const code = document.getElementById('room-code-value').textContent;
-          if (code && navigator.clipboard) {
-            navigator.clipboard.writeText(code).catch(() => {});
-          }
-          setOnlineStatus('Código copiado: ' + code);
-        });
-
-        document.getElementById('btn-start-match').addEventListener('click', startMatch);
-
-        document.getElementById('btn-top-menu').addEventListener('click', () => openModal('menu-modal'));
-        document.getElementById('btn-back-menu').addEventListener('click', () => {
-          closeModal('gameover-modal');
-          openModal('menu-modal');
-        });
-
-        document.getElementById('btn-open-rules').addEventListener('click', openRulebook);
-        document.getElementById('btn-top-rules').addEventListener('click', openRulebook);
-        document.getElementById('btn-close-rules').addEventListener('click', () => closeModal('rules-modal'));
-
-        document.getElementById('btn-rules-prev').addEventListener('click', () => {
-          if (rulesIdx > 0) {
-            rulesIdx -= 1;
-            renderRulebookPage();
-          }
-        });
-        document.getElementById('btn-rules-next').addEventListener('click', () => {
-          if (rulesIdx < RULEBOOK_PAGES.length - 1) {
-            rulesIdx += 1;
-            renderRulebookPage();
-          } else {
-            closeModal('rules-modal');
-          }
-        });
-
-        document.getElementById('btn-draw-card').addEventListener('click', onBuyCard);
-        document.getElementById('btn-end-turn').addEventListener('click', onEndTurn);
-        document.getElementById('btn-pass-ok').addEventListener('click', () => {
-          closeModal('pass-modal');
-          renderAll();
-        });
-        document.getElementById('btn-combat-pass-ok').addEventListener('click', () => {
-          closeModal('combat-pass-modal');
-          const fn = pendingCombatPassAction;
-          pendingCombatPassAction = null;
-          if (typeof fn === 'function') {
-            fn();
-          }
-        });
-      }
-
-
-      /* =====================================================================
-         FIREBASE AUTH (GOOGLE), MATCHMAKING POR RATING & ATUALIZAÇÃO ELO
-         ===================================================================== */
-      const XEKER_FIREBASE_CONFIG = {
-        apiKey: "AIzaSyCxDrumqQH06FWXCMVICBIMSaJlkgh-OwM",
-        authDomain: "xeker-e5bc8.firebaseapp.com",
-        projectId: "xeker-e5bc8",
-        storageBucket: "xeker-e5bc8.firebasestorage.app",
-        messagingSenderId: "1046784254725",
-        appId: "1:1046784254725:web:0cbbd1a69be38b76c74d6c",
-        measurementId: "G-6WSW0WSY3F"
-      };
-
-      const rankedState = {
-        db: null,
-        auth: null,
-        user: null,
-        profile: {
-          uid: null,
-          displayName: 'Jogador',
-          rating: 1000,
-          wins: 0,
-          losses: 0,
-          status: 'idle',
-          currentMatchId: null
-        },
-        searching: false,
-        queueStartMs: 0,
-        queueTimerId: null,
-        userUnsub: null,
-        matchUnsub: null,
-        activeMatchId: null,
-        mySide: null,
-        eloAppliedForMatch: null,
-        lastMatchDoc: null
-      };
-
-      function initFirebaseRanked() {
-        try {
-          if (typeof firebase === 'undefined') return;
-          if (!firebase.apps.length) {
-            firebase.initializeApp(XEKER_FIREBASE_CONFIG);
-          }
-          rankedState.auth = firebase.auth();
-          rankedState.db = firebase.firestore();
-
-          rankedState.auth.onAuthStateChanged(async (user) => {
-            if (rankedState.userUnsub) {
-              rankedState.userUnsub();
-              rankedState.userUnsub = null;
-            }
-            if (!user) {
-              rankedState.user = null;
-              rankedState.profile = {
-                uid: null,
-                displayName: 'Jogador',
-                rating: 1000,
-                wins: 0,
-                losses: 0,
-                status: 'idle',
-                currentMatchId: null
-              };
-              stopRankedQueue(false);
-              renderRankedAuthUI();
-              return;
-            }
-
-            rankedState.user = user;
-            const userRef = rankedState.db.collection('users').doc(user.uid);
-            const snap = await userRef.get();
-            if (!snap.exists) {
-              await userRef.set({
-                uid: user.uid,
-                displayName: user.displayName || 'Jogador XEKER',
-                rating: 1000,
-                wins: 0,
-                losses: 0,
-                status: 'idle',
-                currentMatchId: null,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-              });
-            } else {
-              await userRef.update({
-                displayName: user.displayName || snap.data().displayName || 'Jogador XEKER',
-                status: 'idle',
-                currentMatchId: null
-              }).catch(() => {});
-            }
-
-            rankedState.userUnsub = userRef.onSnapshot((doc) => {
-              if (!doc.exists) return;
-              const d = doc.data();
-              rankedState.profile = {
-                uid: user.uid,
-                displayName: d.displayName || user.displayName || 'Jogador XEKER',
-                rating: typeof d.rating === 'number' ? d.rating : 1000,
-                wins: typeof d.wins === 'number' ? d.wins : 0,
-                losses: typeof d.losses === 'number' ? d.losses : 0,
-                status: d.status || 'idle',
-                currentMatchId: d.currentMatchId || null
-              };
-              renderRankedAuthUI();
-
-              if (rankedState.searching && rankedState.profile.currentMatchId) {
-                const matchId = rankedState.profile.currentMatchId;
-                stopRankedQueue(false);
-                attachToRankedMatch(matchId);
-              }
-            });
-
-            renderRankedAuthUI();
-            setOnlineStatus(`Logado como ${user.displayName || 'Jogador'} (${rankedState.profile.rating} ELO).`);
-          });
-        } catch (err) {
-          setOnlineStatus('Aviso Firebase: ' + (err && err.message ? err.message : err));
-        }
-      }
-
-      function renderRankedAuthUI() {
-        const loggedOutEl = document.getElementById('google-auth-logged-out');
-        const loggedInEl = document.getElementById('google-auth-logged-in');
-        if (!loggedOutEl || !loggedInEl) return;
-
-        if (!rankedState.user) {
-          loggedOutEl.classList.remove('hidden');
-          loggedInEl.classList.add('hidden');
-          return;
-        }
-
-        loggedOutEl.classList.add('hidden');
-        loggedInEl.classList.remove('hidden');
-        document.getElementById('ranked-user-name').textContent = rankedState.profile.displayName;
-        document.getElementById('ranked-user-record').textContent = `${rankedState.profile.wins}V · ${rankedState.profile.losses}D`;
-        document.getElementById('ranked-user-rating').textContent = String(Math.round(rankedState.profile.rating));
-
-        const qBox = document.getElementById('queue-status-box');
-        const findBtn = document.getElementById('btn-find-ranked');
-        const cancelBtn = document.getElementById('btn-cancel-ranked');
-
-        if (rankedState.searching) {
-          qBox.classList.remove('hidden');
-          findBtn.classList.add('hidden');
-          cancelBtn.classList.remove('hidden');
-        } else {
-          qBox.classList.add('hidden');
-          findBtn.classList.remove('hidden');
-          cancelBtn.classList.add('hidden');
-        }
-      }
-
-      async function signInWithGoogleRanked() {
-        try {
-          if (!rankedState.auth) {
-            setOnlineStatus('Firebase Auth não inicializado.');
-            return;
-          }
-          const provider = new firebase.auth.GoogleAuthProvider();
-          await rankedState.auth.signInWithPopup(provider);
-        } catch (err) {
-          setOnlineStatus('Falha no login Google: ' + (err && err.message ? err.message : err));
-        }
-      }
-
-      async function signOutGoogleRanked() {
-        try {
-          stopRankedQueue(true);
-          if (rankedState.auth) {
-            await rankedState.auth.signOut();
-          }
-          setOnlineStatus('Você saiu da conta Google.');
-        } catch (err) {
-          setOnlineStatus('Erro ao sair: ' + (err && err.message ? err.message : err));
-        }
-      }
-
-      function getCurrentQueueRange(elapsedSec) {
-        if (elapsedSec < 10) return 120;
-        if (elapsedSec < 20) return 250;
-        if (elapsedSec < 35) return 500;
-        return 9999;
-      }
-
-      async function tryMatchmakingTick() {
-        if (!rankedState.searching || !rankedState.user || !rankedState.db) return;
-        const myUid = rankedState.user.uid;
-        const myRating = rankedState.profile.rating || 1000;
-        const elapsedSec = Math.floor((Date.now() - rankedState.queueStartMs) / 1000);
-        const range = getCurrentQueueRange(elapsedSec);
-
-        const mm = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
-        const ss = String(elapsedSec % 60).padStart(2, '0');
-        const elClock = document.getElementById('queue-elapsed');
-        const elRange = document.getElementById('queue-range-text');
-        if (elClock) elClock.textContent = `${mm}:${ss}`;
-        if (elRange) elRange.textContent = range >= 9999 ? 'Faixa: qualquer ranking' : `Faixa atual: ±${range} rating`;
-
-        const queueRef = rankedState.db.collection('match_queue');
-        await queueRef.doc(myUid).set({
-          uid: myUid,
-          displayName: rankedState.profile.displayName,
-          rating: myRating,
-          range: range,
-          updatedAt: Date.now()
-        }, { merge: true });
-
-        const snap = await queueRef.get();
-        let bestCandidate = null;
-        let bestDiff = Infinity;
-
-        snap.forEach((doc) => {
-          if (doc.id === myUid) return;
-          const cand = doc.data();
-          if (!cand || typeof cand.rating !== 'number') return;
-          const diff = Math.abs(cand.rating - myRating);
-          const candRange = typeof cand.range === 'number' ? cand.range : 120;
-          if (diff <= range && diff <= candRange && diff < bestDiff) {
-            bestDiff = diff;
-            bestCandidate = cand;
-          }
-        });
-
-        if (!bestCandidate) return;
-
-        if (myUid > bestCandidate.uid) return;
-
-        const matchRef = rankedState.db.collection('matches').doc();
-        const whiteIsMe = Math.random() < 0.5;
-        const whiteUid = whiteIsMe ? myUid : bestCandidate.uid;
-        const blackUid = whiteIsMe ? bestCandidate.uid : myUid;
-        const whiteRating = whiteIsMe ? myRating : bestCandidate.rating;
-        const blackRating = whiteIsMe ? bestCandidate.rating : myRating;
-
-        await rankedState.db.runTransaction(async (tx) => {
-          const myQ = await tx.get(queueRef.doc(myUid));
-          const oppQ = await tx.get(queueRef.doc(bestCandidate.uid));
-          if (!myQ.exists || !oppQ.exists) return;
-
-          tx.delete(queueRef.doc(myUid));
-          tx.delete(queueRef.doc(bestCandidate.uid));
-          tx.set(matchRef, {
-            matchId: matchRef.id,
-            whiteUid,
-            blackUid,
-            whiteName: whiteIsMe ? rankedState.profile.displayName : (bestCandidate.displayName || 'Oponente'),
-            blackName: whiteIsMe ? (bestCandidate.displayName || 'Oponente') : rankedState.profile.displayName,
-            whiteRating,
-            blackRating,
-            status: 'active',
-            winner: null,
-            eloProcessed: false,
-            createdAt: Date.now()
-          });
-          tx.update(rankedState.db.collection('users').doc(myUid), {
-            status: 'in_match',
-            currentMatchId: matchRef.id
-          });
-          tx.update(rankedState.db.collection('users').doc(bestCandidate.uid), {
-            status: 'in_match',
-            currentMatchId: matchRef.id
-          });
-        });
-
-        stopRankedQueue(false);
-        attachToRankedMatch(matchRef.id);
-      }
-
-      async function startRankedQueue() {
-        if (!rankedState.user || !rankedState.db) {
-          setOnlineStatus('Faça login com Google primeiro para buscar partida ranqueada.');
-          return;
-        }
-        rankedState.searching = true;
-        rankedState.queueStartMs = Date.now();
-        renderRankedAuthUI();
-        setOnlineStatus('Entrou na fila ranqueada. Procurando oponente de ranking similar...');
-
-        await tryMatchmakingTick();
-        if (rankedState.queueTimerId) clearInterval(rankedState.queueTimerId);
-        rankedState.queueTimerId = setInterval(() => {
-          tryMatchmakingTick().catch(() => {});
-        }, 2500);
-      }
-
-      function stopRankedQueue(removeDoc) {
-        rankedState.searching = false;
-        if (rankedState.queueTimerId) {
-          clearInterval(rankedState.queueTimerId);
-          rankedState.queueTimerId = null;
-        }
-        if (removeDoc && rankedState.user && rankedState.db) {
-          rankedState.db.collection('match_queue').doc(rankedState.user.uid).delete().catch(() => {});
-          rankedState.db.collection('users').doc(rankedState.user.uid).update({
-            status: 'idle',
-            currentMatchId: null
-          }).catch(() => {});
-        }
-        renderRankedAuthUI();
       }
 
       function calculateEloDelta(myRating, oppRating, won, kFactor = 28) {
         const expected = 1 / (1 + Math.pow(10, (oppRating - myRating) / 400));
-        const score = won ? 1 : 0;
-        return Math.round(kFactor * (score - expected));
+        return Math.round(kFactor * ((won ? 1 : 0) - expected));
       }
 
       async function applyRankedEloIfNeeded(matchData) {
-        if (!matchData || !rankedState.db || !rankedState.user) return;
+        if (!matchData || !ranked.db || !ranked.user) return;
         if (matchData.status !== 'finished' || !matchData.winner) return;
-        if (rankedState.eloAppliedForMatch === matchData.matchId) return;
-        rankedState.eloAppliedForMatch = matchData.matchId;
+        if (ranked.eloAppliedForMatch === matchData.matchId) return;
+        ranked.eloAppliedForMatch = matchData.matchId;
 
-        const myUid = rankedState.user.uid;
+        const myUid = ranked.user.uid;
         const iAmWhite = matchData.whiteUid === myUid;
         const iAmBlack = matchData.blackUid === myUid;
         if (!iAmWhite && !iAmBlack) return;
 
-        const mySide = iAmWhite ? 'white' : 'black';
-        const won = matchData.winner === mySide;
+        const won = matchData.winner === (iAmWhite ? 'white' : 'black');
         const myOld = iAmWhite ? matchData.whiteRating : matchData.blackRating;
         const oppOld = iAmWhite ? matchData.blackRating : matchData.whiteRating;
         const delta = calculateEloDelta(myOld, oppOld, won);
         const myNew = Math.max(100, myOld + delta);
 
-        const userRef = rankedState.db.collection('users').doc(myUid);
-        await rankedState.db.runTransaction(async (tx) => {
+        const userRef = ranked.db.collection('users').doc(myUid);
+        await ranked.db.runTransaction(async (tx) => {
           const snap = await tx.get(userRef);
           if (!snap.exists) return;
           const d = snap.data();
@@ -3502,146 +865,743 @@
           });
         });
 
-        const signStr = delta >= 0 ? `+${delta}` : String(delta);
-        setStatus(`🏆 Partida ranqueada encerrada · ELO ${myOld} → ${myNew} (${signStr})`);
+        setStatus(`🏆 Ranqueada finalizada · ELO ${myOld} → ${myNew} (${delta >= 0 ? '+' + delta : delta})`);
       }
 
-      function attachToRankedMatch(matchId) {
-        if (!rankedState.db || !rankedState.user) return;
-        if (rankedState.matchUnsub) {
-          rankedState.matchUnsub();
-          rankedState.matchUnsub = null;
-        }
-        rankedState.activeMatchId = matchId;
+      function endMatch(winnerColor, reason) {
+        if (!state || state.gameOver) return;
+        state.gameOver = true;
+        const winnerName = winnerColor === 'white' ? '♔ Brancas' : '♚ Pretas';
+        const title = `Vitória das ${winnerName}`;
+        state.gameOverData = { title, desc: reason, winnerSide: winnerColor, reason };
+        document.getElementById('gameover-title').textContent = title;
+        document.getElementById('gameover-desc').textContent = reason;
+        renderAll();
 
-        rankedState.matchUnsub = rankedState.db.collection('matches').doc(matchId).onSnapshot((doc) => {
-          if (!doc.exists) return;
-          const data = doc.data();
-          rankedState.lastMatchDoc = data;
-          const myUid = rankedState.user.uid;
-          rankedState.mySide = data.whiteUid === myUid ? 'white' : 'black';
-
-          if (!state || !state.rankedMatchId) {
-            closeAllModals();
-            selectedMode = 'bot';
-            state = {
-              mode: 'ranked',
-              rankedMatchId: matchId,
-              mySide: rankedState.mySide,
-              turn: 'white',
-              round: 1,
-              ownTurns: { white: 1, black: 0 },
-              actions: 2,
-              clocks: {
-                white: INITIAL_CLOCK_SECONDS,
-                black: INITIAL_CLOCK_SECONDS
-              },
-              board: buildInitialBoard(),
-              deck: createDeck(),
-              discard: [],
-              flop: [],
-              players: {
-                white: { gold: 2, hand: [] },
-                black: { gold: 2, hand: [] }
-              },
-              selected: null,
-              actionMode: null,
-              skillPhase: null,
-              copiedSkill: null,
-              gameOver: false,
-              gameOverData: null
-            };
-            for (let i = 0; i < 3; i++) {
-              const wc = drawCard();
-              const bc = drawCard();
-              if (wc !== null) state.players.white.hand.push(wc);
-              if (bc !== null) state.players.black.hand.push(bc);
-            }
-            dealFlop();
-            startClock();
-            setStatus(`🏆 Partida Ranqueada iniciada! Você é ${rankedState.mySide === 'white' ? 'Brancas (♔)' : 'Pretas (♚)'} · (${data.whiteRating} vs ${data.blackRating} ELO).`);
-            renderAll();
-          }
-
-          if (data.status === 'finished' && data.winner && !state.gameOver) {
-            applyRankedEloIfNeeded(data).catch(() => {});
-            endMatch(data.winner, 'Partida ranqueada concluída e ranking atualizado.');
-          }
-        });
-      }
-
-      function switchLobbyTab(tab) {
-        const rankedTab = document.getElementById('tab-lobby-ranked');
-        const casualTab = document.getElementById('tab-lobby-casual');
-        const rankedPanel = document.getElementById('lobby-ranked-panel');
-        const casualPanel = document.getElementById('lobby-casual-panel');
-
-        const activeCls = 'py-2 px-2 rounded-xl text-[11px] font-extrabold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95';
-        const idleCls = 'py-2 px-2 rounded-xl text-[11px] font-bold border bg-black border-[#d4af37]/35 text-[#e7c252]/85 active:scale-95';
-
-        if (tab === 'casual') {
-          casualTab.className = activeCls;
-          rankedTab.className = idleCls;
-          casualPanel.classList.remove('hidden');
-          rankedPanel.classList.add('hidden');
-        } else {
-          rankedTab.className = activeCls;
-          casualTab.className = idleCls;
-          rankedPanel.classList.remove('hidden');
-          casualPanel.classList.add('hidden');
-        }
-      }
-
-      const _origEndMatch = endMatch;
-      endMatch = function (winnerColor, reason) {
-        _origEndMatch(winnerColor, reason);
-        if (state && state.mode === 'ranked' && state.rankedMatchId && rankedState.db) {
-          const mRef = rankedState.db.collection('matches').doc(state.rankedMatchId);
+        if (isRankedMatch() && ranked.db) {
+          const mRef = ranked.db.collection('matches').doc(state.rankedMatchId);
           mRef.update({
             status: 'finished',
             winner: winnerColor,
             finishedAt: Date.now()
           }).then(() => {
-            if (rankedState.lastMatchDoc) {
-              return applyRankedEloIfNeeded({ ...rankedState.lastMatchDoc, status: 'finished', winner: winnerColor });
+            if (ranked.lastMatchDoc) {
+              return applyRankedEloIfNeeded({ ...ranked.lastMatchDoc, status: 'finished', winner: winnerColor });
             }
           }).catch(() => {});
         }
-      };
+        openModal('gameover-modal');
+      }
 
-      const _origBindEvents = bindEvents;
-      bindEvents = function () {
-        _origBindEvents();
-        const tRanked = document.getElementById('tab-lobby-ranked');
-        const tCasual = document.getElementById('tab-lobby-casual');
-        const gIn = document.getElementById('btn-google-signin');
-        const gOut = document.getElementById('btn-google-signout');
-        const fRank = document.getElementById('btn-find-ranked');
-        const cRank = document.getElementById('btn-cancel-ranked');
+      function doMove(fromR, fromC, toR, toC) {
+        const piece = state.board[fromR][fromC];
+        if (!piece) return;
+        state.board[toR][toC] = piece;
+        state.board[fromR][fromC] = null;
+        piece.acted = true;
+        state.actions = Math.max(0, state.actions - 1);
+        state.selected = null;
+        state.actionMode = null;
 
-        if (tRanked) tRanked.addEventListener('click', () => switchLobbyTab('ranked'));
-        if (tCasual) tCasual.addEventListener('click', () => switchLobbyTab('casual'));
-        if (gIn) gIn.addEventListener('click', signInWithGoogleRanked);
-        if (gOut) gOut.addEventListener('click', signOutGoogleRanked);
-        if (fRank) fRank.addEventListener('click', startRankedQueue);
-        if (cRank) cRank.addEventListener('click', () => {
-          stopRankedQueue(true);
-          setOnlineStatus('Busca na fila ranqueada cancelada.');
-        });
-      };
-
-      window.addEventListener('DOMContentLoaded', () => {
-        initFirebaseRanked();
-      });
-
-      window.addEventListener('DOMContentLoaded', () => {
-        try {
-          bindEvents();
-          syncModeButtons();
-          startClock();
-        } catch (err) {
-          reportError(err);
+        if (piece.type === 'P' && ((piece.color === 'white' && toR === 0) || (piece.color === 'black' && toR === 7))) {
+          piece.type = 'Q';
+          piece.cardVal = PIECE_DATA.Q.cardVal;
+          piece.maxHp = PIECE_DATA.Q.hp;
+          piece.hp = Math.max(piece.hp, PIECE_DATA.Q.hp);
+          setStatus('♛ Peão promovido a Rainha!');
+        } else {
+          setStatus(`${PIECE_DATA[piece.type].name} moveu-se.`);
         }
+        renderAll();
+        pushRankedBoardSync();
+      }
+
+      function resolveDirectCombat(atkR, atkC, defR, defC) {
+        const atk = state.board[atkR][atkC];
+        const def = state.board[defR][defC];
+        if (!atk || !def) return;
+
+        const aPlayer = state.players[atk.color];
+        const dPlayer = state.players[def.color];
+        const aCard = aPlayer.hand.length > 0 ? aPlayer.hand.pop() : null;
+        const dCard = dPlayer.hand.length > 0 ? dPlayer.hand.pop() : null;
+        if (aCard !== null) state.discard.push(aCard);
+        if (dCard !== null) state.discard.push(dCard);
+
+        const aScore = (aCard || 0) + (atk.type === 'Q' ? 5 : atk.type === 'R' || atk.type === 'B' || atk.type === 'N' ? 3 : 1);
+        const dScore = (dCard || 0) + (def.type === 'Q' ? 5 : def.type === 'R' || def.type === 'B' || def.type === 'N' ? 3 : 1);
+
+        if (aScore >= dScore) {
+          def.hp -= 2;
+          if (def.hp <= 0) {
+            state.board[defR][defC] = atk;
+            state.board[atkR][atkC] = null;
+            if (def.type === 'K') {
+              endMatch(atk.color, 'O Rei adversário foi abatido!');
+              return;
+            }
+            state.players[atk.color].gold += PIECE_DATA[def.type].reward || 0;
+          }
+          setStatus(`⚔️ ${PIECE_DATA[atk.type].name} venceu o embate contra ${PIECE_DATA[def.type].name}!`);
+        } else {
+          atk.hp -= (atk.type === 'R' ? 0 : 1);
+          def.hp -= (def.type === 'R' ? 0 : 1);
+          if (atk.hp <= 0) {
+            state.board[atkR][atkC] = null;
+            if (atk.type === 'K') {
+              endMatch(def.color, 'O Rei adversário foi abatido!');
+              return;
+            }
+          }
+          if (def.hp <= 0) {
+            state.board[defR][defC] = null;
+            if (def.type === 'K') {
+              endMatch(atk.color, 'O Rei adversário foi abatido!');
+              return;
+            }
+          }
+          setStatus(`🛡️ Defesa de ${PIECE_DATA[def.type].name} resistiu ao ataque!`);
+        }
+
+        dealFlop();
+        atk.acted = true;
+        state.actions = Math.max(0, state.actions - 1);
+        state.selected = null;
+        state.actionMode = null;
+        renderAll();
+        pushRankedBoardSync();
+      }
+
+      function onTileTap(r, c) {
+        if (!canControlCurrentTurn()) return;
+
+        if (state.selected && state.actionMode) {
+          const { r: sr, c: sc } = state.selected;
+          const sel = state.board[sr][sc];
+          if (sel && sel.color === state.turn && !sel.acted && state.actions > 0) {
+            const reach = getReachInfo(sr, sc);
+            if (state.actionMode === 'move' && reach.moves.some((m) => m.r === r && m.c === c)) {
+              doMove(sr, sc, r, c);
+              return;
+            }
+            if (state.actionMode === 'attack' && reach.attacks.some((a) => a.r === r && a.c === c)) {
+              resolveDirectCombat(sr, sc, r, c);
+              return;
+            }
+          }
+        }
+
+        const tapped = state.board[r][c];
+        if (tapped && tapped.color === state.turn && !tapped.acted) {
+          state.selected = { r, c };
+          state.actionMode = null;
+          renderAll();
+          return;
+        }
+        state.selected = null;
+        state.actionMode = null;
+        renderAll();
+      }
+
+      function executeBotTurn() {
+        if (!state || state.gameOver || state.mode !== 'bot' || state.turn !== 'black') return;
+        for (let r = 0; r < 8; r++) {
+          for (let c = 0; c < 8; c++) {
+            const p = state.board[r][c];
+            if (!p || p.color !== 'black' || p.acted) continue;
+            const reach = getReachInfo(r, c);
+            if (reach.attacks.length > 0 && state.actions > 0) {
+              resolveDirectCombat(r, c, reach.attacks[0].r, reach.attacks[0].c);
+              if (!state.gameOver) setTimeout(executeBotTurn, 350);
+              return;
+            }
+            if (reach.moves.length > 0 && state.actions > 0) {
+              const best = reach.moves.slice().sort((a, b) => b.r - a.r)[0];
+              doMove(r, c, best.r, best.c);
+              if (!state.gameOver) setTimeout(executeBotTurn, 350);
+              return;
+            }
+          }
+        }
+        onEndTurn();
+      }
+
+      function onEndTurn() {
+        if (!canControlCurrentTurn()) return;
+        state.selected = null;
+        state.actionMode = null;
+        for (let r = 0; r < 8; r++) {
+          for (let c = 0; c < 8; c++) {
+            if (state.board[r][c]) state.board[r][c].acted = false;
+          }
+        }
+        if (state.turn === 'white') {
+          state.turn = 'black';
+          state.actions = 2;
+          setStatus('Turno das Pretas (♚) · ♣2');
+          renderAll();
+          pushRankedBoardSync();
+          if (state.mode === 'bot') setTimeout(executeBotTurn, 400);
+        } else {
+          state.turn = 'white';
+          state.round += 1;
+          state.actions = 2;
+          setStatus(`Rodada ${state.round} · Brancas (♔) · ♣2`);
+          renderAll();
+          pushRankedBoardSync();
+        }
+      }
+
+      function onBuyCard() {
+        if (!canControlCurrentTurn()) return;
+        const pl = state.players[state.turn];
+        if (pl.gold < 3 || pl.hand.length >= MAX_HAND_SIZE) return;
+        const c = drawCard();
+        if (c === null) return;
+        pl.gold -= 3;
+        pl.hand.push(c);
+        setStatus(`🃏 Comprou [${RANK_TEXT[c]}] por ♦3.`);
+        renderAll();
+        pushRankedBoardSync();
+      }
+
+      function startMatch() {
+        closeAllModals();
+        state = {
+          mode: selectedMode,
+          turn: 'white',
+          round: 1,
+          actions: 2,
+          clocks: { white: INITIAL_CLOCK_SECONDS, black: INITIAL_CLOCK_SECONDS },
+          board: buildInitialBoard(),
+          deck: createDeck(),
+          discard: [],
+          flop: [],
+          players: { white: { gold: 2, hand: [] }, black: { gold: 2, hand: [] } },
+          selected: null,
+          actionMode: null,
+          gameOver: false,
+          gameOverData: null
+        };
+        for (let i = 0; i < 3; i++) {
+          const w = drawCard(), b = drawCard();
+          if (w !== null) state.players.white.hand.push(w);
+          if (b !== null) state.players.black.hand.push(b);
+        }
+        dealFlop();
+        setStatus('Partida iniciada · Brancas (♔) começam.');
+        renderAll();
+      }
+
+      function startClock() {
+        if (timerId) clearInterval(timerId);
+        timerId = setInterval(() => {
+          if (!state || state.gameOver) return;
+          const openM = document.querySelector('.xeker-modal.open');
+          if (openM && openM.id !== 'menu-modal') return;
+          if (openM && openM.id === 'menu-modal') return;
+          state.clocks[state.turn] = Math.max(0, state.clocks[state.turn] - 1);
+          refreshClocks();
+          if (state.clocks[state.turn] <= 0) {
+            endMatch(state.turn === 'white' ? 'black' : 'white', 'Tempo esgotado.');
+          }
+        }, 1000);
+      }
+
+      function renderAll() {
+        if (!state) return;
+        document.getElementById('val-gold-white').textContent = String(state.players.white.gold);
+        document.getElementById('val-gold-black').textContent = String(state.players.black.gold);
+        document.getElementById('val-cards-white').textContent = String(state.players.white.hand.length);
+        document.getElementById('val-cards-black').textContent = String(state.players.black.hand.length);
+        document.getElementById('val-actions').textContent = String(state.actions);
+        refreshClocks();
+
+        const flopEl = document.getElementById('flop-container');
+        flopEl.innerHTML = '';
+        state.flop.forEach((v) => {
+          const d = document.createElement('div');
+          d.className = 'xeker-card w-8 h-10 rounded-md text-xs';
+          d.textContent = RANK_TEXT[v];
+          flopEl.appendChild(d);
+        });
+
+        let moves = [], attacks = [];
+        if (state.selected) {
+          const reach = getReachInfo(state.selected.r, state.selected.c);
+          if (state.actionMode === 'move') moves = reach.moves;
+          if (state.actionMode === 'attack') attacks = reach.attacks;
+        }
+
+        const boardEl = document.getElementById('board-grid');
+        boardEl.innerHTML = '';
+        for (let r = 0; r < 8; r++) {
+          for (let c = 0; c < 8; c++) {
+            const tile = document.createElement('div');
+            tile.className = `tile ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
+            if (state.selected && state.selected.r === r && state.selected.c === c) tile.classList.add('selected');
+            if (moves.some((m) => m.r === r && m.c === c)) tile.classList.add('can-move');
+            if (attacks.some((a) => a.r === r && a.c === c)) tile.classList.add('can-attack');
+
+            const piece = state.board[r][c];
+            if (piece) {
+              const info = PIECE_DATA[piece.type];
+              const tok = document.createElement('div');
+              tok.className = `piece-token ${piece.color} ${piece.acted ? 'acted' : ''}`;
+              const gl = document.createElement('span');
+              gl.className = 'piece-glyph';
+              gl.textContent = piece.color === 'white' ? info.white : info.black;
+              const hp = document.createElement('span');
+              hp.className = 'piece-badge-hp';
+              hp.textContent = String(Math.max(0, piece.hp));
+              tok.appendChild(gl);
+              tok.appendChild(hp);
+              tile.appendChild(tok);
+            }
+            tile.addEventListener('click', () => onTileTap(r, c));
+            boardEl.appendChild(tile);
+          }
+        }
+
+        const menuBox = document.getElementById('piece-menu');
+        if (!state.selected || !state.board[state.selected.r][state.selected.c]) {
+          menuBox.innerHTML = '<span class="text-[11px] text-zinc-400">Toque em uma peça aliada</span>';
+        } else {
+          const p = state.board[state.selected.r][state.selected.c];
+          const reach = getReachInfo(state.selected.r, state.selected.c);
+          const canDo = canControlCurrentTurn() && state.actions > 0 && p.color === state.turn && !p.acted;
+          menuBox.innerHTML = `
+            <span class="text-xs font-bold text-[#f3d678] truncate pr-1">${PIECE_DATA[p.type].name}</span>
+            <div class="flex items-center gap-1">
+              <button type="button" id="act-move" class="px-2 py-1 rounded-lg text-[11px] font-bold border ${state.actionMode === 'move' ? 'bg-emerald-500/25 border-emerald-400 text-emerald-200' : 'bg-[#111217] border-white/15 text-zinc-200'} disabled:opacity-35" ${canDo && reach.moves.length > 0 ? '' : 'disabled'}>Mover</button>
+              <button type="button" id="act-attack" class="px-2 py-1 rounded-lg text-[11px] font-bold border ${state.actionMode === 'attack' ? 'bg-red-500/25 border-red-400 text-red-200' : 'bg-[#111217] border-white/15 text-zinc-200'} disabled:opacity-35" ${canDo && reach.attacks.length > 0 ? '' : 'disabled'}>Atacar</button>
+            </div>
+          `;
+          document.getElementById('act-move').addEventListener('click', () => {
+            state.actionMode = state.actionMode === 'move' ? null : 'move';
+            renderAll();
+          });
+          document.getElementById('act-attack').addEventListener('click', () => {
+            state.actionMode = state.actionMode === 'attack' ? null : 'attack';
+            renderAll();
+          });
+        }
+
+        const handBox = document.getElementById('hand-container');
+        handBox.innerHTML = '';
+        const viewSide = isRankedMatch() ? ranked.mySide : state.turn;
+        const hand = state.players[viewSide].hand;
+        if (!hand || hand.length === 0) {
+          handBox.innerHTML = '<span class="text-xs text-zinc-500">Sem cartas na mão.</span>';
+        } else {
+          hand.forEach((v) => {
+            const c = document.createElement('div');
+            c.className = 'xeker-card w-11 h-14 shrink-0 rounded-lg text-base';
+            c.textContent = RANK_TEXT[v];
+            handBox.appendChild(c);
+          });
+        }
+      }
+
+      /* =====================================================================
+         FIREBASE AUTH (REDIRECT + POPUP FALLBACK), MATCHMAKING & ELO
+         ===================================================================== */
+      function renderRankedUI() {
+        const outEl = document.getElementById('google-auth-logged-out');
+        const inEl = document.getElementById('google-auth-logged-in');
+        if (!outEl || !inEl) return;
+
+        if (!ranked.user) {
+          outEl.classList.remove('hidden');
+          inEl.classList.add('hidden');
+          return;
+        }
+
+        outEl.classList.add('hidden');
+        inEl.classList.remove('hidden');
+        document.getElementById('ranked-user-name').textContent = ranked.profile.displayName;
+        document.getElementById('ranked-user-record').textContent = `${ranked.profile.wins}V · ${ranked.profile.losses}D`;
+        document.getElementById('ranked-user-rating').textContent = String(Math.round(ranked.profile.rating));
+
+        const qBox = document.getElementById('queue-status-box');
+        const fBtn = document.getElementById('btn-find-ranked');
+        const cBtn = document.getElementById('btn-cancel-ranked');
+        if (ranked.searching) {
+          qBox.classList.remove('hidden');
+          fBtn.classList.add('hidden');
+          cBtn.classList.remove('hidden');
+        } else {
+          qBox.classList.add('hidden');
+          fBtn.classList.remove('hidden');
+          cBtn.classList.add('hidden');
+        }
+      }
+
+      async function signInWithGoogle() {
+        if (!ranked.auth) {
+          setOnlineStatus('Firebase Auth não inicializado.');
+          return;
+        }
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        setOnlineStatus('Redirecionando para login Google...');
+        try {
+          await ranked.auth.signInWithRedirect(provider);
+        } catch (err) {
+          // Fallback para popup caso redirect seja bloqueado
+          try {
+            await ranked.auth.signInWithPopup(provider);
+          } catch (popErr) {
+            setOnlineStatus('Erro no login Google: ' + (popErr && popErr.code ? popErr.code : popErr.message));
+          }
+        }
+      }
+
+      async function signOutGoogle() {
+        stopRankedQueue(true);
+        if (ranked.auth) await ranked.auth.signOut();
+        setOnlineStatus('Desconectado da conta Google.');
+      }
+
+      function getQueueRange(sec) {
+        if (sec < 10) return 120;
+        if (sec < 20) return 250;
+        if (sec < 35) return 500;
+        return 9999;
+      }
+
+      async function tryMatchmakingTick() {
+        if (!ranked.searching || !ranked.user || !ranked.db) return;
+        const myUid = ranked.user.uid;
+        const myRating = ranked.profile.rating || 1000;
+        const sec = Math.floor((Date.now() - ranked.queueStartMs) / 1000);
+        const range = getQueueRange(sec);
+
+        document.getElementById('queue-elapsed').textContent = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+        document.getElementById('queue-range-text').textContent = range >= 9999 ? 'Faixa: qualquer ranking' : `Faixa atual: ±${range} rating`;
+
+        const queueRef = ranked.db.collection('match_queue');
+        await queueRef.doc(myUid).set({
+          uid: myUid,
+          displayName: ranked.profile.displayName,
+          rating: myRating,
+          range,
+          updatedAt: Date.now()
+        }, { merge: true });
+
+        const snap = await queueRef.get();
+        let best = null, bestDiff = Infinity;
+        snap.forEach((doc) => {
+          if (doc.id === myUid) return;
+          const c = doc.data();
+          if (!c || typeof c.rating !== 'number') return;
+          const diff = Math.abs(c.rating - myRating);
+          const cRange = typeof c.range === 'number' ? c.range : 120;
+          if (diff <= range && diff <= cRange && diff < bestDiff) {
+            bestDiff = diff;
+            best = c;
+          }
+        });
+
+        if (!best || myUid > best.uid) return;
+
+        const matchRef = ranked.db.collection('matches').doc();
+        const whiteIsMe = Math.random() < 0.5;
+        const whiteUid = whiteIsMe ? myUid : best.uid;
+        const blackUid = whiteIsMe ? best.uid : myUid;
+        const whiteRating = whiteIsMe ? myRating : best.rating;
+        const blackRating = whiteIsMe ? best.rating : myRating;
+
+        const initBoard = buildInitialBoard();
+        const initDeck = createDeck();
+        const initFlop = [initDeck.pop(), initDeck.pop(), initDeck.pop()];
+        const wHand = [initDeck.pop(), initDeck.pop(), initDeck.pop()];
+        const bHand = [initDeck.pop(), initDeck.pop(), initDeck.pop()];
+
+        await ranked.db.runTransaction(async (tx) => {
+          const mq = await tx.get(queueRef.doc(myUid));
+          const oq = await tx.get(queueRef.doc(best.uid));
+          if (!mq.exists || !oq.exists) return;
+
+          tx.delete(queueRef.doc(myUid));
+          tx.delete(queueRef.doc(best.uid));
+          tx.set(matchRef, {
+            matchId: matchRef.id,
+            whiteUid,
+            blackUid,
+            whiteRating,
+            blackRating,
+            turn: 'white',
+            round: 1,
+            actions: 2,
+            clocks: { white: INITIAL_CLOCK_SECONDS, black: INITIAL_CLOCK_SECONDS },
+            boardJson: JSON.stringify(initBoard),
+            flop: initFlop,
+            whiteGold: 2,
+            blackGold: 2,
+            whiteHand,
+            blackHand: bHand,
+            statusText: `Partida Ranqueada iniciada (${whiteRating} vs ${blackRating} ELO).`,
+            status: 'active',
+            winner: null,
+            createdAt: Date.now()
+          });
+          tx.update(ranked.db.collection('users').doc(myUid), { status: 'in_match', currentMatchId: matchRef.id });
+          tx.update(ranked.db.collection('users').doc(best.uid), { status: 'in_match', currentMatchId: matchRef.id });
+        });
+
+        stopRankedQueue(false);
+        attachToRankedMatch(matchRef.id);
+      }
+
+      async function startRankedQueue() {
+        if (!ranked.user || !ranked.db) {
+          setOnlineStatus('Faça login com Google primeiro.');
+          return;
+        }
+        ranked.searching = true;
+        ranked.queueStartMs = Date.now();
+        renderRankedUI();
+        setOnlineStatus('Entrou na fila ranqueada...');
+        await tryMatchmakingTick();
+        if (ranked.queueTimerId) clearInterval(ranked.queueTimerId);
+        ranked.queueTimerId = setInterval(() => { tryMatchmakingTick().catch(() => {}); }, 2500);
+      }
+
+      function stopRankedQueue(removeDoc) {
+        ranked.searching = false;
+        if (ranked.queueTimerId) {
+          clearInterval(ranked.queueTimerId);
+          ranked.queueTimerId = null;
+        }
+        if (removeDoc && ranked.user && ranked.db) {
+          ranked.db.collection('match_queue').doc(ranked.user.uid).delete().catch(() => {});
+          ranked.db.collection('users').doc(ranked.user.uid).update({ status: 'idle', currentMatchId: null }).catch(() => {});
+        }
+        renderRankedUI();
+      }
+
+      function attachToRankedMatch(matchId) {
+        if (!ranked.db || !ranked.user) return;
+        if (ranked.matchUnsub) ranked.matchUnsub();
+        ranked.activeMatchId = matchId;
+
+        ranked.matchUnsub = ranked.db.collection('matches').doc(matchId).onSnapshot((doc) => {
+          if (!doc.exists) return;
+          const d = doc.data();
+          ranked.lastMatchDoc = d;
+          ranked.mySide = d.whiteUid === ranked.user.uid ? 'white' : 'black';
+
+          closeAllModals();
+          let parsedBoard = buildInitialBoard();
+          try { if (d.boardJson) parsedBoard = JSON.parse(d.boardJson); } catch (_) {}
+
+          state = {
+            mode: 'ranked',
+            rankedMatchId: matchId,
+            turn: d.turn || 'white',
+            round: d.round || 1,
+            actions: typeof d.actions === 'number' ? d.actions : 2,
+            clocks: d.clocks || { white: INITIAL_CLOCK_SECONDS, black: INITIAL_CLOCK_SECONDS },
+            board: parsedBoard,
+            deck: [],
+            discard: [],
+            flop: Array.isArray(d.flop) ? d.flop : [],
+            players: {
+              white: { gold: typeof d.whiteGold === 'number' ? d.whiteGold : 2, hand: Array.isArray(d.whiteHand) ? d.whiteHand : [] },
+              black: { gold: typeof d.blackGold === 'number' ? d.blackGold : 2, hand: Array.isArray(d.blackHand) ? d.blackHand : [] }
+            },
+            selected: null,
+            actionMode: null,
+            gameOver: d.status === 'finished',
+            gameOverData: null
+          };
+
+          if (d.statusText) setStatus(d.statusText);
+          renderAll();
+
+          if (d.status === 'finished' && d.winner) {
+            applyRankedEloIfNeeded(d).catch(() => {});
+            const winName = d.winner === 'white' ? '♔ Brancas' : '♚ Pretas';
+            document.getElementById('gameover-title').textContent = `Vitória das ${winName}`;
+            document.getElementById('gameover-desc').textContent = 'Partida ranqueada concluída.';
+            openModal('gameover-modal');
+          }
+        });
+      }
+
+      async function initFirebase() {
+        try {
+          if (typeof firebase === 'undefined') return;
+          if (!firebase.apps.length) firebase.initializeApp(XEKER_FIREBASE_CONFIG);
+          ranked.auth = firebase.auth();
+          ranked.db = firebase.firestore();
+
+          try {
+            const res = await ranked.auth.getRedirectResult();
+            if (res && res.user) {
+              setOnlineStatus(`Bem-vindo, ${res.user.displayName || 'Jogador'}!`);
+              openModal('online-modal');
+            }
+          } catch (redirErr) {
+            setOnlineStatus('Retorno login: ' + (redirErr && redirErr.code ? redirErr.code : redirErr.message));
+          }
+
+          ranked.auth.onAuthStateChanged(async (user) => {
+            if (ranked.userUnsub) { ranked.userUnsub(); ranked.userUnsub = null; }
+            if (!user) {
+              ranked.user = null;
+              ranked.profile = { uid: null, displayName: 'Jogador', rating: 1000, wins: 0, losses: 0, status: 'idle', currentMatchId: null };
+              stopRankedQueue(false);
+              renderRankedUI();
+              setOnlineStatus('Pronto para entrar com sua Conta Google.');
+              return;
+            }
+
+            ranked.user = user;
+            const userRef = ranked.db.collection('users').doc(user.uid);
+            try {
+              const snap = await userRef.get();
+              if (!snap.exists) {
+                await userRef.set({
+                  uid: user.uid,
+                  displayName: user.displayName || 'Jogador XEKER',
+                  rating: 1000,
+                  wins: 0,
+                  losses: 0,
+                  status: 'idle',
+                  currentMatchId: null
+                });
+              } else {
+                await userRef.update({ status: 'idle', currentMatchId: null }).catch(() => {});
+              }
+            } catch (fsErr) {
+              setOnlineStatus('Aviso Firestore: ' + (fsErr && fsErr.code ? fsErr.code : fsErr.message));
+            }
+
+            ranked.userUnsub = userRef.onSnapshot((doc) => {
+              if (!doc.exists) return;
+              const d = doc.data();
+              ranked.profile = {
+                uid: user.uid,
+                displayName: d.displayName || user.displayName || 'Jogador XEKER',
+                rating: typeof d.rating === 'number' ? d.rating : 1000,
+                wins: typeof d.wins === 'number' ? d.wins : 0,
+                losses: typeof d.losses === 'number' ? d.losses : 0,
+                status: d.status || 'idle',
+                currentMatchId: d.currentMatchId || null
+              };
+              renderRankedUI();
+              if (ranked.searching && ranked.profile.currentMatchId) {
+                const mid = ranked.profile.currentMatchId;
+                stopRankedQueue(false);
+                attachToRankedMatch(mid);
+              }
+            }, (err) => {
+              setOnlineStatus('Erro perfil: ' + (err && err.code ? err.code : err.message));
+            });
+
+            renderRankedUI();
+            setOnlineStatus(`Conectado como ${user.displayName || 'Jogador'} (${ranked.profile.rating} ELO).`);
+          });
+        } catch (err) {
+          setOnlineStatus('Erro Firebase: ' + (err && err.message ? err.message : err));
+        }
+      }
+
+      function switchLobbyTab(tab) {
+        const rTab = document.getElementById('tab-lobby-ranked');
+        const cTab = document.getElementById('tab-lobby-casual');
+        const rPan = document.getElementById('lobby-ranked-panel');
+        const cPan = document.getElementById('lobby-casual-panel');
+        const act = 'py-2 px-2 rounded-xl text-[11px] font-extrabold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95';
+        const idle = 'py-2 px-2 rounded-xl text-[11px] font-bold border bg-black border-[#d4af37]/35 text-[#e7c252]/85 active:scale-95';
+        if (tab === 'casual') {
+          cTab.className = act; rTab.className = idle;
+          cPan.classList.remove('hidden'); rPan.classList.add('hidden');
+        } else {
+          rTab.className = act; cTab.className = idle;
+          rPan.classList.remove('hidden'); cPan.classList.add('hidden');
+        }
+      }
+
+      function renderRulebook() {
+        const p = RULEBOOK_PAGES[rulesIdx];
+        document.getElementById('rules-title').textContent = p.title;
+        document.getElementById('rules-counter').textContent = `Página ${rulesIdx + 1} de ${RULEBOOK_PAGES.length}`;
+        document.getElementById('rules-page-label').textContent = `Página ${rulesIdx + 1} / ${RULEBOOK_PAGES.length}`;
+        document.getElementById('rules-content').innerHTML = p.html;
+        document.getElementById('btn-rules-prev').disabled = rulesIdx === 0;
+        document.getElementById('btn-rules-next').textContent = rulesIdx === RULEBOOK_PAGES.length - 1 ? 'Fechar' : 'Próxima';
+      }
+
+      function bindEvents() {
+        const setMode = (m) => {
+          selectedMode = m;
+          const act = 'py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95';
+          const idle = 'py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-black border-[#d4af37]/35 text-[#e7c252]/85 active:scale-95';
+          document.getElementById('btn-select-bot').className = m === 'bot' ? act : idle;
+          document.getElementById('btn-select-pvp').className = m === 'pvp' ? act : idle;
+          document.getElementById('btn-select-online').className = m === 'online' ? act : idle;
+          if (m === 'online') openModal('online-modal');
+        };
+
+        document.getElementById('btn-select-bot').addEventListener('click', () => setMode('bot'));
+        document.getElementById('btn-select-pvp').addEventListener('click', () => setMode('pvp'));
+        document.getElementById('btn-select-online').addEventListener('click', () => setMode('online'));
+        document.getElementById('btn-start-match').addEventListener('click', startMatch);
+
+        document.getElementById('btn-close-online').addEventListener('click', () => closeModal('online-modal'));
+        document.getElementById('tab-lobby-ranked').addEventListener('click', () => switchLobbyTab('ranked'));
+        document.getElementById('tab-lobby-casual').addEventListener('click', () => switchLobbyTab('casual'));
+        document.getElementById('btn-google-signin').addEventListener('click', signInWithGoogle);
+        document.getElementById('btn-google-signout').addEventListener('click', signOutGoogle);
+        document.getElementById('btn-find-ranked').addEventListener('click', startRankedQueue);
+        document.getElementById('btn-cancel-ranked').addEventListener('click', () => {
+          stopRankedQueue(true);
+          setOnlineStatus('Busca cancelada.');
+        });
+
+        document.getElementById('btn-create-room').addEventListener('click', () => {
+          const code = 'XK-' + Math.random().toString(36).substring(2, 7).toUpperCase();
+          document.getElementById('room-code-box').classList.remove('hidden');
+          document.getElementById('room-code-value').textContent = code;
+          setOnlineStatus('Código gerado: ' + code);
+        });
+        document.getElementById('btn-copy-room').addEventListener('click', () => {
+          const code = document.getElementById('room-code-value').textContent;
+          if (code && navigator.clipboard) navigator.clipboard.writeText(code).catch(() => {});
+          setOnlineStatus('Código copiado.');
+        });
+        document.getElementById('btn-join-room').addEventListener('click', () => {
+          const code = (document.getElementById('input-join-code').value || '').trim().toUpperCase();
+          setOnlineStatus(code ? 'Conectando à sala ' + code + '...' : 'Informe o código.');
+        });
+
+        document.getElementById('btn-top-menu').addEventListener('click', () => openModal('menu-modal'));
+        document.getElementById('btn-back-menu').addEventListener('click', () => {
+          closeModal('gameover-modal');
+          openModal('menu-modal');
+        });
+
+        const openRules = () => { rulesIdx = 0; renderRulebook(); openModal('rules-modal'); };
+        document.getElementById('btn-open-rules').addEventListener('click', openRules);
+        document.getElementById('btn-top-rules').addEventListener('click', openRules);
+        document.getElementById('btn-close-rules').addEventListener('click', () => closeModal('rules-modal'));
+        document.getElementById('btn-rules-prev').addEventListener('click', () => { if (rulesIdx > 0) { rulesIdx--; renderRulebook(); } });
+        document.getElementById('btn-rules-next').addEventListener('click', () => {
+          if (rulesIdx < RULEBOOK_PAGES.length - 1) { rulesIdx++; renderRulebook(); }
+          else closeModal('rules-modal');
+        });
+
+        document.getElementById('btn-draw-card').addEventListener('click', onBuyCard);
+        document.getElementById('btn-end-turn').addEventListener('click', onEndTurn);
+      }
+
+      window.addEventListener('DOMContentLoaded', () => {
+        bindEvents();
+        startClock();
+        initFirebase();
       });
     })();
   </script>
