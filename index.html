@@ -6,6 +6,9 @@
   <title>XEKER — Xadrez &amp; Pôquer Tático</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -474,42 +477,101 @@
     </div>
   </div>
 
-  <!-- MODAL LOBBY ON-LINE (CRIAR / ENTRAR EM SALA) -->
+  <!-- MODAL LOBBY ON-LINE (SALA POR CÓDIGO + MATCHMAKING RANQUEADO GOOGLE) -->
   <div id="online-modal" class="xeker-modal">
-    <div class="w-full max-w-[380px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl space-y-3 text-xs">
+    <div class="w-full max-w-[390px] max-h-[92dvh] overflow-y-auto rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl space-y-3 text-xs">
       <div class="flex items-center justify-between pb-2 border-b border-white/10">
         <h2 class="font-display font-bold text-sm text-[#f3d678]">🌐 Partida On-line (1v1)</h2>
         <button type="button" id="btn-close-online" class="px-2.5 py-1 rounded-lg bg-[#161820] border border-white/15 font-bold text-zinc-200 active:scale-95">✕</button>
       </div>
 
-      <div class="p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/25 space-y-2">
-        <div class="font-bold text-[#f3d678]">Criar Sala (Joga de Brancas ♔)</div>
-        <button type="button" id="btn-create-room" class="w-full py-2 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold active:scale-95">
-          Gerar Código de Sala
+      <!-- Seletor de Lobby: Ranqueada Google vs Sala por Código -->
+      <div class="grid grid-cols-2 gap-1.5">
+        <button type="button" id="tab-lobby-ranked" class="py-2 px-2 rounded-xl text-[11px] font-extrabold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95">
+          🏆 Ranqueada (Google)
         </button>
-        <div id="room-code-box" class="hidden flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg bg-black/60 border border-[#d4af37]/40">
-          <div>
-            <div class="text-[10px] text-zinc-400">Código da sala:</div>
-            <div id="room-code-value" class="font-mono font-extrabold text-sm tracking-widest text-[#fff1b8]"></div>
+        <button type="button" id="tab-lobby-casual" class="py-2 px-2 rounded-xl text-[11px] font-bold border bg-black border-[#d4af37]/35 text-[#e7c252]/85 active:scale-95">
+          🔗 Sala por Código
+        </button>
+      </div>
+
+      <!-- Painel Ranqueada com Conta Google + Matchmaking por Rating -->
+      <div id="lobby-ranked-panel" class="space-y-2.5">
+        <div id="google-auth-logged-out" class="p-3 rounded-xl bg-[#161820] border border-[#d4af37]/30 text-center space-y-2">
+          <div class="font-bold text-[#f3d678]">Entre com sua Conta Google</div>
+          <p class="text-[11px] text-zinc-300 leading-snug">
+            Salva seu perfil, pontuação de ranking (ELO) e pareia você contra oponentes de nível semelhante.
+          </p>
+          <button type="button" id="btn-google-signin" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#fff1b8] via-[#d4af37] to-[#9c7218] text-[#140e02] font-extrabold text-xs shadow active:scale-95">
+            Entrar com Google
+          </button>
+        </div>
+
+        <div id="google-auth-logged-in" class="hidden p-3 rounded-xl bg-[#161820] border border-[#d4af37]/45 space-y-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <div class="min-w-0">
+              <div id="ranked-user-name" class="font-extrabold text-sm text-[#fff1b8] truncate">Jogador</div>
+              <div id="ranked-user-record" class="text-[10px] text-zinc-400">0V · 0D</div>
+            </div>
+            <div class="text-right shrink-0 px-2.5 py-1 rounded-xl bg-black/70 border border-[#d4af37]/50">
+              <div class="text-[9px] uppercase tracking-wider text-amber-200/75">Rating</div>
+              <div id="ranked-user-rating" class="font-mono font-black text-sm text-[#f3d678]">1000</div>
+            </div>
           </div>
-          <button type="button" id="btn-copy-room" class="px-2.5 py-1 rounded-lg bg-[#d4af37]/20 border border-[#d4af37]/50 text-[#f3d678] font-bold active:scale-95">
-            Copiar
+
+          <div id="queue-status-box" class="hidden p-2 rounded-lg bg-black/65 border border-[#d4af37]/35 text-[11px] text-amber-100 space-y-1">
+            <div class="flex items-center justify-between font-bold text-[#f3d678]">
+              <span>🔎 Buscando oponente...</span>
+              <span id="queue-elapsed" class="font-mono">00s</span>
+            </div>
+            <div id="queue-range-text" class="text-[10px] text-zinc-300">Faixa inicial: ±120 rating</div>
+          </div>
+
+          <button type="button" id="btn-find-ranked" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#fff1b8] via-[#d4af37] to-[#9c7218] text-[#140e02] font-extrabold text-xs shadow active:scale-95">
+            Buscar Partida Ranqueada
+          </button>
+
+          <button type="button" id="btn-cancel-ranked" class="hidden w-full py-2 rounded-xl bg-red-950/70 border border-red-400/50 text-red-200 font-bold text-xs active:scale-95">
+            Cancelar Busca
+          </button>
+
+          <button type="button" id="btn-google-signout" class="w-full py-1.5 rounded-lg bg-black/60 border border-white/10 text-[11px] text-zinc-400 font-semibold active:scale-95">
+            Sair da Conta Google
           </button>
         </div>
       </div>
 
-      <div class="p-2.5 rounded-xl bg-[#161820] border border-white/10 space-y-2">
-        <div class="font-bold text-zinc-200">Entrar em Sala (Joga de Pretas ♚)</div>
-        <div class="flex gap-1.5">
-          <input id="input-join-code" type="text" maxlength="16" placeholder="Código da sala" class="flex-1 px-2.5 py-2 rounded-xl bg-black/60 border border-white/15 text-white font-mono uppercase text-xs focus:outline-none focus:border-[#d4af37]" />
-          <button type="button" id="btn-join-room" class="px-3 py-2 rounded-xl bg-[#d4af37]/25 border border-[#f3d678] text-[#fff1b8] font-bold active:scale-95">
-            Entrar
+      <!-- Painel Sala por Código (PeerJS P2P) -->
+      <div id="lobby-casual-panel" class="hidden space-y-2.5">
+        <div class="p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/25 space-y-2">
+          <div class="font-bold text-[#f3d678]">Criar Sala (Joga de Brancas ♔)</div>
+          <button type="button" id="btn-create-room" class="w-full py-2 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold active:scale-95">
+            Gerar Código de Sala
           </button>
+          <div id="room-code-box" class="hidden flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg bg-black/60 border border-[#d4af37]/40">
+            <div>
+              <div class="text-[10px] text-zinc-400">Código da sala:</div>
+              <div id="room-code-value" class="font-mono font-extrabold text-sm tracking-widest text-[#fff1b8]"></div>
+            </div>
+            <button type="button" id="btn-copy-room" class="px-2.5 py-1 rounded-lg bg-[#d4af37]/20 border border-[#d4af37]/50 text-[#f3d678] font-bold active:scale-95">
+              Copiar
+            </button>
+          </div>
+        </div>
+
+        <div class="p-2.5 rounded-xl bg-[#161820] border border-white/10 space-y-2">
+          <div class="font-bold text-zinc-200">Entrar em Sala (Joga de Pretas ♚)</div>
+          <div class="flex gap-1.5">
+            <input id="input-join-code" type="text" maxlength="16" placeholder="Código da sala" class="flex-1 px-2.5 py-2 rounded-xl bg-black/60 border border-white/15 text-white font-mono uppercase text-xs focus:outline-none focus:border-[#d4af37]" />
+            <button type="button" id="btn-join-room" class="px-3 py-2 rounded-xl bg-[#d4af37]/25 border border-[#f3d678] text-[#fff1b8] font-bold active:scale-95">
+              Entrar
+            </button>
+          </div>
         </div>
       </div>
 
       <div id="online-status-text" class="px-2.5 py-2 rounded-xl bg-black/50 border border-white/10 text-[11px] text-amber-200 min-h-[36px] flex items-center">
-        Escolha criar uma sala ou inserir o código de outro jogador.
+        Entre com sua conta Google para ranqueada ou use Sala por Código.
       </div>
     </div>
   </div>
@@ -3101,6 +3163,476 @@
           }
         });
       }
+
+
+      /* =====================================================================
+         FIREBASE AUTH (GOOGLE), MATCHMAKING POR RATING & ATUALIZAÇÃO ELO
+         ===================================================================== */
+      const XEKER_FIREBASE_CONFIG = {
+        apiKey: "AIzaSyCxDrumqQH06FWXCMVICBIMSaJlkgh-OwM",
+        authDomain: "xeker-e5bc8.firebaseapp.com",
+        projectId: "xeker-e5bc8",
+        storageBucket: "xeker-e5bc8.firebasestorage.app",
+        messagingSenderId: "1046784254725",
+        appId: "1:1046784254725:web:0cbbd1a69be38b76c74d6c",
+        measurementId: "G-6WSW0WSY3F"
+      };
+
+      const rankedState = {
+        db: null,
+        auth: null,
+        user: null,
+        profile: {
+          uid: null,
+          displayName: 'Jogador',
+          rating: 1000,
+          wins: 0,
+          losses: 0,
+          status: 'idle',
+          currentMatchId: null
+        },
+        searching: false,
+        queueStartMs: 0,
+        queueTimerId: null,
+        userUnsub: null,
+        matchUnsub: null,
+        activeMatchId: null,
+        mySide: null,
+        eloAppliedForMatch: null,
+        lastMatchDoc: null
+      };
+
+      function initFirebaseRanked() {
+        try {
+          if (typeof firebase === 'undefined') return;
+          if (!firebase.apps.length) {
+            firebase.initializeApp(XEKER_FIREBASE_CONFIG);
+          }
+          rankedState.auth = firebase.auth();
+          rankedState.db = firebase.firestore();
+
+          rankedState.auth.onAuthStateChanged(async (user) => {
+            if (rankedState.userUnsub) {
+              rankedState.userUnsub();
+              rankedState.userUnsub = null;
+            }
+            if (!user) {
+              rankedState.user = null;
+              rankedState.profile = {
+                uid: null,
+                displayName: 'Jogador',
+                rating: 1000,
+                wins: 0,
+                losses: 0,
+                status: 'idle',
+                currentMatchId: null
+              };
+              stopRankedQueue(false);
+              renderRankedAuthUI();
+              return;
+            }
+
+            rankedState.user = user;
+            const userRef = rankedState.db.collection('users').doc(user.uid);
+            const snap = await userRef.get();
+            if (!snap.exists) {
+              await userRef.set({
+                uid: user.uid,
+                displayName: user.displayName || 'Jogador XEKER',
+                rating: 1000,
+                wins: 0,
+                losses: 0,
+                status: 'idle',
+                currentMatchId: null,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+              });
+            } else {
+              await userRef.update({
+                displayName: user.displayName || snap.data().displayName || 'Jogador XEKER',
+                status: 'idle',
+                currentMatchId: null
+              }).catch(() => {});
+            }
+
+            rankedState.userUnsub = userRef.onSnapshot((doc) => {
+              if (!doc.exists) return;
+              const d = doc.data();
+              rankedState.profile = {
+                uid: user.uid,
+                displayName: d.displayName || user.displayName || 'Jogador XEKER',
+                rating: typeof d.rating === 'number' ? d.rating : 1000,
+                wins: typeof d.wins === 'number' ? d.wins : 0,
+                losses: typeof d.losses === 'number' ? d.losses : 0,
+                status: d.status || 'idle',
+                currentMatchId: d.currentMatchId || null
+              };
+              renderRankedAuthUI();
+
+              if (rankedState.searching && rankedState.profile.currentMatchId) {
+                const matchId = rankedState.profile.currentMatchId;
+                stopRankedQueue(false);
+                attachToRankedMatch(matchId);
+              }
+            });
+
+            renderRankedAuthUI();
+            setOnlineStatus(`Logado como ${user.displayName || 'Jogador'} (${rankedState.profile.rating} ELO).`);
+          });
+        } catch (err) {
+          setOnlineStatus('Aviso Firebase: ' + (err && err.message ? err.message : err));
+        }
+      }
+
+      function renderRankedAuthUI() {
+        const loggedOutEl = document.getElementById('google-auth-logged-out');
+        const loggedInEl = document.getElementById('google-auth-logged-in');
+        if (!loggedOutEl || !loggedInEl) return;
+
+        if (!rankedState.user) {
+          loggedOutEl.classList.remove('hidden');
+          loggedInEl.classList.add('hidden');
+          return;
+        }
+
+        loggedOutEl.classList.add('hidden');
+        loggedInEl.classList.remove('hidden');
+        document.getElementById('ranked-user-name').textContent = rankedState.profile.displayName;
+        document.getElementById('ranked-user-record').textContent = `${rankedState.profile.wins}V · ${rankedState.profile.losses}D`;
+        document.getElementById('ranked-user-rating').textContent = String(Math.round(rankedState.profile.rating));
+
+        const qBox = document.getElementById('queue-status-box');
+        const findBtn = document.getElementById('btn-find-ranked');
+        const cancelBtn = document.getElementById('btn-cancel-ranked');
+
+        if (rankedState.searching) {
+          qBox.classList.remove('hidden');
+          findBtn.classList.add('hidden');
+          cancelBtn.classList.remove('hidden');
+        } else {
+          qBox.classList.add('hidden');
+          findBtn.classList.remove('hidden');
+          cancelBtn.classList.add('hidden');
+        }
+      }
+
+      async function signInWithGoogleRanked() {
+        try {
+          if (!rankedState.auth) {
+            setOnlineStatus('Firebase Auth não inicializado.');
+            return;
+          }
+          const provider = new firebase.auth.GoogleAuthProvider();
+          await rankedState.auth.signInWithPopup(provider);
+        } catch (err) {
+          setOnlineStatus('Falha no login Google: ' + (err && err.message ? err.message : err));
+        }
+      }
+
+      async function signOutGoogleRanked() {
+        try {
+          stopRankedQueue(true);
+          if (rankedState.auth) {
+            await rankedState.auth.signOut();
+          }
+          setOnlineStatus('Você saiu da conta Google.');
+        } catch (err) {
+          setOnlineStatus('Erro ao sair: ' + (err && err.message ? err.message : err));
+        }
+      }
+
+      function getCurrentQueueRange(elapsedSec) {
+        if (elapsedSec < 10) return 120;
+        if (elapsedSec < 20) return 250;
+        if (elapsedSec < 35) return 500;
+        return 9999;
+      }
+
+      async function tryMatchmakingTick() {
+        if (!rankedState.searching || !rankedState.user || !rankedState.db) return;
+        const myUid = rankedState.user.uid;
+        const myRating = rankedState.profile.rating || 1000;
+        const elapsedSec = Math.floor((Date.now() - rankedState.queueStartMs) / 1000);
+        const range = getCurrentQueueRange(elapsedSec);
+
+        const mm = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+        const ss = String(elapsedSec % 60).padStart(2, '0');
+        const elClock = document.getElementById('queue-elapsed');
+        const elRange = document.getElementById('queue-range-text');
+        if (elClock) elClock.textContent = `${mm}:${ss}`;
+        if (elRange) elRange.textContent = range >= 9999 ? 'Faixa: qualquer ranking' : `Faixa atual: ±${range} rating`;
+
+        const queueRef = rankedState.db.collection('match_queue');
+        await queueRef.doc(myUid).set({
+          uid: myUid,
+          displayName: rankedState.profile.displayName,
+          rating: myRating,
+          range: range,
+          updatedAt: Date.now()
+        }, { merge: true });
+
+        const snap = await queueRef.get();
+        let bestCandidate = null;
+        let bestDiff = Infinity;
+
+        snap.forEach((doc) => {
+          if (doc.id === myUid) return;
+          const cand = doc.data();
+          if (!cand || typeof cand.rating !== 'number') return;
+          const diff = Math.abs(cand.rating - myRating);
+          const candRange = typeof cand.range === 'number' ? cand.range : 120;
+          if (diff <= range && diff <= candRange && diff < bestDiff) {
+            bestDiff = diff;
+            bestCandidate = cand;
+          }
+        });
+
+        if (!bestCandidate) return;
+
+        if (myUid > bestCandidate.uid) return;
+
+        const matchRef = rankedState.db.collection('matches').doc();
+        const whiteIsMe = Math.random() < 0.5;
+        const whiteUid = whiteIsMe ? myUid : bestCandidate.uid;
+        const blackUid = whiteIsMe ? bestCandidate.uid : myUid;
+        const whiteRating = whiteIsMe ? myRating : bestCandidate.rating;
+        const blackRating = whiteIsMe ? bestCandidate.rating : myRating;
+
+        await rankedState.db.runTransaction(async (tx) => {
+          const myQ = await tx.get(queueRef.doc(myUid));
+          const oppQ = await tx.get(queueRef.doc(bestCandidate.uid));
+          if (!myQ.exists || !oppQ.exists) return;
+
+          tx.delete(queueRef.doc(myUid));
+          tx.delete(queueRef.doc(bestCandidate.uid));
+          tx.set(matchRef, {
+            matchId: matchRef.id,
+            whiteUid,
+            blackUid,
+            whiteName: whiteIsMe ? rankedState.profile.displayName : (bestCandidate.displayName || 'Oponente'),
+            blackName: whiteIsMe ? (bestCandidate.displayName || 'Oponente') : rankedState.profile.displayName,
+            whiteRating,
+            blackRating,
+            status: 'active',
+            winner: null,
+            eloProcessed: false,
+            createdAt: Date.now()
+          });
+          tx.update(rankedState.db.collection('users').doc(myUid), {
+            status: 'in_match',
+            currentMatchId: matchRef.id
+          });
+          tx.update(rankedState.db.collection('users').doc(bestCandidate.uid), {
+            status: 'in_match',
+            currentMatchId: matchRef.id
+          });
+        });
+
+        stopRankedQueue(false);
+        attachToRankedMatch(matchRef.id);
+      }
+
+      async function startRankedQueue() {
+        if (!rankedState.user || !rankedState.db) {
+          setOnlineStatus('Faça login com Google primeiro para buscar partida ranqueada.');
+          return;
+        }
+        rankedState.searching = true;
+        rankedState.queueStartMs = Date.now();
+        renderRankedAuthUI();
+        setOnlineStatus('Entrou na fila ranqueada. Procurando oponente de ranking similar...');
+
+        await tryMatchmakingTick();
+        if (rankedState.queueTimerId) clearInterval(rankedState.queueTimerId);
+        rankedState.queueTimerId = setInterval(() => {
+          tryMatchmakingTick().catch(() => {});
+        }, 2500);
+      }
+
+      function stopRankedQueue(removeDoc) {
+        rankedState.searching = false;
+        if (rankedState.queueTimerId) {
+          clearInterval(rankedState.queueTimerId);
+          rankedState.queueTimerId = null;
+        }
+        if (removeDoc && rankedState.user && rankedState.db) {
+          rankedState.db.collection('match_queue').doc(rankedState.user.uid).delete().catch(() => {});
+          rankedState.db.collection('users').doc(rankedState.user.uid).update({
+            status: 'idle',
+            currentMatchId: null
+          }).catch(() => {});
+        }
+        renderRankedAuthUI();
+      }
+
+      function calculateEloDelta(myRating, oppRating, won, kFactor = 28) {
+        const expected = 1 / (1 + Math.pow(10, (oppRating - myRating) / 400));
+        const score = won ? 1 : 0;
+        return Math.round(kFactor * (score - expected));
+      }
+
+      async function applyRankedEloIfNeeded(matchData) {
+        if (!matchData || !rankedState.db || !rankedState.user) return;
+        if (matchData.status !== 'finished' || !matchData.winner) return;
+        if (rankedState.eloAppliedForMatch === matchData.matchId) return;
+        rankedState.eloAppliedForMatch = matchData.matchId;
+
+        const myUid = rankedState.user.uid;
+        const iAmWhite = matchData.whiteUid === myUid;
+        const iAmBlack = matchData.blackUid === myUid;
+        if (!iAmWhite && !iAmBlack) return;
+
+        const mySide = iAmWhite ? 'white' : 'black';
+        const won = matchData.winner === mySide;
+        const myOld = iAmWhite ? matchData.whiteRating : matchData.blackRating;
+        const oppOld = iAmWhite ? matchData.blackRating : matchData.whiteRating;
+        const delta = calculateEloDelta(myOld, oppOld, won);
+        const myNew = Math.max(100, myOld + delta);
+
+        const userRef = rankedState.db.collection('users').doc(myUid);
+        await rankedState.db.runTransaction(async (tx) => {
+          const snap = await tx.get(userRef);
+          if (!snap.exists) return;
+          const d = snap.data();
+          tx.update(userRef, {
+            rating: myNew,
+            wins: (d.wins || 0) + (won ? 1 : 0),
+            losses: (d.losses || 0) + (won ? 0 : 1),
+            status: 'idle',
+            currentMatchId: null
+          });
+        });
+
+        const signStr = delta >= 0 ? `+${delta}` : String(delta);
+        setStatus(`🏆 Partida ranqueada encerrada · ELO ${myOld} → ${myNew} (${signStr})`);
+      }
+
+      function attachToRankedMatch(matchId) {
+        if (!rankedState.db || !rankedState.user) return;
+        if (rankedState.matchUnsub) {
+          rankedState.matchUnsub();
+          rankedState.matchUnsub = null;
+        }
+        rankedState.activeMatchId = matchId;
+
+        rankedState.matchUnsub = rankedState.db.collection('matches').doc(matchId).onSnapshot((doc) => {
+          if (!doc.exists) return;
+          const data = doc.data();
+          rankedState.lastMatchDoc = data;
+          const myUid = rankedState.user.uid;
+          rankedState.mySide = data.whiteUid === myUid ? 'white' : 'black';
+
+          if (!state || !state.rankedMatchId) {
+            closeAllModals();
+            selectedMode = 'bot';
+            state = {
+              mode: 'ranked',
+              rankedMatchId: matchId,
+              mySide: rankedState.mySide,
+              turn: 'white',
+              round: 1,
+              ownTurns: { white: 1, black: 0 },
+              actions: 2,
+              clocks: {
+                white: INITIAL_CLOCK_SECONDS,
+                black: INITIAL_CLOCK_SECONDS
+              },
+              board: buildInitialBoard(),
+              deck: createDeck(),
+              discard: [],
+              flop: [],
+              players: {
+                white: { gold: 2, hand: [] },
+                black: { gold: 2, hand: [] }
+              },
+              selected: null,
+              actionMode: null,
+              skillPhase: null,
+              copiedSkill: null,
+              gameOver: false,
+              gameOverData: null
+            };
+            for (let i = 0; i < 3; i++) {
+              const wc = drawCard();
+              const bc = drawCard();
+              if (wc !== null) state.players.white.hand.push(wc);
+              if (bc !== null) state.players.black.hand.push(bc);
+            }
+            dealFlop();
+            startClock();
+            setStatus(`🏆 Partida Ranqueada iniciada! Você é ${rankedState.mySide === 'white' ? 'Brancas (♔)' : 'Pretas (♚)'} · (${data.whiteRating} vs ${data.blackRating} ELO).`);
+            renderAll();
+          }
+
+          if (data.status === 'finished' && data.winner && !state.gameOver) {
+            applyRankedEloIfNeeded(data).catch(() => {});
+            endMatch(data.winner, 'Partida ranqueada concluída e ranking atualizado.');
+          }
+        });
+      }
+
+      function switchLobbyTab(tab) {
+        const rankedTab = document.getElementById('tab-lobby-ranked');
+        const casualTab = document.getElementById('tab-lobby-casual');
+        const rankedPanel = document.getElementById('lobby-ranked-panel');
+        const casualPanel = document.getElementById('lobby-casual-panel');
+
+        const activeCls = 'py-2 px-2 rounded-xl text-[11px] font-extrabold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95';
+        const idleCls = 'py-2 px-2 rounded-xl text-[11px] font-bold border bg-black border-[#d4af37]/35 text-[#e7c252]/85 active:scale-95';
+
+        if (tab === 'casual') {
+          casualTab.className = activeCls;
+          rankedTab.className = idleCls;
+          casualPanel.classList.remove('hidden');
+          rankedPanel.classList.add('hidden');
+        } else {
+          rankedTab.className = activeCls;
+          casualTab.className = idleCls;
+          rankedPanel.classList.remove('hidden');
+          casualPanel.classList.add('hidden');
+        }
+      }
+
+      const _origEndMatch = endMatch;
+      endMatch = function (winnerColor, reason) {
+        _origEndMatch(winnerColor, reason);
+        if (state && state.mode === 'ranked' && state.rankedMatchId && rankedState.db) {
+          const mRef = rankedState.db.collection('matches').doc(state.rankedMatchId);
+          mRef.update({
+            status: 'finished',
+            winner: winnerColor,
+            finishedAt: Date.now()
+          }).then(() => {
+            if (rankedState.lastMatchDoc) {
+              return applyRankedEloIfNeeded({ ...rankedState.lastMatchDoc, status: 'finished', winner: winnerColor });
+            }
+          }).catch(() => {});
+        }
+      };
+
+      const _origBindEvents = bindEvents;
+      bindEvents = function () {
+        _origBindEvents();
+        const tRanked = document.getElementById('tab-lobby-ranked');
+        const tCasual = document.getElementById('tab-lobby-casual');
+        const gIn = document.getElementById('btn-google-signin');
+        const gOut = document.getElementById('btn-google-signout');
+        const fRank = document.getElementById('btn-find-ranked');
+        const cRank = document.getElementById('btn-cancel-ranked');
+
+        if (tRanked) tRanked.addEventListener('click', () => switchLobbyTab('ranked'));
+        if (tCasual) tCasual.addEventListener('click', () => switchLobbyTab('casual'));
+        if (gIn) gIn.addEventListener('click', signInWithGoogleRanked);
+        if (gOut) gOut.addEventListener('click', signOutGoogleRanked);
+        if (fRank) fRank.addEventListener('click', startRankedQueue);
+        if (cRank) cRank.addEventListener('click', () => {
+          stopRankedQueue(true);
+          setOnlineStatus('Busca na fila ranqueada cancelada.');
+        });
+      };
+
+      window.addEventListener('DOMContentLoaded', () => {
+        initFirebaseRanked();
+      });
 
       window.addEventListener('DOMContentLoaded', () => {
         try {
