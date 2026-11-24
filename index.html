@@ -1270,15 +1270,27 @@
         return 9999;
       }
 
+      function updateQueueClockDisplay() {
+        if (!ranked.searching) return;
+        const sec = Math.max(0, Math.floor((Date.now() - ranked.queueStartMs) / 1000));
+        const range = getQueueRange(sec);
+        const elapsedEl = document.getElementById('queue-elapsed');
+        const rangeEl = document.getElementById('queue-range-text');
+        if (elapsedEl) {
+          elapsedEl.textContent = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+        }
+        if (rangeEl) {
+          rangeEl.textContent = range >= 9999 ? 'Faixa: qualquer ranking' : `Faixa atual: ±${range} rating`;
+        }
+      }
+
       async function tryMatchmakingTick() {
         if (!ranked.searching || !ranked.user || !ranked.db) return;
+        updateQueueClockDisplay();
         const myUid = ranked.user.uid;
         const myRating = ranked.profile.rating || 1000;
-        const sec = Math.floor((Date.now() - ranked.queueStartMs) / 1000);
+        const sec = Math.max(0, Math.floor((Date.now() - ranked.queueStartMs) / 1000));
         const range = getQueueRange(sec);
-
-        document.getElementById('queue-elapsed').textContent = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
-        document.getElementById('queue-range-text').textContent = range >= 9999 ? 'Faixa: qualquer ranking' : `Faixa atual: ±${range} rating`;
 
         const queueRef = ranked.db.collection('match_queue');
         await queueRef.doc(myUid).set({
@@ -1359,21 +1371,33 @@
           setOnlineStatus('Faça login com Google primeiro.');
           return;
         }
+        stopRankedQueue(false);
         ranked.searching = true;
         ranked.queueStartMs = Date.now();
         renderRankedUI();
+        updateQueueClockDisplay();
         setOnlineStatus('Entrou na fila ranqueada...');
-        await tryMatchmakingTick();
-        if (ranked.queueTimerId) clearInterval(ranked.queueTimerId);
+
+        // Atualiza o cronômetro a cada 1 segundo
+        ranked.queueClockId = setInterval(updateQueueClockDisplay, 1000);
+        // Consulta de pareamento a cada 2.5 segundos
         ranked.queueTimerId = setInterval(() => { tryMatchmakingTick().catch(() => {}); }, 2500);
+
+        tryMatchmakingTick().catch(() => {});
       }
 
       function stopRankedQueue(removeDoc) {
         ranked.searching = false;
+        if (ranked.queueClockId) {
+          clearInterval(ranked.queueClockId);
+          ranked.queueClockId = null;
+        }
         if (ranked.queueTimerId) {
           clearInterval(ranked.queueTimerId);
           ranked.queueTimerId = null;
         }
+        const elapsedEl = document.getElementById('queue-elapsed');
+        if (elapsedEl) elapsedEl.textContent = '00:00';
         if (removeDoc && ranked.user && ranked.db) {
           ranked.db.collection('match_queue').doc(ranked.user.uid).delete().catch(() => {});
           ranked.db.collection('users').doc(ranked.user.uid).update({ status: 'idle', currentMatchId: null }).catch(() => {});
