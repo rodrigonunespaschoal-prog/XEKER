@@ -91,12 +91,13 @@
     .luxury-menu-canvas {
       position: relative;
       background:
-        radial-gradient(circle at 50% 24%, rgba(243, 214, 120, 0.14) 0%, rgba(212, 175, 55, 0.04) 36%, rgba(7, 8, 11, 0.98) 76%),
-        linear-gradient(180deg, #0c0d12 0%, #07080b 55%, #050608 100%);
-      border: 1px solid rgba(212, 175, 55, 0.55);
+        radial-gradient(circle at 50% 24%, rgba(243, 214, 120, 0.16) 0%, rgba(212, 175, 55, 0.05) 38%, rgba(0, 0, 0, 0.99) 78%),
+        linear-gradient(180deg, #070709 0%, #020203 55%, #000000 100%);
+      border: 1.5px solid rgba(212, 175, 55, 0.72);
       box-shadow:
-        0 24px 60px rgba(0, 0, 0, 0.92),
-        inset 0 1px 0 rgba(255, 236, 179, 0.25);
+        0 24px 64px rgba(0, 0, 0, 0.96),
+        0 0 24px rgba(212, 175, 55, 0.14),
+        inset 0 1px 0 rgba(255, 241, 184, 0.35);
       overflow-y: auto;
     }
 
@@ -424,10 +425,10 @@
           <button type="button" id="btn-select-bot" class="py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95">
             🤖 Bot
           </button>
-          <button type="button" id="btn-select-pvp" class="py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95">
+          <button type="button" id="btn-select-pvp" class="py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-black border-[#d4af37]/35 text-[#e7c252]/85 active:scale-95">
             👥 Local
           </button>
-          <button type="button" id="btn-select-online" class="py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95">
+          <button type="button" id="btn-select-online" class="py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-black border-[#d4af37]/35 text-[#e7c252]/85 active:scale-95">
             🌐 On-line
           </button>
         </div>
@@ -436,7 +437,7 @@
           Iniciar Partida
         </button>
 
-        <button type="button" id="btn-open-rules" class="w-full py-2 rounded-xl bg-[#12141c]/95 border border-[#d4af37]/45 text-[#f3d678] font-bold text-xs tracking-wide active:scale-95">
+        <button type="button" id="btn-open-rules" class="w-full py-2 rounded-xl bg-black border border-[#d4af37]/60 text-[#f3d678] font-bold text-xs tracking-wide active:scale-95">
           📖 Regras
         </button>
       </div>
@@ -466,8 +467,8 @@
           <span class="text-lg text-[#fff1b8]">♗</span>
           <span class="opacity-85">♘</span>
         </div>
-        <div class="text-[10px] tracking-[0.22em] text-[#d4af37]/80 font-medium mt-1">
-          design by XEKER
+        <div class="text-[11px] tracking-[0.12em] text-[#f3d678] font-semibold mt-1">
+          criado por Rodrigo Nunes Paschoal
         </div>
       </div>
     </div>
@@ -3025,7 +3026,7 @@
         const onlineBtn = document.getElementById('btn-select-online');
 
         const activeCls = 'py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95';
-        const idleCls = 'py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95';
+        const idleCls = 'py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-black border-[#d4af37]/35 text-[#e7c252]/85 active:scale-95';
 
         botBtn.className = selectedMode === 'bot' ? activeCls : idleCls;
         pvpBtn.className = selectedMode === 'pvp' ? activeCls : idleCls;
