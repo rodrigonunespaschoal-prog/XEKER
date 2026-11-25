@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Xeker — 1v1 Tático</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -75,7 +74,7 @@
       transform: translateY(-2px) scale(0.97);
     }
 
-    /* Verso de carta oculta (mão oculta em Passa e Joga / On-line / Ranked) */
+    /* Verso de carta oculta (mão oculta em Off-line / Ranked) */
     .xeker-card-back {
       background: linear-gradient(145deg, #1d2233 0%, #0f111a 100%);
       border: 1.5px solid rgba(212, 175, 55, 0.55);
@@ -106,26 +105,6 @@
       background-clip: text;
       color: transparent;
       filter: drop-shadow(0 3px 10px rgba(212, 175, 55, 0.35));
-    }
-
-    .gold-foil-card {
-      background: linear-gradient(150deg, #fff0b3 0%, #e7c252 35%, #b88922 72%, #f3d678 100%);
-      border: 1.5px solid #ffe699;
-      color: #261903;
-      box-shadow:
-        0 10px 24px rgba(0, 0, 0, 0.75),
-        0 0 16px rgba(212, 175, 55, 0.25),
-        inset 0 1px 1px rgba(255, 255, 255, 0.7);
-      position: relative;
-    }
-
-    .gold-foil-card::after {
-      content: '';
-      position: absolute;
-      inset: 3px;
-      border-radius: 7px;
-      border: 1px solid rgba(92, 61, 6, 0.35);
-      pointer-events: none;
     }
 
     @keyframes starTwinkle {
@@ -271,7 +250,10 @@
     #combat-pass-modal {
       z-index: 65;
     }
-    #online-modal, #ranked-modal {
+    #ranked-turn-modal {
+      z-index: 68;
+    }
+    #ranked-modal {
       z-index: 70;
     }
   </style>
@@ -401,14 +383,11 @@
 
       <!-- Seletor de Modo & Botões Principais -->
       <div class="w-full space-y-2 my-1.5 shrink-0">
-        <div class="grid grid-cols-3 gap-1.5">
-          <button type="button" id="btn-select-pvp" class="py-2.5 px-1.5 rounded-xl text-xs font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95">
-            🤖 IA Bot
+        <div class="grid grid-cols-2 gap-1.5">
+          <button type="button" id="btn-select-offline" class="py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95">
+            📱 Off-line (Mesmo Aparelho)
           </button>
-          <button type="button" id="btn-select-online" class="py-2.5 px-1.5 rounded-xl text-xs font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95">
-            ⚡ 1v1 Online
-          </button>
-          <button type="button" id="btn-select-ranked" class="py-2.5 px-1.5 rounded-xl text-xs font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95">
+          <button type="button" id="btn-select-ranked" class="py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95">
             🏆 Ranked Elo
           </button>
         </div>
@@ -497,43 +476,18 @@
     </div>
   </div>
 
-  <!-- MODAL LOBBY ON-LINE (CRIAR / ENTRAR EM SALA PEERJS) -->
-  <div id="online-modal" class="xeker-modal">
-    <div class="w-full max-w-[380px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl space-y-3 text-xs">
-      <div class="flex items-center justify-between pb-2 border-b border-white/10">
-        <h2 class="font-display font-bold text-sm text-[#f3d678]">🌐 Partida On-line (1v1)</h2>
-        <button type="button" id="btn-close-online" class="px-2.5 py-1 rounded-lg bg-[#161820] border border-white/15 font-bold text-zinc-200 active:scale-95">✕</button>
+  <!-- MODAL INDICADOR DE TURNO E COR NA RANKED -->
+  <div id="ranked-turn-modal" class="xeker-modal">
+    <div class="w-full max-w-[360px] rounded-2xl bg-[#111217] border border-[#d4af37]/70 p-5 text-center shadow-2xl space-y-3">
+      <div id="ranked-turn-icon" class="text-4xl">♔</div>
+      <div id="ranked-turn-side-badge" class="inline-block px-3 py-1 rounded-full bg-[#d4af37]/15 border border-[#d4af37]/50 text-[11px] font-extrabold text-[#f3d678]">
+        Você joga de Brancas (♔)
       </div>
-
-      <div class="p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/25 space-y-2">
-        <div class="font-bold text-[#f3d678]">Criar Sala (Joga de Brancas ♔)</div>
-        <button type="button" id="btn-create-room" class="w-full py-2 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold active:scale-95">
-          Gerar Código de Sala
-        </button>
-        <div id="room-code-box" class="hidden flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg bg-black/60 border border-[#d4af37]/40">
-          <div>
-            <div class="text-[10px] text-zinc-400">Código da sala:</div>
-            <div id="room-code-value" class="font-mono font-extrabold text-sm tracking-widest text-[#fff1b8]"></div>
-          </div>
-          <button type="button" id="btn-copy-room" class="px-2.5 py-1 rounded-lg bg-[#d4af37]/20 border border-[#d4af37]/50 text-[#f3d678] font-bold active:scale-95">
-            Copiar
-          </button>
-        </div>
-      </div>
-
-      <div class="p-2.5 rounded-xl bg-[#161820] border border-white/10 space-y-2">
-        <div class="font-bold text-zinc-200">Entrar em Sala (Joga de Pretas ♚)</div>
-        <div class="flex gap-1.5">
-          <input id="input-join-code" type="text" maxlength="16" placeholder="Código da sala" class="flex-1 px-2.5 py-2 rounded-xl bg-black/60 border border-white/15 text-white font-mono uppercase text-xs focus:outline-none focus:border-[#d4af37]" />
-          <button type="button" id="btn-join-room" class="px-3 py-2 rounded-xl bg-[#d4af37]/25 border border-[#f3d678] text-[#fff1b8] font-bold active:scale-95">
-            Entrar
-          </button>
-        </div>
-      </div>
-
-      <div id="online-status-text" class="px-2.5 py-2 rounded-xl bg-black/50 border border-white/10 text-[11px] text-amber-200 min-h-[36px] flex items-center">
-        Escolha criar uma sala ou inserir o código de outro jogador.
-      </div>
+      <h2 id="ranked-turn-heading" class="font-display font-bold text-lg text-white">Vez das Brancas (♔)</h2>
+      <p id="ranked-turn-desc" class="text-xs text-zinc-300 leading-relaxed"></p>
+      <button type="button" id="btn-ranked-turn-ok" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold text-sm active:scale-95">
+        Entendido
+      </button>
     </div>
   </div>
 
@@ -563,13 +517,13 @@
     </div>
   </div>
 
-  <!-- MODAL DE PRIVACIDADE DO COMBATE ("PASSE PARA O JOGADOR X") -->
+  <!-- MODAL DE PASSAGEM DE APARELHO NO COMBATE -->
   <div id="combat-pass-modal" class="xeker-modal">
     <div class="w-full max-w-[360px] rounded-2xl bg-[#111217] border border-[#d4af37]/70 p-5 text-center shadow-2xl">
-      <div class="text-3xl mb-2">🛡️</div>
-      <h2 id="combat-pass-heading" class="font-display font-bold text-lg text-[#f3d678] mb-1">Passe para o Jogador X</h2>
+      <div class="text-3xl mb-2">📱</div>
+      <h2 id="combat-pass-heading" class="font-display font-bold text-lg text-[#f3d678] mb-1">Passe o aparelho para o Jogador X</h2>
       <p id="combat-pass-desc" class="text-xs text-zinc-300 mb-4">
-        Mantenha a mão do outro jogador oculta para escolher sua carta de combate com privacidade.
+        Passe o aparelho para o jogador da vez escolher sua carta de combate sem que o outro veja a mão.
       </p>
       <button type="button" id="btn-combat-pass-ok" class="w-full py-3 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold text-sm active:scale-95">
         Revelar Minhas Cartas
@@ -577,12 +531,12 @@
     </div>
   </div>
 
-  <!-- MODAL PASSA E JOGA (TROCA DE TURNO LOCAL) -->
+  <!-- MODAL PASSAGEM DE APARELHO ENTRE TURNOS (OFF-LINE) -->
   <div id="pass-modal" class="xeker-modal">
     <div class="w-full max-w-[360px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-5 text-center shadow-2xl">
-      <div class="text-3xl mb-2">🔄</div>
-      <h2 id="pass-heading" class="font-display font-bold text-lg text-[#f3d678] mb-1">Passa e Joga</h2>
-      <p class="text-xs text-zinc-400 mb-4">Passe o dispositivo para o jogador da vez antes de continuar.</p>
+      <div class="text-3xl mb-2">📱</div>
+      <h2 id="pass-heading" class="font-display font-bold text-lg text-[#f3d678] mb-1">Passe o aparelho</h2>
+      <p id="pass-desc" class="text-xs text-zinc-300 mb-4">Passe o aparelho para o jogador da vez antes de revelar sua mão.</p>
       <button type="button" id="btn-pass-ok" class="w-full py-3 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold text-sm active:scale-95">
         Continuar Turno
       </button>
@@ -781,7 +735,7 @@
 
     const COMBO_EFFECTS = {
       0: 'Carta Alta: Sem efeito extra de combo.',
-      1: '1 Par: Cura a peça usada no combate em +2♥ (até o HP máximo).',
+      1: '1 Par: Cura a peça usada no combo em +2♥ (até o HP máximo).',
       2: '2 Pares: Concede +4♦ de ouro ao vencedor do combo.',
       3: 'Trinca: Causa +1♥ de dano extra.',
       4: 'Sequência: Concede +1♣ (ação) e compra +1 carta.',
@@ -901,19 +855,15 @@
       }
     ];
 
-    let selectedMode = 'bot';
+    let selectedMode = 'offline';
     let state = null;
     let duelContext = null;
     let pendingCombatPassAction = null;
     let rulesIdx = 0;
     let timerId = null;
 
-    /* Camada de rede On-line (PeerJS / WebRTC) + Ranked (Firestore) */
     const net = {
-      peer: null,
-      conn: null,
       role: null,
-      roomCode: null,
       connected: false,
       pendingCombat: null,
       lastSummary: null
@@ -923,7 +873,7 @@
       user: null,
       profile: null,
       matchId: null,
-      mySide: null, // 'white' (host) ou 'black' (guest)
+      mySide: null,
       oppProfile: null,
       matchUnsub: null,
       queueUnsub: null,
@@ -932,25 +882,17 @@
       lastActionSeq: 0,
       lastAtkCardSeq: 0,
       lastDefCardSeq: 0,
-      lastSummaryAckSeq: 0
+      lastSummaryAckSeq: 0,
+      lastAnnouncedTurnKey: null
     };
-
-    function isRemoteMultiplayer() {
-      return Boolean(state && (state.mode === 'online' || state.mode === 'ranked'));
-    }
 
     function isRankedMode() {
       return Boolean(state && state.mode === 'ranked');
     }
 
     function myOnlineSide() {
-      if (!isRemoteMultiplayer()) return state ? state.turn : 'white';
-      return net.role === 'guest' ? 'black' : 'white';
-    }
-
-    function setOnlineStatus(msg) {
-      const el = document.getElementById('online-status-text');
-      if (el) el.textContent = msg;
+      if (!isRankedMode()) return state ? state.turn : 'white';
+      return ranked.mySide || 'white';
     }
 
     function showRankedFeedback(msg, isError = false) {
@@ -968,26 +910,30 @@
       if (el) el.classList.add('hidden');
     }
 
-    function generateRoomCode() {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      let code = 'XK-';
-      for (let i = 0; i < 5; i++) {
-        code += chars[Math.floor(Math.random() * chars.length)];
-      }
-      return code;
+    function showRankedTurnIndicator(turnSide, roundNum) {
+      if (!isRankedMode() || !state || state.gameOver) return;
+      const key = `${roundNum || 1}-${turnSide}`;
+      if (ranked.lastAnnouncedTurnKey === key) return;
+      ranked.lastAnnouncedTurnKey = key;
+
+      const mySide = myOnlineSide();
+      const isMyTurn = turnSide === mySide;
+      const turnColorLabel = turnSide === 'white' ? 'Brancas (♔)' : 'Pretas (♚)';
+      const myColorLabel = mySide === 'white' ? 'Brancas (♔)' : 'Pretas (♚)';
+
+      document.getElementById('ranked-turn-icon').textContent = turnSide === 'white' ? '♔' : '♚';
+      document.getElementById('ranked-turn-side-badge').textContent = `Você é das ${myColorLabel}`;
+      document.getElementById('ranked-turn-heading').textContent = `Vez das ${turnColorLabel}`;
+      document.getElementById('ranked-turn-desc').textContent = isMyTurn
+        ? `É a sua vez de jogar (Rodada ${roundNum || 1}). Você está com as ${myColorLabel}.`
+        : `Aguardando a vez das ${turnColorLabel} (Rodada ${roundNum || 1}). Você é das ${myColorLabel}.`;
+
+      openModal('ranked-turn-modal');
     }
 
     function sendNet(payload) {
       if (isRankedMode() && ranked.matchId) {
         sendRankedPayload(payload);
-        return;
-      }
-      if (net.conn && net.conn.open) {
-        try {
-          net.conn.send(payload);
-        } catch (err) {
-          reportError(err);
-        }
       }
     }
 
@@ -1031,7 +977,7 @@
     }
 
     function syncOnlineState() {
-      if (!isRemoteMultiplayer() || net.role !== 'host' || !state) return;
+      if (!isRankedMode() || net.role !== 'host' || !state) return;
       sendNet({
         type: 'state_sync',
         view: buildGuestSafeView()
@@ -1273,6 +1219,7 @@
       ranked.lastAtkCardSeq = 0;
       ranked.lastDefCardSeq = 0;
       ranked.lastSummaryAckSeq = 0;
+      ranked.lastAnnouncedTurnKey = null;
 
       const matchRef = doc(db, 'matches', matchId);
       const initialSnap = await getDoc(matchRef);
@@ -1295,9 +1242,10 @@
 
       if (amWhite) {
         startMatch();
-        setStatus(`🏆 Ranked Elo: Você (♔ ${mData.whiteName} · ${mData.whiteEloBefore}) vs ♚ ${mData.blackName} (${mData.blackEloBefore})`);
+        setStatus(`🏆 Ranked Elo: Você é Brancas (♔ ${mData.whiteName} · ${mData.whiteEloBefore}) vs ♚ ${mData.blackName} (${mData.blackEloBefore})`);
+        showRankedTurnIndicator('white', 1);
       } else {
-        setStatus(`🏆 Ranked Elo: Você (♚ ${mData.blackName} · ${mData.blackEloBefore}) vs ♔ ${mData.whiteName} (${mData.whiteEloBefore}) · Aguardando Brancas...`);
+        setStatus(`🏆 Ranked Elo: Você é Pretas (♚ ${mData.blackName} · ${mData.blackEloBefore}) vs ♔ ${mData.whiteName} (${mData.whiteEloBefore}) · Aguardando Brancas...`);
       }
 
       ranked.matchUnsub = onSnapshot(matchRef, (snap) => {
@@ -1408,11 +1356,10 @@
     function applyGuestView(view) {
       if (!view) return;
       closeModal('menu-modal');
-      closeModal('online-modal');
       closeModal('ranked-modal');
       const prevSummary = net.lastSummary;
       state = {
-        mode: view.mode || 'online',
+        mode: view.mode || 'ranked',
         turn: view.turn,
         round: view.round,
         ownTurns: view.ownTurns,
@@ -1529,140 +1476,11 @@
         document.getElementById('gameover-title').textContent = state.gameOverData.title;
         document.getElementById('gameover-desc').textContent = state.gameOverData.desc;
         openModal('gameover-modal');
+      } else if (!net.pendingCombat && !net.lastSummary) {
+        showRankedTurnIndicator(state.turn, state.round);
       }
 
       renderAll();
-    }
-
-    function setupConnectionListeners(conn, role) {
-      net.conn = conn;
-      net.role = role;
-
-      conn.on('open', () => {
-        net.connected = true;
-        if (role === 'host') {
-          setOnlineStatus('Oponente conectado! Iniciando partida...');
-          closeModal('online-modal');
-          startMatch();
-        } else {
-          selectedMode = 'online';
-          syncModeButtons();
-          setOnlineStatus('Conectado à sala! Aguardando Brancas...');
-          closeModal('online-modal');
-          closeModal('menu-modal');
-          setStatus('Conectado à sala! Aguardando início da partida das Brancas (♔)...');
-        }
-      });
-
-      conn.on('data', (msg) => {
-        try {
-          if (!msg || !msg.type) return;
-
-          if (msg.type === 'state_sync' && net.role === 'guest') {
-            applyGuestView(msg.view);
-          } else if (msg.type === 'clock_sync' && net.role === 'guest') {
-            if (state && msg.clocks) {
-              state.clocks = msg.clocks;
-              refreshClocks();
-            }
-          } else if (msg.type === 'online_action' && net.role === 'host') {
-            handleGuestActionRequest(msg.action);
-          } else if (msg.type === 'online_atk_card' && net.role === 'host') {
-            handleGuestAttackerCard(msg.cardIdx);
-          } else if (msg.type === 'online_def_card' && net.role === 'host') {
-            handleGuestDefenderCard(msg.cardIdx);
-          } else if (msg.type === 'online_summary_ack' && net.role === 'host') {
-            net.lastSummary = null;
-            if (state && state.gameOver && state.gameOverData) {
-              endMatch(state.gameOverData.winnerSide, state.gameOverData.reason);
-            }
-            syncOnlineState();
-          }
-        } catch (err) {
-          reportError(err);
-        }
-      });
-
-      conn.on('close', () => {
-        net.connected = false;
-        setStatus('⚠️ Conexão on-line encerrada.');
-        setOnlineStatus('Conexão encerrada.');
-      });
-
-      conn.on('error', (err) => {
-        reportError(err);
-      });
-    }
-
-    function createOnlineRoom() {
-      try {
-        if (typeof Peer === 'undefined') {
-          setOnlineStatus('Biblioteca WebRTC indisponível no momento.');
-          return;
-        }
-        if (net.peer) {
-          try { net.peer.destroy(); } catch (_) {}
-        }
-        const code = generateRoomCode();
-        net.roomCode = code;
-        net.role = 'host';
-        net.connected = false;
-        setOnlineStatus('Criando sala on-line...');
-
-        const peer = new Peer(code);
-        net.peer = peer;
-
-        peer.on('open', (id) => {
-          document.getElementById('room-code-box').classList.remove('hidden');
-          document.getElementById('room-code-value').textContent = id;
-          setOnlineStatus('Sala criada. Envie o código para o oponente.');
-        });
-
-        peer.on('connection', (conn) => {
-          setupConnectionListeners(conn, 'host');
-        });
-
-        peer.on('error', (err) => {
-          setOnlineStatus('Erro ao criar sala: ' + (err && err.type ? err.type : err.message));
-        });
-      } catch (err) {
-        reportError(err);
-      }
-    }
-
-    function joinOnlineRoom() {
-      try {
-        if (typeof Peer === 'undefined') {
-          setOnlineStatus('Biblioteca WebRTC indisponível no momento.');
-          return;
-        }
-        const raw = (document.getElementById('input-join-code').value || '').trim().toUpperCase();
-        if (!raw) {
-          setOnlineStatus('Digite o código da sala.');
-          return;
-        }
-        if (net.peer) {
-          try { net.peer.destroy(); } catch (_) {}
-        }
-        net.roomCode = raw;
-        net.role = 'guest';
-        net.connected = false;
-        setOnlineStatus('Conectando à sala ' + raw + '...');
-
-        const peer = new Peer();
-        net.peer = peer;
-
-        peer.on('open', () => {
-          const conn = peer.connect(raw, { reliable: true });
-          setupConnectionListeners(conn, 'guest');
-        });
-
-        peer.on('error', (err) => {
-          setOnlineStatus('Falha ao entrar: ' + (err && err.type ? err.type : err.message));
-        });
-      } catch (err) {
-        reportError(err);
-      }
     }
 
     function handleGuestActionRequest(action) {
@@ -1787,7 +1605,7 @@
 
     function openCombatPrivacyPass(sideColor, descriptionText, onRevealCallback) {
       const label = sideColor === 'white' ? 'Jogador Brancas (♔)' : 'Jogador Pretas (♚)';
-      document.getElementById('combat-pass-heading').textContent = `Passe para ${label}`;
+      document.getElementById('combat-pass-heading').textContent = `Passe o aparelho para ${label}`;
       document.getElementById('combat-pass-desc').textContent = descriptionText;
       pendingCombatPassAction = onRevealCallback;
       openModal('combat-pass-modal');
@@ -1798,15 +1616,15 @@
       timerId = setInterval(() => {
         try {
           if (!state || state.gameOver) return;
-          if (isRemoteMultiplayer() && net.role === 'guest') return;
+          if (isRankedMode() && net.role === 'guest') return;
           if (hasOpenModal()) return;
-          if (isRemoteMultiplayer() && !net.connected) return;
+          if (isRankedMode() && !net.connected) return;
 
           const active = state.turn;
           state.clocks[active] = Math.max(0, state.clocks[active] - 1);
           refreshClocks();
 
-          if (isRemoteMultiplayer() && net.role === 'host') {
+          if (isRankedMode() && net.role === 'host') {
             sendNet({ type: 'clock_sync', clocks: state.clocks });
           }
 
@@ -2046,10 +1864,6 @@
 
     function startMatch() {
       try {
-        if (selectedMode === 'online' && (!net.connected || net.role !== 'host')) {
-          openModal('online-modal');
-          return;
-        }
         if (selectedMode === 'ranked' && (!net.connected || !ranked.matchId)) {
           openModal('ranked-modal');
           return;
@@ -2060,6 +1874,7 @@
         pendingCombatPassAction = null;
         net.pendingCombat = null;
         net.lastSummary = null;
+        ranked.lastAnnouncedTurnKey = null;
 
         state = {
           mode: selectedMode,
@@ -2097,15 +1912,16 @@
         dealFlop();
         startClock();
 
-        if (state.mode === 'online' || state.mode === 'ranked') {
-          setStatus('Partida on-line iniciada · Você é Brancas (♔).');
+        if (state.mode === 'ranked') {
+          setStatus('Partida Ranked iniciada · Você é Brancas (♔).');
+          renderAll();
+          if (net.role === 'host') {
+            syncOnlineState();
+          }
+          showRankedTurnIndicator('white', 1);
         } else {
-          setStatus('Partida iniciada (Passa e Joga) · Brancas (♣2, ♦2, 3 cartas).');
-        }
-
-        renderAll();
-        if (isRemoteMultiplayer() && net.role === 'host') {
-          syncOnlineState();
+          setStatus('Partida Off-line iniciada (Mesmo Aparelho) · Brancas (♔) começam.');
+          renderAll();
         }
       } catch (err) {
         reportError(err);
@@ -2206,7 +2022,7 @@
       document.getElementById('gameover-title').textContent = title;
       document.getElementById('gameover-desc').textContent = reason;
       renderAll();
-      if (isRemoteMultiplayer() && net.role === 'host') {
+      if (isRankedMode() && net.role === 'host') {
         syncOnlineState();
       }
       openModal('gameover-modal');
@@ -2282,7 +2098,7 @@
         setStatus(`${PIECE_DATA[piece.type].name} moveu-se.`);
       }
       renderAll();
-      if (isRemoteMultiplayer() && net.role === 'host') {
+      if (isRankedMode() && net.role === 'host') {
         syncOnlineState();
       }
     }
@@ -2357,7 +2173,7 @@
           return;
         }
         renderAll();
-        if (isRemoteMultiplayer() && net.role === 'host') {
+        if (isRankedMode() && net.role === 'host') {
           syncOnlineState();
         }
       });
@@ -2544,7 +2360,7 @@
 
       renderAll();
 
-      if (isRemoteMultiplayer() && net.role === 'host') {
+      if (isRankedMode() && net.role === 'host') {
         if (winnerSideEnd) {
           state.gameOver = true;
           state.gameOverData = {
@@ -2586,7 +2402,7 @@
             <div class="text-[10px] text-amber-200">Peça: ${formatPieceRep(atkPiece)}</div>
           `;
 
-          if (isRemoteMultiplayer() && net.role === 'host' && defPiece.color === 'black') {
+          if (isRankedMode() && net.role === 'host' && defPiece.color === 'black') {
             net.pendingCombat = {
               atkR, atkC, defR, defC,
               atkPiece: { ...atkPiece },
@@ -2597,11 +2413,11 @@
             };
             syncOnlineState();
             body.innerHTML = `<div class="text-xs text-amber-200 text-center py-2">Aguardando defensor (Pretas) escolher sua carta...</div>`;
-          } else if (state.mode === 'pvp') {
-            body.innerHTML = `<div class="text-xs text-zinc-400 text-center py-2">Aguardando transição privada para o defensor...</div>`;
+          } else if (state.mode === 'offline') {
+            body.innerHTML = `<div class="text-xs text-zinc-400 text-center py-2">Passe o aparelho para o defensor antes de revelar as cartas...</div>`;
             openCombatPrivacyPass(
               defPiece.color,
-              'Passe o dispositivo para o defensor escolher sua carta de defesa sem ver a mão do atacante.',
+              'Passe o aparelho para o defensor escolher sua carta de defesa sem ver a mão do atacante.',
               () => {
                 renderDefenderCardSelection(chosenAtk, defPiece, defPlayer);
               }
@@ -2701,7 +2517,7 @@
         }
         finishPieceAction(atkPiece);
         renderAll();
-        if (isRemoteMultiplayer() && net.role === 'host') {
+        if (isRankedMode() && net.role === 'host') {
           syncOnlineState();
         }
         openModal('combat-modal');
@@ -2732,7 +2548,7 @@
 
       duelContext = { atkR, atkC, defR, defC, atkCard: null };
 
-      if (isRemoteMultiplayer() && net.role === 'host') {
+      if (isRankedMode() && net.role === 'host') {
         if (atkPiece.color === 'white') {
           net.pendingCombat = {
             atkR, atkC, defR, defC,
@@ -2760,11 +2576,11 @@
         return;
       }
 
-      if (state.mode === 'pvp') {
-        document.getElementById('combat-body').innerHTML = `<div class="text-xs text-zinc-400 text-center py-2">Preparando transição privada para o atacante...</div>`;
+      if (state.mode === 'offline') {
+        document.getElementById('combat-body').innerHTML = `<div class="text-xs text-zinc-400 text-center py-2">Passe o aparelho para o atacante antes de revelar as cartas...</div>`;
         openCombatPrivacyPass(
           atkPiece.color,
-          'Passe o dispositivo para o atacante escolher sua carta de combate sem expor as mãos.',
+          'Passe o aparelho para o atacante escolher sua carta de combate sem que o outro jogador veja a mão.',
           () => {
             renderAttackerCardSelection(atkR, atkC, defR, defC, atkPiece, defPiece, atkPlayer, defPlayer);
           }
@@ -2837,7 +2653,7 @@
           setStatus(`♠ ${isCopied ? 'Rainha (Peão)' : 'Peão'} sacrificou-se causando 1♥ a ${hitCount} inimigo(s) (♦1 · 0♣).`);
         }
         renderAll();
-        if (isRemoteMultiplayer() && net.role === 'host') syncOnlineState();
+        if (isRankedMode() && net.role === 'host') syncOnlineState();
         return;
       }
 
@@ -2859,7 +2675,7 @@
         finishPieceSkillAction(userPiece);
         setStatus(`♠ ${isCopied ? 'Rainha (Bispo)' : 'Bispo'} curou +1♥ em ${healedCount} aliado(s) no alcance (♦1 · 0♣).`);
         renderAll();
-        if (isRemoteMultiplayer() && net.role === 'host') syncOnlineState();
+        if (isRankedMode() && net.role === 'host') syncOnlineState();
         return;
       }
 
@@ -2875,7 +2691,7 @@
         finishPieceSkillAction(userPiece);
         setStatus(`♠ ${isCopied ? 'Rainha (Torre)' : 'Torre'} trocou de posição com ${PIECE_DATA[targetPiece.type].name} (♦1 · 0♣).`);
         renderAll();
-        if (isRemoteMultiplayer() && net.role === 'host') syncOnlineState();
+        if (isRankedMode() && net.role === 'host') syncOnlineState();
         return;
       }
 
@@ -2898,7 +2714,7 @@
         setStatus(`♠ ${isCopied ? `Rainha (${PIECE_DATA[skillType].name})` : PIECE_DATA[userPiece.type].name} causou ${dmg}♥ em ${PIECE_DATA[enemy.type].name} (♦1 · 0♣).`);
       }
       renderAll();
-      if (isRemoteMultiplayer() && net.role === 'host') syncOnlineState();
+      if (isRankedMode() && net.role === 'host') syncOnlineState();
     }
 
     function onActiveSkillClick() {
@@ -2907,7 +2723,7 @@
       const piece = state.board[r][c];
       const player = state.players[state.turn];
       if (!piece || piece.color !== state.turn) return;
-      if (isRemoteMultiplayer() && state.turn !== myOnlineSide()) return;
+      if (isRankedMode() && state.turn !== myOnlineSide()) return;
 
       if (state.skillPhase) {
         state.skillPhase = null;
@@ -2937,7 +2753,7 @@
       }
 
       if (piece.type === 'P' || piece.type === 'B') {
-        if (isRemoteMultiplayer() && net.role === 'guest') {
+        if (isRankedMode() && net.role === 'guest') {
           sendNet({
             type: 'online_action',
             action: { kind: 'skill', fromR: r, fromC: c, effType: piece.type, toR: r, toC: c, copiedFlag: false }
@@ -2972,7 +2788,7 @@
 
     function onTileTap(r, c) {
       if (!state || state.gameOver) return;
-      if (isRemoteMultiplayer() && state.turn !== myOnlineSide()) return;
+      if (isRankedMode() && state.turn !== myOnlineSide()) return;
 
       if (state.selected && state.skillPhase) {
         const { r: sr, c: sc } = state.selected;
@@ -2982,7 +2798,7 @@
           if (validTargets.some((t) => t.r === r && t.c === c)) {
             const effType = state.copiedSkill || sel.type;
             const copiedFlag = Boolean(state.copiedSkill);
-            if (isRemoteMultiplayer() && net.role === 'guest') {
+            if (isRankedMode() && net.role === 'guest') {
               sendNet({
                 type: 'online_action',
                 action: { kind: 'skill', fromR: sr, fromC: sc, effType, toR: r, toC: c, copiedFlag }
@@ -3008,7 +2824,7 @@
         if (sel && sel.color === state.turn && !sel.acted && state.actions > 0) {
           const reach = getReachInfo(sr, sc);
           if (state.actionMode === 'move' && reach.moves.some((m) => m.r === r && m.c === c)) {
-            if (isRemoteMultiplayer() && net.role === 'guest') {
+            if (isRankedMode() && net.role === 'guest') {
               sendNet({
                 type: 'online_action',
                 action: { kind: 'move', fromR: sr, fromC: sc, toR: r, toC: c }
@@ -3022,7 +2838,7 @@
             return;
           }
           if (state.actionMode === 'attack' && reach.attacks.some((a) => a.r === r && a.c === c)) {
-            if (isRemoteMultiplayer() && net.role === 'guest') {
+            if (isRankedMode() && net.role === 'guest') {
               sendNet({
                 type: 'online_action',
                 action: { kind: 'attack', fromR: sr, fromC: sc, toR: r, toC: c }
@@ -3080,9 +2896,9 @@
 
     function onBuyCard() {
       if (!state || state.gameOver) return;
-      if (isRemoteMultiplayer() && state.turn !== myOnlineSide()) return;
+      if (isRankedMode() && state.turn !== myOnlineSide()) return;
 
-      if (isRemoteMultiplayer() && net.role === 'guest') {
+      if (isRankedMode() && net.role === 'guest') {
         sendNet({ type: 'online_action', action: { kind: 'buy' } });
         return;
       }
@@ -3107,16 +2923,16 @@
       player.hand.push(drawn);
       setStatus(`🃏 Comprou carta [${RANK_TEXT[drawn]}] por ♦3 e 0♣.`);
       renderAll();
-      if (isRemoteMultiplayer() && net.role === 'host') {
+      if (isRankedMode() && net.role === 'host') {
         syncOnlineState();
       }
     }
 
     function onEndTurn() {
       if (!state || state.gameOver) return;
-      if (isRemoteMultiplayer() && state.turn !== myOnlineSide()) return;
+      if (isRankedMode() && state.turn !== myOnlineSide()) return;
 
-      if (isRemoteMultiplayer() && net.role === 'guest') {
+      if (isRankedMode() && net.role === 'guest') {
         sendNet({ type: 'online_action', action: { kind: 'end_turn' } });
         return;
       }
@@ -3139,16 +2955,14 @@
         const bCard = maybeDrawEveryTwoOwnTurns('black');
         const bDrawMsg = bCard !== null ? ` · Pretas receberam +1 carta [${RANK_TEXT[bCard]}]` : '';
 
-        if (isRemoteMultiplayer()) {
+        if (isRankedMode()) {
           setStatus(`Turno das Pretas · ♣2${bDrawMsg}`);
           renderAll();
           if (net.role === 'host') syncOnlineState();
-        } else if (state.mode === 'bot') {
-          setStatus(`Turno da IA (Pretas) · ♣2${bDrawMsg}`);
-          renderAll();
-          setTimeout(runBotTurn, 450);
+          showRankedTurnIndicator('black', state.round);
         } else {
-          document.getElementById('pass-heading').textContent = 'Vez das Pretas (♚)';
+          document.getElementById('pass-heading').textContent = 'Passe o aparelho para Pretas (♚)';
+          document.getElementById('pass-desc').textContent = 'Passe o aparelho para o jogador das Pretas (♚) antes de revelar a mão.';
           setStatus(`Turno das Pretas · ♣2${bDrawMsg}`);
           renderAll();
           openModal('pass-modal');
@@ -3160,15 +2974,17 @@
         const wCard = maybeDrawEveryTwoOwnTurns('white');
         const wDrawMsg = wCard !== null ? ` · Brancas receberam +1 carta [${RANK_TEXT[wCard]}]` : '';
 
-        if (state.mode === 'pvp') {
-          document.getElementById('pass-heading').textContent = 'Vez das Brancas (♔)';
+        if (isRankedMode()) {
+          setStatus(`Rodada ${state.round} · Brancas · ♣2${wDrawMsg}`);
+          renderAll();
+          if (net.role === 'host') syncOnlineState();
+          showRankedTurnIndicator('white', state.round);
+        } else {
+          document.getElementById('pass-heading').textContent = 'Passe o aparelho para Brancas (♔)';
+          document.getElementById('pass-desc').textContent = 'Passe o aparelho para o jogador das Brancas (♔) antes de revelar a mão.';
           setStatus(`Rodada ${state.round} · Brancas · ♣2${wDrawMsg}`);
           renderAll();
           openModal('pass-modal');
-        } else {
-          setStatus(`Rodada ${state.round} · Brancas · ♣2${wDrawMsg}`);
-          renderAll();
-          if (isRemoteMultiplayer() && net.role === 'host') syncOnlineState();
         }
       }
     }
@@ -3190,13 +3006,13 @@
 
       const activePlayer = state.players[state.turn];
       const mySide = myOnlineSide();
-      const canActOnMyTurn = !state.gameOver && (!isRemoteMultiplayer() || state.turn === mySide);
+      const canActOnMyTurn = !state.gameOver && (!isRankedMode() || state.turn === mySide);
 
       document.getElementById('btn-draw-card').disabled =
         !canActOnMyTurn ||
         activePlayer.gold < 3 ||
         activePlayer.hand.length >= MAX_HAND_SIZE ||
-        (!isRemoteMultiplayer() && state.deck.length === 0 && state.discard.length === 0);
+        (!isRankedMode() && state.deck.length === 0 && state.discard.length === 0);
 
       const flopEl = document.getElementById('flop-container');
       flopEl.innerHTML = '';
@@ -3321,7 +3137,7 @@
       const combatModalOpen = document.getElementById('combat-modal').classList.contains('open');
       const combatPassOpen = document.getElementById('combat-pass-modal').classList.contains('open');
 
-      if (isRemoteMultiplayer()) {
+      if (isRankedMode()) {
         const myHand = state.players[mySide].hand;
         if (myHand.length === 0) {
           handBox.innerHTML = '<span class="text-xs text-zinc-500">Sem cartas na mão.</span>';
@@ -3334,7 +3150,7 @@
             }
           });
         }
-      } else if (state.mode === 'pvp' && (passTurnOpen || combatModalOpen || combatPassOpen)) {
+      } else if (state.mode === 'offline' && (passTurnOpen || combatModalOpen || combatPassOpen)) {
         if (activePlayer.hand.length === 0) {
           handBox.innerHTML = '<span class="text-xs text-zinc-500">Sem cartas na mão.</span>';
         } else {
@@ -3377,21 +3193,19 @@
     }
 
     function syncModeButtons() {
-      const pvpBtn = document.getElementById('btn-select-pvp');
-      const onlineBtn = document.getElementById('btn-select-online');
+      const offlineBtn = document.getElementById('btn-select-offline');
       const rankedBtn = document.getElementById('btn-select-ranked');
 
-      const activeCls = 'py-2.5 px-1.5 rounded-xl text-xs font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95';
-      const idleCls = 'py-2.5 px-1.5 rounded-xl text-xs font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95';
+      const activeCls = 'py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95';
+      const idleCls = 'py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95';
 
-      pvpBtn.className = selectedMode === 'pvp' ? activeCls : idleCls;
-      onlineBtn.className = selectedMode === 'online' ? activeCls : idleCls;
+      offlineBtn.className = selectedMode === 'offline' ? activeCls : idleCls;
       rankedBtn.className = selectedMode === 'ranked' ? activeCls : idleCls;
     }
 
     function openSurrenderModal() {
       if (!state || state.gameOver) return;
-      const sideToSurrender = isRemoteMultiplayer() ? myOnlineSide() : state.turn;
+      const sideToSurrender = isRankedMode() ? myOnlineSide() : state.turn;
       const label = sideToSurrender === 'white' ? 'Brancas (♔)' : 'Pretas (♚)';
       document.getElementById('surrender-desc').textContent =
         `Tem certeza de que ${label} deseja se render? O oponente vencerá a partida imediatamente.`;
@@ -3401,8 +3215,8 @@
     function confirmSurrender() {
       closeModal('surrender-modal');
       if (!state || state.gameOver) return;
-      const surrenderingSide = isRemoteMultiplayer() ? myOnlineSide() : state.turn;
-      if (isRemoteMultiplayer() && net.role === 'guest') {
+      const surrenderingSide = isRankedMode() ? myOnlineSide() : state.turn;
+      if (isRankedMode() && net.role === 'guest') {
         sendNet({ type: 'online_action', action: { kind: 'surrender' } });
         return;
       }
@@ -3412,16 +3226,9 @@
     }
 
     function bindEvents() {
-      document.getElementById('btn-select-pvp').addEventListener('click', () => {
-        selectedMode = selectedMode === 'bot' ? 'pvp' : 'bot';
-        const btn = document.getElementById('btn-select-pvp');
-        btn.textContent = selectedMode === 'bot' ? '🤖 IA Bot' : '🤖 IA Bot';
+      document.getElementById('btn-select-offline').addEventListener('click', () => {
+        selectedMode = 'offline';
         syncModeButtons();
-      });
-      document.getElementById('btn-select-online').addEventListener('click', () => {
-        selectedMode = 'online';
-        syncModeButtons();
-        openModal('online-modal');
       });
       document.getElementById('btn-select-ranked').addEventListener('click', () => {
         selectedMode = 'ranked';
@@ -3459,15 +3266,8 @@
       document.getElementById('btn-find-ranked').addEventListener('click', enterRankedQueue);
       document.getElementById('btn-cancel-ranked').addEventListener('click', leaveRankedQueue);
 
-      document.getElementById('btn-close-online').addEventListener('click', () => closeModal('online-modal'));
-      document.getElementById('btn-create-room').addEventListener('click', createOnlineRoom);
-      document.getElementById('btn-join-room').addEventListener('click', joinOnlineRoom);
-      document.getElementById('btn-copy-room').addEventListener('click', () => {
-        const code = document.getElementById('room-code-value').textContent;
-        if (code && navigator.clipboard) {
-          navigator.clipboard.writeText(code).catch(() => {});
-        }
-        setOnlineStatus('Código copiado: ' + code);
+      document.getElementById('btn-ranked-turn-ok').addEventListener('click', () => {
+        closeModal('ranked-turn-modal');
       });
 
       document.getElementById('btn-start-match').addEventListener('click', startMatch);
@@ -3519,51 +3319,6 @@
           fn();
         }
       });
-    }
-
-
-    function runBotTurn() {
-      try {
-        if (!state || state.gameOver || state.turn !== 'black' || state.mode !== 'bot') return;
-        if (hasOpenModal()) {
-          setTimeout(runBotTurn, 400);
-          return;
-        }
-        if (state.actions > 0) {
-          const candidates = [];
-          for (let r = 0; r < 8; r++) {
-            for (let c = 0; c < 8; c++) {
-              const p = state.board[r][c];
-              if (p && p.color === 'black' && !p.acted) {
-                const reach = getReachInfo(r, c);
-                for (const atk of reach.attacks) {
-                  candidates.push({ kind: 'attack', r, c, tr: atk.r, tc: atk.c, prio: 10 });
-                }
-                for (const mv of reach.moves) {
-                  const advanceScore = mv.r;
-                  candidates.push({ kind: 'move', r, c, tr: mv.r, tc: mv.c, prio: advanceScore });
-                }
-              }
-            }
-          }
-          if (candidates.length > 0) {
-            candidates.sort((a, b) => b.prio - a.prio);
-            const chosen = candidates[0];
-            if (chosen.kind === 'attack' && state.players.black.hand.length > 0) {
-              startCombat(chosen.r, chosen.c, chosen.tr, chosen.tc);
-              return;
-            }
-            if (chosen.kind === 'move') {
-              doMove(chosen.r, chosen.c, chosen.tr, chosen.tc);
-              setTimeout(runBotTurn, 400);
-              return;
-            }
-          }
-        }
-        onEndTurn();
-      } catch (err) {
-        reportError(err);
-      }
     }
 
     function initApp() {
