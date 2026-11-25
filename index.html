@@ -946,38 +946,61 @@
         pushRankedBoardSync();
       }
 
-      function resolveDirectCombat(atkR, atkC, defR, defC) {
-        const atk = state.board[atkR][atkC];
-        const def = state.board[defR][defC];
+      let pendingCombat = null;
+
+      function finalizeCombatWithCard(chosenHandIndex) {
+        if (!pendingCombat || !state) return;
+        const { atkR, atkC, defR, defC } = pendingCombat;
+        const atk = state.board[atkR] && state.board[atkR][atkC];
+        const def = state.board[defR] && state.board[defR][defC];
+        pendingCombat = null;
+        closeModal('combat-modal');
         if (!atk || !def) return;
 
         const aPlayer = state.players[atk.color];
         const dPlayer = state.players[def.color];
-        const aCard = aPlayer.hand.length > 0 ? aPlayer.hand.pop() : null;
-        const dCard = dPlayer.hand.length > 0 ? dPlayer.hand.pop() : null;
-        if (aCard !== null) state.discard.push(aCard);
-        if (dCard !== null) state.discard.push(dCard);
 
-        const aScore = (aCard || 0) + (atk.type === 'Q' ? 5 : atk.type === 'R' || atk.type === 'B' || atk.type === 'N' ? 3 : 1);
-        const dScore = (dCard || 0) + (def.type === 'Q' ? 5 : def.type === 'R' || def.type === 'B' || def.type === 'N' ? 3 : 1);
+        let aCard = null;
+        if (typeof chosenHandIndex === 'number' && chosenHandIndex >= 0 && chosenHandIndex < aPlayer.hand.length) {
+          aCard = aPlayer.hand.splice(chosenHandIndex, 1)[0];
+        } else if (aPlayer.hand.length > 0 && chosenHandIndex !== -1) {
+          aCard = aPlayer.hand.pop();
+        }
+        if (aCard !== null && aCard !== undefined) state.discard.push(aCard);
+
+        let dCard = null;
+        if (dPlayer.hand.length > 0) {
+          dCard = dPlayer.hand.pop();
+          if (dCard !== null && dCard !== undefined) state.discard.push(dCard);
+        }
+
+        const flopBonus = state.flop.reduce((acc, v) => acc + (v || 0), 0);
+        const aBase = atk.type === 'Q' ? 5 : (atk.type === 'R' || atk.type === 'B' || atk.type === 'N' ? 3 : 1);
+        const dBase = def.type === 'Q' ? 5 : (def.type === 'R' || def.type === 'B' || def.type === 'N' ? 3 : 1);
+        const aScore = (aCard || 0) + aBase + flopBonus;
+        const dScore = (dCard || 0) + dBase + flopBonus;
 
         if (aScore >= dScore) {
           def.hp -= 2;
           if (def.hp <= 0) {
             state.board[defR][defC] = atk;
             state.board[atkR][atkC] = null;
+            if (atk.type === 'Q') atk.hp = Math.min(atk.maxHp, atk.hp + 1);
             if (def.type === 'K') {
               endMatch(atk.color, 'O Rei adversário foi abatido!');
               return;
             }
             state.players[atk.color].gold += PIECE_DATA[def.type].reward || 0;
           }
-          setStatus(`⚔️ ${PIECE_DATA[atk.type].name} venceu o embate contra ${PIECE_DATA[def.type].name}!`);
+          setStatus(`⚔️ ${PIECE_DATA[atk.type].name} (${aScore}) venceu ${PIECE_DATA[def.type].name} (${dScore})!`);
         } else {
-          atk.hp -= (atk.type === 'R' ? 0 : 1);
-          def.hp -= (def.type === 'R' ? 0 : 1);
+          const atkDmg = atk.type === 'R' ? 0 : 1;
+          const defDmg = def.type === 'B' ? 2 : (def.type === 'R' ? 0 : 1);
+          atk.hp -= atkDmg;
+          def.hp -= defDmg;
           if (atk.hp <= 0) {
             state.board[atkR][atkC] = null;
+            if (def.type === 'Q') def.hp = Math.min(def.maxHp, def.hp + 1);
             if (atk.type === 'K') {
               endMatch(def.color, 'O Rei adversário foi abatido!');
               return;
@@ -985,21 +1008,93 @@
           }
           if (def.hp <= 0) {
             state.board[defR][defC] = null;
+            if (atk.type === 'Q') atk.hp = Math.min(atk.maxHp, atk.hp + 1);
             if (def.type === 'K') {
               endMatch(atk.color, 'O Rei adversário foi abatido!');
               return;
             }
           }
-          setStatus(`🛡️ Defesa de ${PIECE_DATA[def.type].name} resistiu ao ataque!`);
+          setStatus(`🛡️ Defesa de ${PIECE_DATA[def.type].name} (${dScore}) superou ${PIECE_DATA[atk.type].name} (${aScore})!`);
         }
 
         dealFlop();
         atk.acted = true;
         state.actions = Math.max(0, state.actions - 1);
         state.selected = null;
-        state.actionMode = null;
+        state.actionMode = 'move';
         renderAll();
         pushRankedBoardSync();
+      }
+
+      function resolveDirectCombat(atkR, atkC, defR, defC) {
+        const atk = state.board[atkR][atkC];
+        const def = state.board[defR][defC];
+        if (!atk || !def) return;
+
+        pendingCombat = { atkR, atkC, defR, defC };
+        const aInfo = PIECE_DATA[atk.type];
+        const dInfo = PIECE_DATA[def.type];
+        const aPlayer = state.players[atk.color];
+
+        document.getElementById('combat-heading').textContent = '⚔️ Escolha Sua Carta de Combate';
+        document.getElementById('combat-atk-glyph').textContent = atk.color === 'white' ? aInfo.white : aInfo.black;
+        document.getElementById('combat-atk-info').textContent = `${aInfo.name} (${atk.hp}♥)`;
+        document.getElementById('combat-atk-sub').textContent = `Mão: ${aPlayer.hand.length} carta(s)`;
+
+        document.getElementById('combat-def-glyph').textContent = def.color === 'white' ? dInfo.white : dInfo.black;
+        document.getElementById('combat-def-info').textContent = `${dInfo.name} (${def.hp}♥)`;
+        document.getElementById('combat-def-sub').textContent = `Cartas: ${state.players[def.color].hand.length}`;
+
+        const flopBox = document.getElementById('combat-flop');
+        flopBox.innerHTML = '';
+        state.flop.forEach((v) => {
+          const fc = document.createElement('div');
+          fc.className = 'xeker-card w-9 h-12 rounded-md text-xs';
+          fc.textContent = RANK_TEXT[v];
+          flopBox.appendChild(fc);
+        });
+
+        const bodyBox = document.getElementById('combat-body');
+        bodyBox.innerHTML = '<div class="text-[11px] text-zinc-300 text-center">Selecione uma carta da sua mão para somar ao combate:</div>';
+
+        const cardsRow = document.createElement('div');
+        cardsRow.className = 'flex flex-wrap justify-center gap-2 py-1';
+        if (aPlayer.hand.length === 0) {
+          cardsRow.innerHTML = '<span class="text-xs text-zinc-400">Você não possui cartas na mão.</span>';
+        } else {
+          aPlayer.hand.forEach((val, idx) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'xeker-card w-12 h-16 rounded-lg text-base active:scale-95';
+            btn.textContent = RANK_TEXT[val];
+            btn.addEventListener('click', () => finalizeCombatWithCard(idx));
+            cardsRow.appendChild(btn);
+          });
+        }
+        bodyBox.appendChild(cardsRow);
+
+        const actionsRow = document.createElement('div');
+        actionsRow.className = 'flex gap-2 pt-2';
+        const noCardBtn = document.createElement('button');
+        noCardBtn.type = 'button';
+        noCardBtn.className = 'flex-1 py-2 rounded-xl bg-[#d4af37]/20 border border-[#d4af37]/60 text-[#f3d678] font-bold text-xs active:scale-95';
+        noCardBtn.textContent = aPlayer.hand.length > 0 ? 'Jogar Sem Carta' : 'Confirmar Combate';
+        noCardBtn.addEventListener('click', () => finalizeCombatWithCard(-1));
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'px-3 py-2 rounded-xl bg-[#161820] border border-white/15 text-zinc-300 font-bold text-xs active:scale-95';
+        cancelBtn.textContent = 'Cancelar';
+        cancelBtn.addEventListener('click', () => {
+          pendingCombat = null;
+          closeModal('combat-modal');
+        });
+
+        actionsRow.appendChild(noCardBtn);
+        actionsRow.appendChild(cancelBtn);
+        bodyBox.appendChild(actionsRow);
+
+        openModal('combat-modal');
       }
 
       function executeActiveSkill(sr, sc, tr, tc) {
@@ -1114,6 +1209,11 @@
         }
 
         const tapped = state.board[r][c];
+        if (tapped) {
+          state.inspectedCoord = { r, c };
+        } else {
+          state.inspectedCoord = null;
+        }
         if (tapped && tapped.color === state.turn && !tapped.acted) {
           state.selected = { r, c };
           state.actionMode = 'move';
@@ -1316,6 +1416,30 @@
             state.actionMode = state.actionMode === 'skill' ? 'move' : 'skill';
             renderAll();
           });
+        }
+
+        const infoCard = document.getElementById('piece-info-card');
+        if (infoCard) {
+          let inspectedPiece = null;
+          if (state.selected && state.board[state.selected.r] && state.board[state.selected.r][state.selected.c]) {
+            inspectedPiece = state.board[state.selected.r][state.selected.c];
+          } else if (state.inspectedCoord && state.board[state.inspectedCoord.r] && state.board[state.inspectedCoord.r][state.inspectedCoord.c]) {
+            inspectedPiece = state.board[state.inspectedCoord.r][state.inspectedCoord.c];
+          }
+          if (!inspectedPiece) {
+            infoCard.innerHTML = '<span class="text-zinc-400">Toque em uma peça para ver suas habilidades.</span>';
+          } else {
+            const pInfo = PIECE_DATA[inspectedPiece.type];
+            const sideLabel = inspectedPiece.color === 'white' ? 'Brancas' : 'Pretas';
+            infoCard.innerHTML = `
+              <div class="flex items-center justify-between font-bold text-[#f3d678]">
+                <span>${inspectedPiece.color === 'white' ? pInfo.white : pInfo.black} ${pInfo.name} (${sideLabel}) · ${Math.max(0, inspectedPiece.hp)}/${pInfo.maxHp || pInfo.hp}♥</span>
+                <span class="text-[9px] text-amber-200/80">${pInfo.reachLabel}</span>
+              </div>
+              <div class="text-[10px] text-zinc-200 truncate"><strong>Ativa (1♦):</strong> ${pInfo.activeText}</div>
+              <div class="text-[10px] text-zinc-400 truncate"><strong>Passiva:</strong> ${pInfo.passiveText}</div>
+            `;
+          }
         }
 
         const handBox = document.getElementById('hand-container');
