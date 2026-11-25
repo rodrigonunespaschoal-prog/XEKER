@@ -315,8 +315,11 @@
       </div>
     </section>
 
-    <!-- Centro: Tabuleiro 8x8 -->
-    <main class="flex-1 min-h-0 px-1.5 py-0.5 flex items-center justify-center">
+    <!-- Centro: Banner de Vez em Destaque + Tabuleiro 8x8 -->
+    <main class="flex-1 min-h-0 px-1.5 py-0.5 flex flex-col items-center justify-center gap-1">
+      <div id="turn-banner" class="w-full max-w-[380px] px-3 py-1 rounded-xl bg-gradient-to-r from-[#f3d678]/35 via-[#d4af37]/30 to-[#f3d678]/35 border-2 border-[#fff1b8] text-center text-xs sm:text-sm font-black tracking-wide text-[#fff1b8] shadow-[0_0_20px_rgba(243,214,120,0.45)]">
+        Vez do jogador —
+      </div>
       <div id="board-grid" class="xeker-board"></div>
     </main>
 
@@ -437,9 +440,12 @@
   <!-- MODAL MODO RANKEADO (FIREBASE AUTH + MATCHMAKING POR ELO) -->
   <div id="ranked-modal" class="xeker-modal">
     <div class="w-full max-w-[380px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl space-y-3 text-xs">
-      <div class="flex items-center justify-between pb-2 border-b border-white/10">
-        <h2 class="font-display font-bold text-sm text-[#f3d678]">🏆 Modo Rankeado (Elo)</h2>
-        <button type="button" id="btn-close-ranked" class="px-2.5 py-1 rounded-lg bg-[#161820] border border-white/15 font-bold text-zinc-200 active:scale-95">✕</button>
+      <div class="flex items-center justify-between gap-2 pb-2 border-b border-white/10">
+        <div class="flex items-center gap-2 min-w-0">
+          <h2 class="font-display font-bold text-sm text-[#f3d678] truncate">🏆 Modo Rankeado (Elo)</h2>
+          <span id="ranked-online-counter" class="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-[10px] font-bold text-emerald-300 shrink-0">● Online: —</span>
+        </div>
+        <button type="button" id="btn-close-ranked" class="px-2.5 py-1 rounded-lg bg-[#161820] border border-white/15 font-bold text-zinc-200 active:scale-95 shrink-0">✕</button>
       </div>
 
       <!-- Desconectado -->
@@ -468,8 +474,9 @@
           Buscar Partida Rankeada
         </button>
 
-        <button type="button" id="btn-cancel-ranked" class="hidden w-full py-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/50 text-[#f3d678] font-bold text-sm active:scale-95">
-          Cancelar Busca...
+        <button type="button" id="btn-cancel-ranked" class="hidden w-full py-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/50 text-[#f3d678] font-bold text-sm active:scale-95 flex items-center justify-center gap-2">
+          <span>Cancelar Busca</span>
+          <span id="ranked-search-clock" class="font-mono text-xs text-amber-200">00:00</span>
         </button>
       </div>
 
@@ -484,7 +491,7 @@
       <div id="ranked-turn-side-badge" class="inline-block px-3 py-1 rounded-full bg-[#d4af37]/15 border border-[#d4af37]/50 text-[11px] font-extrabold text-[#f3d678]">
         Você joga de Brancas (♔)
       </div>
-      <h2 id="ranked-turn-heading" class="font-display font-bold text-lg text-white">Vez das Brancas (♔)</h2>
+      <h2 id="ranked-turn-heading" class="font-display font-extrabold text-xl text-[#fff1b8] drop-shadow-[0_0_12px_rgba(243,214,120,0.45)]">Vez do jogador —</h2>
       <p id="ranked-turn-desc" class="text-xs text-zinc-300 leading-relaxed"></p>
       <button type="button" id="btn-ranked-turn-ok" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold text-sm active:scale-95">
         Entendido
@@ -620,6 +627,7 @@
       query,
       where,
       getDocs,
+      getCountFromServer,
       onSnapshot,
       serverTimestamp
     } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
@@ -877,9 +885,13 @@
       matchId: null,
       mySide: null,
       oppProfile: null,
+      matchNames: { white: null, black: null },
       matchUnsub: null,
       queueUnsub: null,
       searchInterval: null,
+      searchClockInterval: null,
+      searchSeconds: 0,
+      onlineCountTimer: null,
       eloApplied: false,
       lastActionSeq: 0,
       lastAtkCardSeq: 0,
@@ -887,6 +899,92 @@
       lastSummaryAckSeq: 0,
       lastAnnouncedTurnKey: null
     };
+
+    function getPlayerDisplayName(side) {
+      if (isRankedMode()) {
+        if (ranked.matchNames && ranked.matchNames[side]) {
+          return ranked.matchNames[side];
+        }
+        if (side === myOnlineSide() && ranked.profile && ranked.profile.name) {
+          return ranked.profile.name;
+        }
+        if (side !== myOnlineSide() && ranked.oppProfile && ranked.oppProfile.name) {
+          return ranked.oppProfile.name;
+        }
+      }
+      return side === 'white' ? 'Brancas' : 'Pretas';
+    }
+
+    function updateTurnBanner() {
+      const banner = document.getElementById('turn-banner');
+      if (!banner) return;
+      if (!state || state.gameOver) {
+        banner.textContent = 'Vez do jogador —';
+        return;
+      }
+      const pName = getPlayerDisplayName(state.turn);
+      const isMyTurn = !isRankedMode() || state.turn === myOnlineSide();
+      banner.textContent = `Vez do jogador ${pName}`;
+      banner.className = isMyTurn
+        ? 'w-full max-w-[380px] px-3 py-1 rounded-xl bg-gradient-to-r from-[#f3d678]/35 via-[#d4af37]/30 to-[#f3d678]/35 border-2 border-[#fff1b8] text-center text-xs sm:text-sm font-black tracking-wide text-[#fff1b8] shadow-[0_0_20px_rgba(243,214,120,0.45)]'
+        : 'w-full max-w-[380px] px-3 py-1 rounded-xl bg-[#161820] border border-[#d4af37]/40 text-center text-xs font-bold tracking-wide text-zinc-300';
+    }
+
+    function formatSearchClock(sec) {
+      const mm = String(Math.floor(sec / 60)).padStart(2, '0');
+      const ss = String(sec % 60).padStart(2, '0');
+      return `${mm}:${ss}`;
+    }
+
+    function startSearchClock() {
+      stopSearchClock();
+      ranked.searchSeconds = 0;
+      const clockEl = document.getElementById('ranked-search-clock');
+      if (clockEl) clockEl.textContent = '00:00';
+      ranked.searchClockInterval = setInterval(() => {
+        ranked.searchSeconds += 1;
+        const el = document.getElementById('ranked-search-clock');
+        if (el) el.textContent = formatSearchClock(ranked.searchSeconds);
+      }, 1000);
+    }
+
+    function stopSearchClock() {
+      if (ranked.searchClockInterval) {
+        clearInterval(ranked.searchClockInterval);
+        ranked.searchClockInterval = null;
+      }
+      ranked.searchSeconds = 0;
+      const clockEl = document.getElementById('ranked-search-clock');
+      if (clockEl) clockEl.textContent = '00:00';
+    }
+
+    async function refreshRankedOnlineCount() {
+      const badge = document.getElementById('ranked-online-counter');
+      if (!badge) return;
+      try {
+        const usersSnap = await getCountFromServer(collection(db, 'users'));
+        const activeMatchesSnap = await getCountFromServer(
+          query(collection(db, 'matches'), where('status', '==', 'active'))
+        );
+        const total = (usersSnap.data().count || 0) + (activeMatchesSnap.data().count || 0) * 2;
+        badge.textContent = `● Online: ${total}`;
+      } catch (_) {
+        badge.textContent = '● Online: —';
+      }
+    }
+
+    function startRankedOnlineCounter() {
+      refreshRankedOnlineCount();
+      if (ranked.onlineCountTimer) clearInterval(ranked.onlineCountTimer);
+      ranked.onlineCountTimer = setInterval(refreshRankedOnlineCount, 10000);
+    }
+
+    function stopRankedOnlineCounter() {
+      if (ranked.onlineCountTimer) {
+        clearInterval(ranked.onlineCountTimer);
+        ranked.onlineCountTimer = null;
+      }
+    }
 
     function isRankedMode() {
       return Boolean(state && state.mode === 'ranked');
@@ -918,17 +1016,17 @@
       if (ranked.lastAnnouncedTurnKey === key) return;
       ranked.lastAnnouncedTurnKey = key;
 
+      const turnPlayerName = getPlayerDisplayName(turnSide);
       const mySide = myOnlineSide();
       const isMyTurn = turnSide === mySide;
-      const turnColorLabel = turnSide === 'white' ? 'Brancas (♔)' : 'Pretas (♚)';
       const myColorLabel = mySide === 'white' ? 'Brancas (♔)' : 'Pretas (♚)';
 
       document.getElementById('ranked-turn-icon').textContent = turnSide === 'white' ? '♔' : '♚';
       document.getElementById('ranked-turn-side-badge').textContent = `Você é das ${myColorLabel}`;
-      document.getElementById('ranked-turn-heading').textContent = `Vez das ${turnColorLabel}`;
+      document.getElementById('ranked-turn-heading').textContent = `Vez do jogador ${turnPlayerName}`;
       document.getElementById('ranked-turn-desc').textContent = isMyTurn
         ? `É a sua vez de jogar (Rodada ${roundNum || 1}). Você está com as ${myColorLabel}.`
-        : `Aguardando a vez das ${turnColorLabel} (Rodada ${roundNum || 1}). Você é das ${myColorLabel}.`;
+        : `Aguardando a vez do jogador ${turnPlayerName} (Rodada ${roundNum || 1}). Você é das ${myColorLabel}.`;
 
       openModal('ranked-turn-modal');
     }
@@ -986,9 +1084,6 @@
       });
     }
 
-    /* ============================================================
-       FIREBASE AUTH + RANKED MATCHMAKING & FIRESTORE BRIDGE
-       ============================================================ */
     async function sendRankedPayload(payload) {
       if (!ranked.matchId || !payload || !payload.type) return;
       const matchRef = doc(db, 'matches', ranked.matchId);
@@ -1083,6 +1178,7 @@
     });
 
     function cleanupRankedQueue() {
+      stopSearchClock();
       if (ranked.queueUnsub) {
         ranked.queueUnsub();
         ranked.queueUnsub = null;
@@ -1113,6 +1209,7 @@
       hideRankedFeedback();
       document.getElementById('btn-find-ranked').classList.add('hidden');
       document.getElementById('btn-cancel-ranked').classList.remove('hidden');
+      startSearchClock();
       showRankedFeedback('Buscando oponente com Elo próximo...');
 
       const myUid = ranked.user.uid;
@@ -1234,6 +1331,10 @@
 
       const amWhite = mData.whiteUid === ranked.user.uid;
       ranked.mySide = amWhite ? 'white' : 'black';
+      ranked.matchNames = {
+        white: mData.whiteName || 'Brancas',
+        black: mData.blackName || 'Pretas'
+      };
       ranked.oppProfile = amWhite
         ? { name: mData.blackName, elo: mData.blackEloBefore }
         : { name: mData.whiteName, elo: mData.whiteEloBefore };
@@ -1604,7 +1705,26 @@
         onBuyCard();
       } else if (action.kind === 'end_turn') {
         state.turn = 'black';
-        onEndTurn();
+        state.selected = null;
+        state.actionMode = null;
+        state.skillPhase = null;
+        state.copiedSkill = null;
+        for (let r = 0; r < 8; r++) {
+          for (let c = 0; c < 8; c++) {
+            const p = state.board[r][c];
+            if (p) p.acted = false;
+          }
+        }
+        state.turn = 'white';
+        state.round += 1;
+        state.actions = 2;
+        const wCard = maybeDrawEveryTwoOwnTurns('white');
+        const wDrawMsg = wCard !== null ? ` · Brancas receberam +1 carta [${RANK_TEXT[wCard]}]` : '';
+        const whitePlayerName = getPlayerDisplayName('white');
+        setStatus(`Rodada ${state.round} · Vez do jogador ${whitePlayerName} · ♣2${wDrawMsg}`);
+        renderAll();
+        syncOnlineState();
+        showRankedTurnIndicator('white', state.round);
       }
     }
 
@@ -3052,7 +3172,7 @@
         state.actionMode = null;
         state.skillPhase = null;
         state.copiedSkill = null;
-        setStatus('Passando a vez para as Brancas...');
+        setStatus(`Passando a vez para o jogador ${getPlayerDisplayName('white')}...`);
         renderAll();
         sendNet({ type: 'online_action', action: { kind: 'end_turn' } });
         return;
@@ -3075,16 +3195,17 @@
         state.actions = 2;
         const bCard = maybeDrawEveryTwoOwnTurns('black');
         const bDrawMsg = bCard !== null ? ` · Pretas receberam +1 carta [${RANK_TEXT[bCard]}]` : '';
+        const blackPlayerName = getPlayerDisplayName('black');
 
         if (isRankedMode()) {
-          setStatus(`Turno das Pretas · ♣2${bDrawMsg}`);
+          setStatus(`Vez do jogador ${blackPlayerName} · ♣2${bDrawMsg}`);
           renderAll();
           if (net.role === 'host') syncOnlineState();
           showRankedTurnIndicator('black', state.round);
         } else {
-          document.getElementById('pass-heading').textContent = 'Passe o aparelho para Pretas (♚)';
-          document.getElementById('pass-desc').textContent = 'Passe o aparelho para o jogador das Pretas (♚) antes de revelar a mão.';
-          setStatus(`Turno das Pretas · ♣2${bDrawMsg}`);
+          document.getElementById('pass-heading').textContent = `Passe o aparelho para ${blackPlayerName}`;
+          document.getElementById('pass-desc').textContent = `Passe o aparelho para o jogador ${blackPlayerName} antes de revelar a mão.`;
+          setStatus(`Vez do jogador ${blackPlayerName} · ♣2${bDrawMsg}`);
           renderAll();
           openModal('pass-modal');
         }
@@ -3094,16 +3215,17 @@
         state.actions = 2;
         const wCard = maybeDrawEveryTwoOwnTurns('white');
         const wDrawMsg = wCard !== null ? ` · Brancas receberam +1 carta [${RANK_TEXT[wCard]}]` : '';
+        const whitePlayerName = getPlayerDisplayName('white');
 
         if (isRankedMode()) {
-          setStatus(`Rodada ${state.round} · Brancas · ♣2${wDrawMsg}`);
+          setStatus(`Rodada ${state.round} · Vez do jogador ${whitePlayerName} · ♣2${wDrawMsg}`);
           renderAll();
           if (net.role === 'host') syncOnlineState();
           showRankedTurnIndicator('white', state.round);
         } else {
-          document.getElementById('pass-heading').textContent = 'Passe o aparelho para Brancas (♔)';
-          document.getElementById('pass-desc').textContent = 'Passe o aparelho para o jogador das Brancas (♔) antes de revelar a mão.';
-          setStatus(`Rodada ${state.round} · Brancas · ♣2${wDrawMsg}`);
+          document.getElementById('pass-heading').textContent = `Passe o aparelho para ${whitePlayerName}`;
+          document.getElementById('pass-desc').textContent = `Passe o aparelho para o jogador ${whitePlayerName} antes de revelar a mão.`;
+          setStatus(`Rodada ${state.round} · Vez do jogador ${whitePlayerName} · ♣2${wDrawMsg}`);
           renderAll();
           openModal('pass-modal');
         }
@@ -3309,6 +3431,8 @@
           });
         }
       }
+
+      updateTurnBanner();
     }
 
     function renderRulebookPage() {
@@ -3374,11 +3498,13 @@
         selectedMode = 'ranked';
         syncModeButtons();
         refreshRankedUI();
+        startRankedOnlineCounter();
         openModal('ranked-modal');
       });
 
       document.getElementById('btn-close-ranked').addEventListener('click', () => {
         leaveRankedQueue();
+        stopRankedOnlineCounter();
         closeModal('ranked-modal');
       });
       document.getElementById('btn-google-login').addEventListener('click', async () => {
