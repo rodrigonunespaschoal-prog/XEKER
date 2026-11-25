@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>XEKER — Xadrez &amp; Pôquer Tático</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -338,6 +337,9 @@
           <span class="text-[11px] text-zinc-400">Toque em uma peça aliada</span>
         </div>
 
+        <button type="button" id="btn-surrender" class="px-2.5 py-2 rounded-xl bg-red-950/80 border border-red-400/50 text-red-200 text-xs font-bold shadow active:scale-95" title="Desistir da partida">
+          Desistir
+        </button>
         <button type="button" id="btn-end-turn" class="px-3 py-2 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] text-xs font-extrabold shadow active:scale-95">
           Fim Turno
         </button>
@@ -425,12 +427,9 @@
         <button type="button" id="btn-close-online" class="px-2.5 py-1 rounded-lg bg-[#161820] border border-white/15 font-bold text-zinc-200 active:scale-95">✕</button>
       </div>
 
-      <div class="grid grid-cols-2 gap-1.5">
+      <div class="grid grid-cols-1">
         <button type="button" id="tab-lobby-ranked" class="py-2 px-2 rounded-xl text-[11px] font-extrabold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95">
           🏆 Ranqueada (Google)
-        </button>
-        <button type="button" id="tab-lobby-casual" class="py-2 px-2 rounded-xl text-[11px] font-bold border bg-black border-[#d4af37]/35 text-[#e7c252]/85 active:scale-95">
-          🔗 Sala por Código
         </button>
       </div>
 
@@ -479,33 +478,6 @@
         </div>
       </div>
 
-      <div id="lobby-casual-panel" class="hidden space-y-2.5">
-        <div class="p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/25 space-y-2">
-          <div class="font-bold text-[#f3d678]">Criar Sala (Joga de Brancas ♔)</div>
-          <button type="button" id="btn-create-room" class="w-full py-2 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold active:scale-95">
-            Gerar Código de Sala
-          </button>
-          <div id="room-code-box" class="hidden flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg bg-black/60 border border-[#d4af37]/40">
-            <div>
-              <div class="text-[10px] text-zinc-400">Código da sala:</div>
-              <div id="room-code-value" class="font-mono font-extrabold text-sm tracking-widest text-[#fff1b8]"></div>
-            </div>
-            <button type="button" id="btn-copy-room" class="px-2.5 py-1 rounded-lg bg-[#d4af37]/20 border border-[#d4af37]/50 text-[#f3d678] font-bold active:scale-95">
-              Copiar
-            </button>
-          </div>
-        </div>
-
-        <div class="p-2.5 rounded-xl bg-[#161820] border border-white/10 space-y-2">
-          <div class="font-bold text-zinc-200">Entrar em Sala (Joga de Pretas ♚)</div>
-          <div class="flex gap-1.5">
-            <input id="input-join-code" type="text" maxlength="16" placeholder="Código da sala" class="flex-1 px-2.5 py-2 rounded-xl bg-black/60 border border-white/15 text-white font-mono uppercase text-xs focus:outline-none focus:border-[#d4af37]" />
-            <button type="button" id="btn-join-room" class="px-3 py-2 rounded-xl bg-[#d4af37]/25 border border-[#f3d678] text-[#fff1b8] font-bold active:scale-95">
-              Entrar
-            </button>
-          </div>
-        </div>
-      </div>
 
       <div id="online-status-box" class="px-2.5 py-2 rounded-xl bg-black/50 border border-white/10 text-[11px] text-amber-200 min-h-[36px] flex items-center gap-2">
         <img id="auth-loading-gif" src="https://i.gifer.com/ZZ5H.gif" alt="Carregando" class="w-4 h-4 shrink-0 rounded-full" />
@@ -759,7 +731,8 @@
       function canControlCurrentTurn() {
         if (!state || state.gameOver) return false;
         if (isRankedMatch()) {
-          return state.turn === ranked.mySide;
+          const effectiveSide = ranked.mySide || state.turn;
+          return state.turn === effectiveSide;
         }
         if (state.mode === 'bot') return state.turn === 'white';
         return true;
@@ -767,7 +740,6 @@
 
       async function pushRankedBoardSync() {
         if (!isRankedMatch() || !ranked.db) return;
-        if (state.turn !== ranked.mySide && !state.gameOver) return;
         try {
           await ranked.db.collection('matches').doc(state.rankedMatchId).update({
             turn: state.turn,
@@ -778,6 +750,8 @@
             flop: state.flop,
             whiteGold: state.players.white.gold,
             blackGold: state.players.black.gold,
+            whiteHand: state.players.white.hand,
+            blackHand: state.players.black.hand,
             whiteHandCount: state.players.white.hand.length,
             blackHandCount: state.players.black.hand.length,
             statusText: document.getElementById('status-bar').textContent,
@@ -982,21 +956,113 @@
         pushRankedBoardSync();
       }
 
+      function executeActiveSkill(sr, sc, tr, tc) {
+        const piece = state.board[sr][sc];
+        const player = state.players[piece.color];
+        if (!piece || player.gold < 1) return;
+
+        const reach = getReachInfo(sr, sc);
+        let used = false;
+
+        if (piece.type === 'P') {
+          reach.enemies.forEach((en) => {
+            en.piece.hp -= 1;
+            if (en.piece.hp <= 0) {
+              if (en.piece.type === 'K') endMatch(piece.color, 'O Rei adversário foi abatido!');
+              else player.gold += PIECE_DATA[en.piece.type].reward || 0;
+              state.board[en.r][en.c] = null;
+            }
+          });
+          state.board[sr][sc] = null;
+          used = true;
+          setStatus('💥 Peão sacrificou-se causando 1♥ aos inimigos no alcance!');
+        } else if (piece.type === 'R') {
+          const target = state.board[tr][tc];
+          if (target) {
+            state.board[tr][tc] = piece;
+            state.board[sr][sc] = target;
+            piece.acted = true;
+            used = true;
+            setStatus('🔁 Torre trocou de posição!');
+          }
+        } else if (piece.type === 'B') {
+          reach.allies.forEach((al) => {
+            al.piece.hp = Math.min(al.piece.maxHp, al.piece.hp + 1);
+          });
+          piece.hp = Math.min(piece.maxHp, piece.hp + 1);
+          piece.acted = true;
+          used = true;
+          setStatus('✨ Bispo curou aliados em +1♥!');
+        } else if (piece.type === 'Q') {
+          const copyTarget = state.board[tr][tc];
+          if (copyTarget && copyTarget.type !== 'Q') {
+            const origType = piece.type;
+            piece.type = copyTarget.type;
+            executeActiveSkill(sr, sc, tr, tc);
+            piece.type = origType;
+            return;
+          }
+        } else if (piece.type === 'K' || piece.type === 'N') {
+          const enemy = state.board[tr][tc];
+          if (enemy && enemy.color !== piece.color) {
+            const dmg = piece.type === 'K' ? 2 : 1;
+            enemy.hp -= dmg;
+            if (enemy.hp <= 0) {
+              if (enemy.type === 'K') {
+                endMatch(piece.color, 'O Rei adversário foi abatido!');
+                return;
+              }
+              player.gold += PIECE_DATA[enemy.type].reward || 0;
+              state.board[tr][tc] = null;
+            }
+            piece.acted = true;
+            used = true;
+            setStatus(`⚡ ${PIECE_DATA[piece.type].name} causou ${dmg}♥ de dano direto!`);
+          }
+        }
+
+        if (used) {
+          player.gold -= 1;
+          state.selected = null;
+          state.actionMode = 'move';
+          renderAll();
+          pushRankedBoardSync();
+        }
+      }
+
+      function onSurrender() {
+        if (!state || state.gameOver) return;
+        const loserSide = isRankedMatch() ? (ranked.mySide || state.turn) : state.turn;
+        const winnerSide = loserSide === 'white' ? 'black' : 'white';
+        endMatch(winnerSide, `${loserSide === 'white' ? '♔ Brancas' : '♚ Pretas'} desistiram da partida.`);
+      }
+
       function onTileTap(r, c) {
         if (!canControlCurrentTurn()) return;
 
-        if (state.selected && state.actionMode) {
+        if (state.selected) {
           const { r: sr, c: sc } = state.selected;
           const sel = state.board[sr][sc];
           if (sel && sel.color === state.turn && !sel.acted && state.actions > 0) {
             const reach = getReachInfo(sr, sc);
-            if (state.actionMode === 'move' && reach.moves.some((m) => m.r === r && m.c === c)) {
+            const mode = state.actionMode || 'move';
+            if (mode === 'move' && reach.moves.some((m) => m.r === r && m.c === c)) {
               doMove(sr, sc, r, c);
               return;
             }
-            if (state.actionMode === 'attack' && reach.attacks.some((a) => a.r === r && a.c === c)) {
+            if (mode === 'attack' && reach.attacks.some((a) => a.r === r && a.c === c)) {
               resolveDirectCombat(sr, sc, r, c);
               return;
+            }
+            if (mode === 'skill') {
+              const isTarget =
+                reach.enemies.some((e) => e.r === r && e.c === c) ||
+                reach.allies.some((a) => a.r === r && a.c === c) ||
+                (sel.type === 'P' && (r !== sr || c !== sc));
+              if (isTarget) {
+                executeActiveSkill(sr, sc, r, c);
+                return;
+              }
             }
           }
         }
@@ -1004,12 +1070,12 @@
         const tapped = state.board[r][c];
         if (tapped && tapped.color === state.turn && !tapped.acted) {
           state.selected = { r, c };
-          state.actionMode = null;
+          state.actionMode = 'move';
           renderAll();
           return;
         }
         state.selected = null;
-        state.actionMode = null;
+        state.actionMode = 'move';
         renderAll();
       }
 
@@ -1136,11 +1202,13 @@
           flopEl.appendChild(d);
         });
 
-        let moves = [], attacks = [];
+        let moves = [], attacks = [], skills = [];
         if (state.selected) {
           const reach = getReachInfo(state.selected.r, state.selected.c);
-          if (state.actionMode === 'move') moves = reach.moves;
-          if (state.actionMode === 'attack') attacks = reach.attacks;
+          const mode = state.actionMode || 'move';
+          if (mode === 'move') moves = reach.moves;
+          if (mode === 'attack') attacks = reach.attacks;
+          if (mode === 'skill') skills = [...reach.enemies, ...reach.allies];
         }
 
         const boardEl = document.getElementById('board-grid');
@@ -1152,6 +1220,7 @@
             if (state.selected && state.selected.r === r && state.selected.c === c) tile.classList.add('selected');
             if (moves.some((m) => m.r === r && m.c === c)) tile.classList.add('can-move');
             if (attacks.some((a) => a.r === r && a.c === c)) tile.classList.add('can-attack');
+            if (skills.some((s) => s.r === r && s.c === c)) tile.classList.add('can-skill');
 
             const piece = state.board[r][c];
             if (piece) {
@@ -1180,19 +1249,25 @@
           const p = state.board[state.selected.r][state.selected.c];
           const reach = getReachInfo(state.selected.r, state.selected.c);
           const canDo = canControlCurrentTurn() && state.actions > 0 && p.color === state.turn && !p.acted;
+          const canSkill = canDo && state.players[p.color].gold >= 1 && (reach.enemies.length > 0 || reach.allies.length > 0 || p.type === 'P');
+          const activeMode = state.actionMode || 'move';
           menuBox.innerHTML = `
             <span class="text-xs font-bold text-[#f3d678] truncate pr-1">${PIECE_DATA[p.type].name}</span>
             <div class="flex items-center gap-1">
-              <button type="button" id="act-move" class="px-2 py-1 rounded-lg text-[11px] font-bold border ${state.actionMode === 'move' ? 'bg-emerald-500/25 border-emerald-400 text-emerald-200' : 'bg-[#111217] border-white/15 text-zinc-200'} disabled:opacity-35" ${canDo && reach.moves.length > 0 ? '' : 'disabled'}>Mover</button>
-              <button type="button" id="act-attack" class="px-2 py-1 rounded-lg text-[11px] font-bold border ${state.actionMode === 'attack' ? 'bg-red-500/25 border-red-400 text-red-200' : 'bg-[#111217] border-white/15 text-zinc-200'} disabled:opacity-35" ${canDo && reach.attacks.length > 0 ? '' : 'disabled'}>Atacar</button>
+              <button type="button" id="act-attack" class="px-2 py-1 rounded-lg text-[11px] font-bold border ${activeMode === 'attack' ? 'bg-red-500/25 border-red-400 text-red-200' : 'bg-[#111217] border-white/15 text-zinc-200'} disabled:opacity-35" ${canDo && reach.attacks.length > 0 ? '' : 'disabled'}>Atacar</button>
+              <button type="button" id="act-skill" class="px-2 py-1 rounded-lg text-[11px] font-bold border ${activeMode === 'skill' ? 'bg-blue-500/25 border-blue-400 text-blue-200' : 'bg-[#111217] border-white/15 text-zinc-200'} disabled:opacity-35" ${canSkill ? '' : 'disabled'}>Habilidade 1♦</button>
             </div>
           `;
-          document.getElementById('act-move').addEventListener('click', () => {
-            state.actionMode = state.actionMode === 'move' ? null : 'move';
+          document.getElementById('act-attack').addEventListener('click', () => {
+            state.actionMode = state.actionMode === 'attack' ? 'move' : 'attack';
             renderAll();
           });
-          document.getElementById('act-attack').addEventListener('click', () => {
-            state.actionMode = state.actionMode === 'attack' ? null : 'attack';
+          document.getElementById('act-skill').addEventListener('click', () => {
+            if (p.type === 'P' && reach.enemies.length > 0) {
+              executeActiveSkill(state.selected.r, state.selected.c, state.selected.r, state.selected.c);
+              return;
+            }
+            state.actionMode = state.actionMode === 'skill' ? 'move' : 'skill';
             renderAll();
           });
         }
@@ -1583,18 +1658,9 @@
 
       function switchLobbyTab(tab) {
         const rTab = document.getElementById('tab-lobby-ranked');
-        const cTab = document.getElementById('tab-lobby-casual');
         const rPan = document.getElementById('lobby-ranked-panel');
-        const cPan = document.getElementById('lobby-casual-panel');
-        const act = 'py-2 px-2 rounded-xl text-[11px] font-extrabold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95';
-        const idle = 'py-2 px-2 rounded-xl text-[11px] font-bold border bg-black border-[#d4af37]/35 text-[#e7c252]/85 active:scale-95';
-        if (tab === 'casual') {
-          cTab.className = act; rTab.className = idle;
-          cPan.classList.remove('hidden'); rPan.classList.add('hidden');
-        } else {
-          rTab.className = act; cTab.className = idle;
-          rPan.classList.remove('hidden'); cPan.classList.add('hidden');
-        }
+        if (rTab) rTab.className = 'py-2 px-2 rounded-xl text-[11px] font-extrabold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95';
+        if (rPan) rPan.classList.remove('hidden');
       }
 
       function renderRulebook() {
@@ -1625,29 +1691,12 @@
 
         document.getElementById('btn-close-online').addEventListener('click', () => closeModal('online-modal'));
         document.getElementById('tab-lobby-ranked').addEventListener('click', () => switchLobbyTab('ranked'));
-        document.getElementById('tab-lobby-casual').addEventListener('click', () => switchLobbyTab('casual'));
         document.getElementById('btn-google-signin').addEventListener('click', signInWithGoogle);
         document.getElementById('btn-google-signout').addEventListener('click', signOutGoogle);
         document.getElementById('btn-find-ranked').addEventListener('click', startRankedQueue);
         document.getElementById('btn-cancel-ranked').addEventListener('click', () => {
           stopRankedQueue(true);
           setOnlineStatus('Busca cancelada.');
-        });
-
-        document.getElementById('btn-create-room').addEventListener('click', () => {
-          const code = 'XK-' + Math.random().toString(36).substring(2, 7).toUpperCase();
-          document.getElementById('room-code-box').classList.remove('hidden');
-          document.getElementById('room-code-value').textContent = code;
-          setOnlineStatus('Código gerado: ' + code);
-        });
-        document.getElementById('btn-copy-room').addEventListener('click', () => {
-          const code = document.getElementById('room-code-value').textContent;
-          if (code && navigator.clipboard) navigator.clipboard.writeText(code).catch(() => {});
-          setOnlineStatus('Código copiado.');
-        });
-        document.getElementById('btn-join-room').addEventListener('click', () => {
-          const code = (document.getElementById('input-join-code').value || '').trim().toUpperCase();
-          setOnlineStatus(code ? 'Conectando à sala ' + code + '...' : 'Informe o código.');
         });
 
         document.getElementById('btn-top-menu').addEventListener('click', () => openModal('menu-modal'));
@@ -1667,6 +1716,7 @@
         });
 
         document.getElementById('btn-draw-card').addEventListener('click', onBuyCard);
+        document.getElementById('btn-surrender').addEventListener('click', onSurrender);
         document.getElementById('btn-end-turn').addEventListener('click', onEndTurn);
       }
 
