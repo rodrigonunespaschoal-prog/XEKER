@@ -771,7 +771,7 @@
         white: '♔',
         black: '♚',
         reachLabel: 'Até 2 casas em todas as 8 direções',
-        activeText: 'Causa 2♥ de dano direto a uma peça inimiga no alcance (até 2 em 8 direções).',
+        activeText: 'Causa 2 de dano não letal a uma peça inimiga.',
         passiveText: 'Não possui habilidade passiva.'
       },
       N: {
@@ -783,7 +783,7 @@
         white: '♘',
         black: '♞',
         reachLabel: 'Salto em L (2+1)',
-        activeText: 'Causa 1♥ de dano direto a uma peça inimiga no alcance (salto 2+1 em L).',
+        activeText: 'Move o alvo 1 casa em qualquer direção.',
         passiveText: 'Ignora obstáculos ao mover-se, atacar ou usar habilidade ativa.'
       }
     };
@@ -838,11 +838,11 @@
             </div>
             <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
               <strong class="text-[#f3d678]">♚ Rei (7♥)</strong> · Alcance: até 2 (8 direções)<br/>
-              <span class="sym-spade">♠</span> Causa 2♥ de dano direto a uma peça inimiga no alcance.
+              <span class="sym-spade">♠</span> Causa 2 de dano não letal a uma peça inimiga.
             </div>
             <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
               <strong class="text-[#f3d678]">♞ Cavalo (3♥)</strong> · Alcance: salto 2+1 em L<br/>
-              <span class="sym-spade">♠</span> Causa 1♥ de dano direto a uma peça inimiga no alcance.
+              <span class="sym-spade">♠</span> Move o alvo 1 casa em qualquer direção.
             </div>
           </div>
         `
@@ -2163,7 +2163,7 @@
       timerId = setInterval(() => {
         try {
           if (!state || state.gameOver) return;
-          if (hasOpenModal()) return;
+          if (hasOpenModal() && !(state.mode === 'offline' && document.getElementById('pass-modal').classList.contains('open') && document.querySelectorAll('.xeker-modal.open').length === 1)) return;
           if (isRankedMode() && !net.connected) return;
 
           if (!state.clocks || typeof state.clocks !== 'object') {
@@ -3204,6 +3204,21 @@
       }
     }
 
+    function getKnightSkillDestinations(tr, tc) {
+      const dests = [];
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          if (dr === 0 && dc === 0) continue;
+          const nr = tr + dr;
+          const nc = tc + dc;
+          if (insideBoard(nr, nc) && !state.board[nr][nc]) {
+            dests.push({ r: nr, c: nc });
+          }
+        }
+      }
+      return dests;
+    }
+
     function getValidSkillTargets(sr, sc, skillType, copiedSkill) {
       const reach = getReachInfo(sr, sc);
       if (skillType === 'Q' && !copiedSkill) {
@@ -3212,6 +3227,9 @@
       const effective = copiedSkill || skillType;
       if (effective === 'B') return reach.allies;
       if (effective === 'R') return reach.allPieces;
+      if (effective === 'N') {
+        return reach.allPieces.filter((entry) => getKnightSkillDestinations(entry.r, entry.c).length > 0);
+      }
       return reach.enemies;
     }
 
@@ -3309,13 +3327,47 @@
         return;
       }
 
+      if (skillType === 'N') {
+        const dests = getKnightSkillDestinations(targetR, targetC);
+        if (dests.length === 0) {
+          setStatus('⚠️ Nenhuma casa adjacente livre para mover o alvo do Cavalo.');
+          return;
+        }
+        const dest = dests[0];
+        const movedTarget = state.board[targetR][targetC];
+        if (!movedTarget) {
+          setStatus('⚠️ Escolha uma peça válida no alcance do Cavalo.');
+          return;
+        }
+        player.gold -= 1;
+        state.board[dest.r][dest.c] = movedTarget;
+        state.board[targetR][targetC] = null;
+        promotePawnIfCrossed(movedTarget, dest.r, dest.c);
+        finishPieceSkillAction(userPiece);
+        setStatus(`♠ ${isCopied ? 'Rainha (Cavalo)' : 'Cavalo'} moveu ${PIECE_DATA[movedTarget.type].name} 1 casa (♦1 · 0♣).`);
+        renderAll();
+        if (isRankedMode() && net.role === 'host') syncOnlineState();
+        return;
+      }
+
       const enemy = state.board[targetR][targetC];
       if (!enemy || enemy.color === userPiece.color) {
         setStatus('⚠️ Escolha um inimigo no alcance.');
         return;
       }
 
-      const dmg = skillType === 'K' ? 2 : 1;
+      if (skillType === 'K') {
+        player.gold -= 1;
+        const applied = Math.min(2, Math.max(0, enemy.hp - 1));
+        enemy.hp = Math.max(1, enemy.hp - 2);
+        finishPieceSkillAction(userPiece);
+        setStatus(`♠ ${isCopied ? 'Rainha (Rei)' : 'Rei'} causou ${applied} de dano não letal em ${PIECE_DATA[enemy.type].name} (restante ${enemy.hp}♥ · ♦1 · 0♣).`);
+        renderAll();
+        if (isRankedMode() && net.role === 'host') syncOnlineState();
+        return;
+      }
+
+      const dmg = 1;
       player.gold -= 1;
       enemy.hp -= dmg;
       let ended = false;
@@ -3395,9 +3447,19 @@
         return;
       }
 
+      if (piece.type === 'N') {
+        state.skillPhase = 'knight_move_target';
+        setStatus('♞ Cavalo: toque em uma peça destacada em azul para movê-la 1 casa.');
+        renderAll();
+        return;
+      }
+
       state.skillPhase = 'enemy_target';
-      const dmgVal = piece.type === 'K' ? 2 : 1;
-      setStatus(`♠ ${PIECE_DATA[piece.type].name}: toque em um inimigo azul (${dmgVal}♥ de dano).`);
+      if (piece.type === 'K') {
+        setStatus('♚ Rei: toque em um inimigo azul para causar até 2 de dano não letal.');
+      } else {
+        setStatus(`♠ ${PIECE_DATA[piece.type].name}: toque em um inimigo azul (1♥ de dano).`);
+      }
       renderAll();
     }
 
