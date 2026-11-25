@@ -3,3619 +3,1020 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>XEKER — Xadrez &amp; Pôquer Tático</title>
+  <title>XEKER — Ranked</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    :root {
-      --bg-obsidian: #09090b;
-      --bg-card: #111217;
-      --bg-panel: #161820;
-      --gold: #d4af37;
-      --gold-light: #f3d678;
-      --parchment-top: #f7f0da;
-      --parchment-bot: #dfc78d;
-      --tile-light: #232634;
-      --tile-dark: #12141c;
-    }
-
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-    }
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100dvh;
-      max-height: 100dvh;
-      background-color: var(--bg-obsidian);
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      background: radial-gradient(circle at top, #171510 0%, #09090b 75%);
       color: #f4f4f5;
-      font-family: 'Inter', sans-serif;
-      overflow: hidden;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100dvh;
+      margin: 0;
     }
-
-    .font-display {
-      font-family: 'Cinzel', serif;
+    .gold-gradient {
+      background: linear-gradient(135deg, #facc15 0%, #eab308 50%, #ca8a04 100%);
+      color: #09090b;
     }
-
-    /* Símbolos temáticos do XEKER */
-    .sym-club { color: #34d399; font-weight: 800; }
-    .sym-spade { color: #60a5fa; font-weight: 800; }
-    .sym-diamond { color: #fbbf24; font-weight: 800; }
-    .sym-heart { color: #f87171; font-weight: 800; }
-
-    /* Carta sem naipe: valor exibido apenas 1 vez, centralizado */
-    .xeker-card {
-      background: linear-gradient(155deg, var(--parchment-top) 0%, var(--parchment-bot) 100%);
-      border: 1.5px solid #9e7923;
-      color: #111216;
-      font-weight: 800;
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.55);
-      transition: transform 0.12s ease, border-color 0.12s ease;
+    .gold-border {
+      border-color: rgba(234, 179, 8, 0.35);
     }
-    .xeker-card::after {
-      content: '';
-      position: absolute;
-      inset: 3px;
-      border: 1px solid rgba(158, 121, 35, 0.35);
-      border-radius: 5px;
-      pointer-events: none;
-    }
-    .xeker-card:active:not(:disabled) {
-      transform: translateY(-2px) scale(0.97);
-    }
-
-    /* Verso de carta oculta (mão oculta em Passa e Joga / On-line) */
-    .xeker-card-back {
-      background: linear-gradient(145deg, #1d2233 0%, #0f111a 100%);
-      border: 1.5px solid rgba(212, 175, 55, 0.55);
-      color: var(--gold-light);
-      font-weight: 800;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.55);
-    }
-
-    /* Visual Dark Luxury dourado do menu inicial */
-    .luxury-menu-canvas {
-      position: relative;
-      background:
-        radial-gradient(circle at 50% 24%, rgba(243, 214, 120, 0.14) 0%, rgba(212, 175, 55, 0.04) 36%, rgba(7, 8, 11, 0.98) 76%),
-        linear-gradient(180deg, #0c0d12 0%, #07080b 55%, #050608 100%);
-      border: 1px solid rgba(212, 175, 55, 0.55);
-      box-shadow:
-        0 24px 60px rgba(0, 0, 0, 0.92),
-        inset 0 1px 0 rgba(255, 236, 179, 0.25);
-      overflow-y: auto;
-    }
-
-    .metallic-gold-title {
-      background: linear-gradient(180deg, #fff1b8 0%, #f3d678 28%, #d4af37 56%, #9c7218 82%, #f5dc88 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      filter: drop-shadow(0 3px 10px rgba(212, 175, 55, 0.35));
-    }
-
-    .gold-foil-card {
-      background: linear-gradient(150deg, #fff0b3 0%, #e7c252 35%, #b88922 72%, #f3d678 100%);
-      border: 1.5px solid #ffe699;
-      color: #261903;
-      box-shadow:
-        0 10px 24px rgba(0, 0, 0, 0.75),
-        0 0 16px rgba(212, 175, 55, 0.25),
-        inset 0 1px 1px rgba(255, 255, 255, 0.7);
-      position: relative;
-    }
-
-    .gold-foil-card::after {
-      content: '';
-      position: absolute;
-      inset: 3px;
-      border-radius: 7px;
-      border: 1px solid rgba(92, 61, 6, 0.35);
-      pointer-events: none;
-    }
-
-    @keyframes starTwinkle {
-      0%, 100% { opacity: 0.45; transform: scale(0.92); }
-      50% { opacity: 1; transform: scale(1.08); }
-    }
-
-    .star-twinkle {
-      transform-box: fill-box;
-      transform-origin: center;
-      animation: starTwinkle 3.2s ease-in-out infinite;
-    }
-
-    /* Tabuleiro 8x8 responsivo */
-    .xeker-board {
-      width: min(100%, 47dvh);
-      max-width: 100%;
-      aspect-ratio: 1 / 1;
+    .board-grid {
       display: grid;
       grid-template-columns: repeat(8, 1fr);
-      grid-template-rows: repeat(8, 1fr);
-      border: 2px solid var(--gold);
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.75);
+      aspect-ratio: 1 / 1;
+      width: 100%;
+      max-width: 420px;
     }
-
-    .tile {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-    .tile.light { background-color: var(--tile-light); }
-    .tile.dark { background-color: var(--tile-dark); }
-
-    .tile.selected {
-      background-color: rgba(212, 175, 55, 0.34) !important;
-      box-shadow: inset 0 0 0 2px var(--gold-light);
-    }
-    .tile.can-move::before {
-      content: '';
-      width: 30%;
-      height: 30%;
-      border-radius: 9999px;
-      background: #34d399;
-      box-shadow: 0 0 8px rgba(52, 211, 153, 0.9);
-      pointer-events: none;
-      z-index: 3;
-    }
-    .tile.can-attack {
-      background-color: rgba(239, 68, 68, 0.32) !important;
-      box-shadow: inset 0 0 0 2px #ef4444;
-    }
-    .tile.can-skill {
-      background-color: rgba(96, 165, 250, 0.34) !important;
-      box-shadow: inset 0 0 0 2px #60a5fa;
-    }
-
-    /* Peças */
-    .piece-token {
-      width: 86%;
-      height: 86%;
-      border-radius: 7px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      z-index: 2;
-      transition: transform 0.12s ease, opacity 0.15s ease;
-    }
-    .piece-token.white {
-      background: radial-gradient(circle at 30% 25%, #ffffff 0%, #e4dcc6 75%, #b8ae92 100%);
-      color: #111216;
-      border: 1.5px solid var(--gold-light);
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.55);
-    }
-    .piece-token.black {
-      background: radial-gradient(circle at 30% 25%, #343849 0%, #14161f 80%, #090a0e 100%);
-      color: var(--gold-light);
-      border: 1.5px solid #b58922;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.75);
-    }
-    .piece-token.acted {
-      opacity: 0.45;
-      filter: grayscale(0.4);
-    }
-    .piece-glyph {
-      font-size: clamp(0.95rem, 3.8vw, 1.3rem);
-      line-height: 1;
-    }
-    .piece-badge-rank {
-      position: absolute;
-      top: -3px;
-      left: -3px;
-      min-width: 14px;
-      height: 14px;
-      padding: 0 2px;
-      border-radius: 4px;
-      background: #09090b;
-      color: var(--gold-light);
-      border: 1px solid var(--gold);
-      font-size: 0.52rem;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .piece-badge-hp {
-      position: absolute;
-      bottom: -3px;
-      right: -3px;
-      min-width: 14px;
-      height: 14px;
-      padding: 0 2px;
-      border-radius: 4px;
-      background: #991b1b;
-      color: #ffffff;
-      border: 1px solid #fca5a5;
-      font-size: 0.52rem;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* Modais */
-    .xeker-modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(5, 5, 8, 0.92);
-      backdrop-filter: blur(6px);
-      z-index: 50;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 12px;
-    }
-    .xeker-modal.open {
-      display: flex;
-    }
-    #combat-pass-modal {
-      z-index: 65;
-    }
-    #online-modal {
-      z-index: 70;
-    }
-    #ranked-modal {
-      z-index: 75;
+    .piece-shadow {
+      filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.75));
     }
   </style>
 </head>
-<body>
-  <!-- Banner de erro caso ocorra exceção inesperada -->
-  <div id="error-toast" class="hidden fixed top-2 left-2 right-2 z-[100] rounded-xl bg-red-950 border border-red-400 text-red-100 px-3 py-2 text-xs font-semibold shadow-xl"></div>
+<body class="flex flex-col items-center justify-between p-4 select-none">
 
-  <!-- Tela Principal do Jogo -->
-  <div id="game-shell" class="w-full max-w-[460px] mx-auto h-[100dvh] flex flex-col justify-between bg-[#09090b] border-x border-[#d4af37]/25 overflow-hidden">
-
-    <!-- Topo: Título, Ouro (♦), Cartas, Relógios 30:00, Regras e Menu -->
-    <header class="shrink-0 flex items-center justify-between gap-1 px-2 py-1 bg-[#111217] border-b border-[#d4af37]/25">
-      <span class="font-display font-extrabold text-sm tracking-widest text-[#f3d678]">XEKER</span>
-
-      <div class="flex items-center gap-1">
-        <div id="hud-white" class="flex items-center gap-1 px-1.5 py-1 rounded-lg bg-[#161820] border border-white/10 text-[11px] font-bold">
-          <span>♔</span>
-          <span class="sym-diamond">♦<span id="val-gold-white">2</span></span>
-          <span class="text-zinc-400">🃏<span id="val-cards-white">3</span></span>
-          <span id="val-clock-white" class="font-mono text-[10px] text-amber-200">15:00</span>
-        </div>
-
-        <div id="hud-black" class="flex items-center gap-1 px-1.5 py-1 rounded-lg bg-[#161820] border border-white/10 text-[11px] font-bold">
-          <span>♚</span>
-          <span class="sym-diamond">♦<span id="val-gold-black">2</span></span>
-          <span class="text-zinc-400">🃏<span id="val-cards-black">3</span></span>
-          <span id="val-clock-black" class="font-mono text-[10px] text-amber-200">15:00</span>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-1">
-        <button type="button" id="btn-top-rules" class="px-2 py-1 rounded-lg bg-[#161820] border border-white/15 text-xs font-bold text-zinc-200 active:scale-95" aria-label="Regras">
-          ?
-        </button>
-        <button type="button" id="btn-top-menu" class="px-2 py-1 rounded-lg bg-[#161820] border border-[#d4af37]/40 text-xs font-bold text-[#f3d678] active:scale-95" aria-label="Menu">
-          ☰
-        </button>
-      </div>
-    </header>
-
-    <!-- Faixa Superior: Flop de 3 Cartas + Ações (♣) + Comprar Carta (3♦ / 0♣) -->
-    <section class="shrink-0 flex items-center justify-between gap-1.5 px-2 py-1 bg-[#111217]/90 border-b border-white/10">
-      <div class="flex items-center gap-1">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-[#d4af37] mr-0.5">Flop</span>
-        <div id="flop-container" class="flex items-center gap-1"></div>
-      </div>
-
-      <div class="flex items-center gap-1">
-        <div class="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#161820] border border-white/10 text-xs font-extrabold" title="Ações restantes no turno">
-          <span class="sym-club">♣</span>
-          <span id="val-actions">2</span>
-        </div>
-
-        <button type="button" id="btn-draw-card" class="px-2 py-1 rounded-lg bg-[#d4af37]/15 border border-[#d4af37]/50 text-[#f3d678] text-[11px] font-bold active:scale-95 disabled:opacity-35" title="Comprar carta do monte (custa 3 de ouro e 0 ações)">
-          Comprar <span class="sym-diamond">3♦</span>
-        </button>
-      </div>
-    </section>
-
-    <!-- Centro: Tabuleiro 8x8 -->
-    <main class="flex-1 min-h-0 px-1.5 py-0.5 flex items-center justify-center">
-      <div id="board-grid" class="xeker-board"></div>
-    </main>
-
-    <!-- Inferior: Habilidades da Peça Selecionada, Menu de 3 Opções, Fim de Turno, Mão e Mensagens -->
-    <section class="shrink-0 flex flex-col gap-1 px-2 pt-1 pb-1.5 bg-[#111217] border-t border-[#d4af37]/25">
-      <!-- Info de habilidades da peça selecionada -->
-      <div id="piece-info-card" class="px-2 py-1 rounded-xl bg-[#161820]/95 border border-[#d4af37]/30 text-[10px] leading-tight text-zinc-300 min-h-[38px] flex flex-col justify-center">
-        <span class="text-zinc-400">Toque em uma peça para ver suas habilidades.</span>
-      </div>
-
-      <div class="flex items-center justify-between gap-1.5 min-h-[36px]">
-        <div id="piece-menu" class="flex-1 flex items-center justify-between gap-1 px-2 py-1 rounded-xl bg-[#161820] border border-white/10 min-h-[36px]">
-          <span class="text-[11px] text-zinc-400">Toque em uma peça aliada</span>
-        </div>
-
-        <div class="flex items-center gap-1 shrink-0">
-          <button type="button" id="btn-surrender" class="px-2.5 py-2 rounded-xl bg-red-950/80 border border-red-400/50 text-red-200 text-[11px] font-extrabold shadow active:scale-95" title="Render-se na partida">
-            🏳️ Render
-          </button>
-          <button type="button" id="btn-end-turn" class="px-3 py-2 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] text-xs font-extrabold shadow active:scale-95">
-            Fim Turno
-          </button>
-        </div>
-      </div>
-
-      <!-- Mão do jogador -->
-      <div id="hand-container" class="flex items-center gap-1.5 overflow-x-auto py-0.5 min-h-[48px]"></div>
-
-      <!-- Barra de status/eventos -->
-      <div id="status-bar" class="px-2.5 py-1 rounded-lg bg-black/50 border border-white/10 text-[11px] text-zinc-200 truncate">
-        Bem-vindo ao XEKER.
-      </div>
-    </section>
-  </div>
-
-  <!-- MODAL MENU PRINCIPAL (ESTILO DARK LUXURY DOURADO) -->
-  <div id="menu-modal" class="xeker-modal open">
-    <div class="luxury-menu-canvas w-full max-w-[392px] max-h-[95dvh] rounded-3xl px-5 py-4 flex flex-col items-center justify-between text-center">
-
-      <!-- Arco superior de estrelas e constelações douradas -->
-      <svg viewBox="0 0 340 56" class="w-full max-w-[330px] h-11 shrink-0 overflow-visible" aria-hidden="true">
-        <g fill="#f3d678" class="star-twinkle">
-          <path d="M170 4 L172 10 L178 12 L172 14 L170 20 L168 14 L162 12 L168 10 Z" />
-          <circle cx="96" cy="22" r="1.4" />
-          <circle cx="244" cy="22" r="1.4" />
-          <path d="M118 14 L119.3 17.7 L123 19 L119.3 20.3 L118 24 L116.7 20.3 L113 19 L116.7 17.7 Z" />
-          <path d="M222 14 L223.3 17.7 L227 19 L223.3 20.3 L222 24 L220.7 20.3 L217 19 L220.7 17.7 Z" />
-        </g>
-        <g fill="#fff6cc" opacity="0.85">
-          <circle cx="62" cy="34" r="1.2" />
-          <circle cx="278" cy="34" r="1.2" />
-          <circle cx="144" cy="10" r="1.1" />
-          <circle cx="196" cy="10" r="1.1" />
-          <path d="M78 24 L78.8 26.2 L81 27 L78.8 27.8 L78 30 L77.2 27.8 L75 27 L77.2 26.2 Z" />
-          <path d="M262 24 L262.8 26.2 L265 27 L262.8 27.8 L262 30 L261.2 27.8 L259 27 L261.2 26.2 Z" />
-        </g>
-      </svg>
-
-      <!-- Título Metálico Dourado XEKER em destaque -->
-      <div class="my-4 py-3 px-4 rounded-2xl bg-[#d4af37]/[0.05] border border-[#d4af37]/30 shadow-[0_0_32px_rgba(212,175,55,0.16)] shrink-0">
-        <h1 class="font-display font-black text-4xl sm:text-5xl tracking-[0.26em] metallic-gold-title">
-          XEKER
-        </h1>
-      </div>
-
-      <!-- Seletor de Modo & Botões Principais -->
-      <div class="w-full space-y-2 my-1.5 shrink-0">
-        <div class="grid grid-cols-3 gap-1.5">
-          <button type="button" id="btn-select-pvp" class="py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95">
-            👥 Local
-          </button>
-          <button type="button" id="btn-select-online" class="py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95">
-            🌐 On-line
-          </button>
-          <button type="button" id="btn-select-ranked" class="py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95">
-            🏆 Ranked
-          </button>
-        </div>
-
-        <button type="button" id="btn-start-match" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#fff1b8] via-[#d4af37] to-[#9c7218] text-[#140e02] font-extrabold text-sm tracking-wide shadow-lg active:scale-95">
-          Iniciar Partida
-        </button>
-
-        <button type="button" id="btn-open-rules" class="w-full py-2 rounded-xl bg-[#12141c]/95 border border-[#d4af37]/45 text-[#f3d678] font-bold text-xs tracking-wide active:scale-95">
-          📖 Regras
-        </button>
-      </div>
-
-      <!-- Guirlanda de Estrelas Douradas + Silhuetas + 'design by XEKER' -->
-      <div class="w-full pt-1 shrink-0">
-        <svg viewBox="0 0 340 52" class="w-full max-w-[330px] h-11 mx-auto overflow-visible" aria-hidden="true">
-          <path d="M18 32 Q 88 8, 170 36 Q 252 8, 322 32" fill="none" stroke="rgba(243,214,120,0.35)" stroke-width="1" stroke-dasharray="2 3" />
-          <path d="M36 16 Q 102 38, 170 14 Q 238 38, 304 16" fill="none" stroke="rgba(255,241,184,0.25)" stroke-width="0.9" stroke-dasharray="1.5 3.5" />
-          <g fill="#f3d678" class="star-twinkle">
-            <path d="M170 24 L172.2 31 L179 33 L172.2 35 L170 42 L167.8 35 L161 33 L167.8 31 Z" />
-            <path d="M88 14 L89.4 18.6 L94 20 L89.4 21.4 L88 26 L86.6 21.4 L82 20 L86.6 18.6 Z" />
-            <path d="M252 14 L253.4 18.6 L258 20 L253.4 21.4 L252 26 L250.6 21.4 L246 20 L250.6 18.6 Z" />
-          </g>
-          <g fill="#fff8dc" opacity="0.9">
-            <circle cx="38" cy="24" r="1.4" />
-            <circle cx="128" cy="24" r="1.3" />
-            <circle cx="212" cy="24" r="1.3" />
-            <circle cx="302" cy="24" r="1.4" />
-            <circle cx="62" cy="14" r="1" />
-            <circle cx="278" cy="14" r="1" />
-          </g>
-        </svg>
-
-        <div class="flex items-end justify-center gap-2 text-[#e7c252] text-base leading-none mt-0.5">
-          <span class="opacity-85">♖</span>
-          <span class="text-lg text-[#fff1b8]">♗</span>
-          <span class="opacity-85">♘</span>
-        </div>
-        <div class="text-[10px] tracking-[0.16em] text-[#d4af37]/85 font-medium mt-1">
-          Criado por Rodrigo Nunes Paschoal 
-        </div>
+  <!-- TOP BAR -->
+  <header class="w-full max-w-md flex items-center justify-between border-b border-yellow-500/20 pb-3">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center font-black text-lg tracking-tighter">X</div>
+      <div>
+        <h1 class="text-lg font-extrabold tracking-widest text-yellow-400 leading-none">XEKER</h1>
+        <span class="text-[11px] uppercase tracking-wider text-zinc-400">1v1 Tático • 15 min</span>
       </div>
     </div>
-  </div>
+    <button id="openRankedBtn" class="px-3.5 py-2 rounded-xl gold-gradient font-bold text-xs uppercase tracking-wider shadow-lg active:scale-95 transition">
+      🏆 Ranked
+    </button>
+  </header>
 
-  <!-- MODAL RANKEADA (LOGIN GOOGLE + ELO MATCHMAKING) -->
-  <div id="ranked-modal" class="xeker-modal">
-    <div class="w-full max-w-[385px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl space-y-3 text-xs">
-      <div class="flex items-center justify-between pb-2 border-b border-white/10">
-        <h2 class="font-display font-bold text-sm text-[#f3d678]">🏆 Modo Rankeado (Elo)</h2>
-        <button type="button" id="btn-close-ranked" class="px-2.5 py-1 rounded-lg bg-[#161820] border border-white/15 font-bold text-zinc-200 active:scale-95">✕</button>
+  <!-- STATUS & CLOCKS -->
+  <main class="w-full max-w-md flex flex-col items-center gap-3 my-auto py-3">
+    <!-- Opponent Bar -->
+    <div class="w-full flex items-center justify-between bg-zinc-900/90 border border-zinc-800 rounded-xl px-3.5 py-2">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <span id="topColorDot" class="w-3 h-3 rounded-full bg-zinc-600 shrink-0"></span>
+        <div class="truncate">
+          <p id="topPlayerName" class="text-sm font-semibold text-zinc-200 truncate">Adversário</p>
+          <p id="topPlayerElo" class="text-[11px] text-zinc-400">Elo: —</p>
+        </div>
       </div>
+      <div id="topClock" class="font-mono text-lg font-bold px-3 py-1 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300">
+        15:00
+      </div>
+    </div>
 
-      <div id="ranked-auth-logged-out" class="p-3 rounded-xl bg-[#161820] border border-[#d4af37]/25 space-y-2 text-center">
-        <div class="font-bold text-zinc-200">Entre com sua conta Google para jogar Ranked e salvar seu Elo.</div>
-        <button type="button" id="btn-google-signin" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold active:scale-95">
-          Entrar com Google
+    <!-- Turn Banner -->
+    <div id="statusBanner" class="w-full text-center text-xs font-semibold uppercase tracking-wider py-1.5 px-3 rounded-lg bg-yellow-500/10 border border-yellow-500/25 text-yellow-300">
+      Modo Local Livre • Toque em 🏆 Ranked para jogar online
+    </div>
+
+    <!-- 8x8 Board -->
+    <div id="board" class="board-grid rounded-xl overflow-hidden border-2 border-yellow-500/40 shadow-2xl bg-zinc-900"></div>
+
+    <!-- Bottom Player Bar -->
+    <div class="w-full flex items-center justify-between bg-zinc-900/90 border border-zinc-800 rounded-xl px-3.5 py-2">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <span id="bottomColorDot" class="w-3 h-3 rounded-full bg-yellow-400 shrink-0"></span>
+        <div class="truncate">
+          <p id="bottomPlayerName" class="text-sm font-semibold text-zinc-100 truncate">Você (Brancas)</p>
+          <p id="bottomPlayerElo" class="text-[11px] text-yellow-400/90">Elo: 1200</p>
+        </div>
+      </div>
+      <div id="bottomClock" class="font-mono text-lg font-bold px-3 py-1 rounded-lg bg-zinc-950 border border-yellow-500/30 text-yellow-400">
+        15:00
+      </div>
+    </div>
+
+    <!-- Action Controls -->
+    <div class="w-full flex items-center justify-between gap-2 pt-1">
+      <button id="resetLocalBtn" class="flex-1 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-semibold text-zinc-300 transition">
+        Reiniciar Tabuleiro
+      </button>
+      <button id="surrenderBtn" class="flex-1 py-2.5 rounded-xl bg-red-950/60 hover:bg-red-900/70 border border-red-800/50 text-xs font-semibold text-red-300 transition hidden">
+        🏳️ Render-se
+      </button>
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="w-full max-w-md text-center text-[11px] text-zinc-500 pt-2">
+    XEKER Online • Matchmaking por Elo
+  </footer>
+
+  <!-- RANKED MODAL -->
+  <div id="rankedModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="w-full max-w-sm bg-zinc-950 border gold-border rounded-2xl p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-extrabold uppercase tracking-wider text-yellow-400 flex items-center gap-2">
+          <span>🏆</span> MODO RANKEADO (ELO)
+        </h2>
+        <button id="closeRankedBtn" class="w-8 h-8 rounded-lg bg-zinc-900 text-zinc-400 hover:text-white flex items-center justify-center">
+          ✕
         </button>
       </div>
 
-      <div id="ranked-auth-logged-in" class="hidden p-3 rounded-xl bg-[#161820] border border-[#d4af37]/35 space-y-2.5">
-        <div class="flex items-center justify-between gap-2">
-          <div class="min-w-0">
-            <div id="ranked-user-name" class="font-extrabold text-[#fff1b8] truncate">Jogador</div>
-            <div class="text-[11px] text-amber-200">
-              Elo: <strong id="ranked-user-elo">1200</strong> · <span id="ranked-user-record">0V - 0D</span>
-            </div>
+      <!-- Logged Out View -->
+      <div id="authLoggedOut" class="space-y-3">
+        <p class="text-xs text-zinc-400 leading-relaxed">
+          Entre com sua conta Google para salvar seu Elo, histórico de partidas e enfrentar jogadores online em tempo real.
+        </p>
+        <button id="googleLoginBtn" class="w-full py-3 rounded-xl gold-gradient font-bold text-sm shadow-lg active:scale-95 transition flex items-center justify-center gap-2">
+          <span>Entrar com Google</span>
+        </button>
+      </div>
+
+      <!-- Logged In View -->
+      <div id="authLoggedIn" class="hidden space-y-3">
+        <div class="flex items-center justify-between bg-zinc-900 border border-zinc-800 rounded-xl p-3">
+          <div class="min-w-0 pr-2">
+            <p id="profileName" class="text-sm font-bold text-white truncate">Jogador</p>
+            <p id="profileStats" class="text-xs text-yellow-400 font-medium">Elo: 1200 • 0V - 0D</p>
           </div>
-          <button type="button" id="btn-google-signout" class="px-2.5 py-1 rounded-lg bg-black/50 border border-white/15 text-[11px] text-zinc-300 font-bold active:scale-95 shrink-0">
+          <button id="logoutBtn" class="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-300 shrink-0">
             Sair
           </button>
         </div>
 
-        <button type="button" id="btn-ranked-queue" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#fff1b8] via-[#d4af37] to-[#9c7218] text-[#140e02] font-extrabold active:scale-95">
+        <button id="findMatchBtn" class="w-full py-3 rounded-xl gold-gradient font-bold text-sm shadow-lg active:scale-95 transition">
           Buscar Partida Rankeada
         </button>
-      </div>
 
-      <div id="ranked-setup-box" class="p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/30 space-y-2">
-        <div class="font-bold text-[#f3d678] text-[11px]">Configuração do Firebase (xeker-e5bc8)</div>
-        <input id="input-fb-apikey" type="text" placeholder="apiKey (ex.: AIzaSy...)" class="w-full px-2 py-1.5 rounded-lg bg-black/60 border border-white/15 text-white text-[11px] focus:outline-none focus:border-[#d4af37]" />
-        <div class="grid grid-cols-2 gap-1.5">
-          <input id="input-fb-senderid" type="text" placeholder="messagingSenderId" class="w-full px-2 py-1.5 rounded-lg bg-black/60 border border-white/15 text-white text-[11px] focus:outline-none focus:border-[#d4af37]" />
-          <input id="input-fb-appid" type="text" placeholder="appId (ex.: 1:...:web:...)" class="w-full px-2 py-1.5 rounded-lg bg-black/60 border border-white/15 text-white text-[11px] focus:outline-none focus:border-[#d4af37]" />
-        </div>
-        <button type="button" id="btn-save-fb-config" class="w-full py-2 rounded-xl bg-[#d4af37]/25 border border-[#f3d678] text-[#fff1b8] font-bold active:scale-95">
-          Salvar Conexão Firebase
+        <button id="cancelQueueBtn" class="w-full py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 font-bold text-sm text-yellow-300 hidden">
+          Cancelar Busca...
         </button>
       </div>
 
-      <div id="ranked-status-text" class="px-2.5 py-2 rounded-xl bg-black/50 border border-white/10 text-[11px] text-amber-200 min-h-[38px] flex items-center">
-        Pronto para conectar ao projeto xeker-e5bc8.
-      </div>
+      <!-- Feedback / Error Box -->
+      <div id="rankedFeedback" class="hidden text-xs rounded-xl p-3 bg-zinc-900 border border-zinc-800 text-zinc-300"></div>
     </div>
   </div>
 
-  <!-- MODAL LOBBY ON-LINE (CRIAR / ENTRAR EM SALA) -->
-  <div id="online-modal" class="xeker-modal">
-    <div class="w-full max-w-[380px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl space-y-3 text-xs">
-      <div class="flex items-center justify-between pb-2 border-b border-white/10">
-        <h2 class="font-display font-bold text-sm text-[#f3d678]">🌐 Partida On-line (1v1)</h2>
-        <button type="button" id="btn-close-online" class="px-2.5 py-1 rounded-lg bg-[#161820] border border-white/15 font-bold text-zinc-200 active:scale-95">✕</button>
-      </div>
-
-      <div class="p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/25 space-y-2">
-        <div class="font-bold text-[#f3d678]">Criar Sala (Joga de Brancas ♔)</div>
-        <button type="button" id="btn-create-room" class="w-full py-2 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold active:scale-95">
-          Gerar Código de Sala
-        </button>
-        <div id="room-code-box" class="hidden flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg bg-black/60 border border-[#d4af37]/40">
-          <div>
-            <div class="text-[10px] text-zinc-400">Código da sala:</div>
-            <div id="room-code-value" class="font-mono font-extrabold text-sm tracking-widest text-[#fff1b8]"></div>
-          </div>
-          <button type="button" id="btn-copy-room" class="px-2.5 py-1 rounded-lg bg-[#d4af37]/20 border border-[#d4af37]/50 text-[#f3d678] font-bold active:scale-95">
-            Copiar
-          </button>
-        </div>
-      </div>
-
-      <div class="p-2.5 rounded-xl bg-[#161820] border border-white/10 space-y-2">
-        <div class="font-bold text-zinc-200">Entrar em Sala (Joga de Pretas ♚)</div>
-        <div class="flex gap-1.5">
-          <input id="input-join-code" type="text" maxlength="16" placeholder="Código da sala" class="flex-1 px-2.5 py-2 rounded-xl bg-black/60 border border-white/15 text-white font-mono uppercase text-xs focus:outline-none focus:border-[#d4af37]" />
-          <button type="button" id="btn-join-room" class="px-3 py-2 rounded-xl bg-[#d4af37]/25 border border-[#f3d678] text-[#fff1b8] font-bold active:scale-95">
-            Entrar
-          </button>
-        </div>
-      </div>
-
-      <div id="online-status-text" class="px-2.5 py-2 rounded-xl bg-black/50 border border-white/10 text-[11px] text-amber-200 min-h-[36px] flex items-center">
-        Escolha criar uma sala ou inserir o código de outro jogador.
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL COMBATE & RESUMO PÓS-COMBATE -->
-  <div id="combat-modal" class="xeker-modal">
-    <div class="w-full max-w-[400px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl max-h-[92dvh] overflow-y-auto">
-      <h2 id="combat-heading" class="font-display font-bold text-base text-center text-[#f3d678] mb-2">⚔️ Combate de Pôquer</h2>
-
-      <div class="text-[10px] uppercase tracking-wider text-center text-zinc-400 mb-1">Flop (3 Cartas)</div>
-      <div id="combat-flop" class="flex justify-center gap-1.5 mb-3"></div>
-
-      <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 mb-3 text-center">
-        <div class="p-2 rounded-xl bg-[#161820] border border-[#d4af37]/30">
-          <div id="combat-atk-glyph" class="text-2xl leading-none mb-1"></div>
-          <div id="combat-atk-info" class="text-xs font-bold text-white"></div>
-          <div id="combat-atk-sub" class="text-[11px] text-[#f3d678] mt-1"></div>
-        </div>
-        <div class="font-display font-black text-sm text-[#d4af37]">VS</div>
-        <div class="p-2 rounded-xl bg-[#161820] border border-[#d4af37]/30">
-          <div id="combat-def-glyph" class="text-2xl leading-none mb-1"></div>
-          <div id="combat-def-info" class="text-xs font-bold text-white"></div>
-          <div id="combat-def-sub" class="text-[11px] text-red-300 mt-1"></div>
-        </div>
-      </div>
-
-      <div id="combat-body" class="space-y-2"></div>
-    </div>
-  </div>
-
-  <!-- MODAL DE PRIVACIDADE DO COMBATE ("PASSE PARA O JOGADOR X") -->
-  <div id="combat-pass-modal" class="xeker-modal">
-    <div class="w-full max-w-[360px] rounded-2xl bg-[#111217] border border-[#d4af37]/70 p-5 text-center shadow-2xl">
-      <div class="text-3xl mb-2">🛡️</div>
-      <h2 id="combat-pass-heading" class="font-display font-bold text-lg text-[#f3d678] mb-1">Passe para o Jogador X</h2>
-      <p id="combat-pass-desc" class="text-xs text-zinc-300 mb-4">
-        Mantenha a mão do outro jogador oculta para escolher sua carta de combate com privacidade.
-      </p>
-      <button type="button" id="btn-combat-pass-ok" class="w-full py-3 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold text-sm active:scale-95">
-        Revelar Minhas Cartas
+  <!-- ENDGAME MODAL -->
+  <div id="endModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="w-full max-w-sm bg-zinc-950 border gold-border rounded-2xl p-6 text-center space-y-4 shadow-2xl">
+      <div id="endIcon" class="text-4xl">🏆</div>
+      <h3 id="endTitle" class="text-lg font-extrabold text-yellow-400 uppercase tracking-wide">Fim de Partida</h3>
+      <p id="endSubtitle" class="text-xs text-zinc-300 leading-relaxed"></p>
+      <button id="closeEndModalBtn" class="w-full py-2.5 rounded-xl gold-gradient font-bold text-sm">
+        Continuar
       </button>
     </div>
   </div>
 
-  <!-- MODAL PASSA E JOGA (TROCA DE TURNO LOCAL) -->
-  <div id="pass-modal" class="xeker-modal">
-    <div class="w-full max-w-[360px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-5 text-center shadow-2xl">
-      <div class="text-3xl mb-2">🔄</div>
-      <h2 id="pass-heading" class="font-display font-bold text-lg text-[#f3d678] mb-1">Passa e Joga</h2>
-      <p class="text-xs text-zinc-400 mb-4">Passe o dispositivo para o jogador da vez antes de continuar.</p>
-      <button type="button" id="btn-pass-ok" class="w-full py-3 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold text-sm active:scale-95">
-        Continuar Turno
-      </button>
-    </div>
-  </div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      updateDoc,
+      deleteDoc,
+      collection,
+      query,
+      where,
+      getDocs,
+      onSnapshot,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-  <!-- MODAL LIVRO DE REGRAS PAGINADO -->
-  <div id="rules-modal" class="xeker-modal">
-    <div class="w-full max-w-[410px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl text-xs flex flex-col">
-      <div class="flex items-center justify-between pb-2 mb-2 border-b border-white/10">
-        <div>
-          <h2 id="rules-title" class="font-display font-bold text-sm text-[#f3d678]">Regras do XEKER</h2>
-          <p id="rules-counter" class="text-[11px] text-zinc-400">Página 1 de 5</p>
-        </div>
-        <button type="button" id="btn-close-rules" class="px-2.5 py-1 rounded-lg bg-[#161820] border border-white/15 font-bold text-zinc-200 active:scale-95">✕</button>
-      </div>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDY6EUIhxvW0xLgKK7peWq5vWxZX_S7CEQ",
+      authDomain: "xeker-c938a.firebaseapp.com",
+      projectId: "xeker-c938a",
+      storageBucket: "xeker-c938a.firebasestorage.app",
+      messagingSenderId: "85932910632",
+      appId: "1:85932910632:web:1df0f64748fe4ead39ad1d",
+      measurementId: "G-PKJF6EQR45"
+    };
 
-      <div id="rules-content" class="min-h-[290px] max-h-[62dvh] overflow-y-auto space-y-2 text-zinc-200 leading-relaxed pr-1"></div>
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
 
-      <div class="flex items-center justify-between gap-2 pt-3 mt-2 border-t border-white/10">
-        <button type="button" id="btn-rules-prev" class="px-3 py-2 rounded-xl bg-[#161820] border border-white/15 font-bold text-zinc-200 active:scale-95 disabled:opacity-35">
-          Anterior
-        </button>
-        <span id="rules-page-label" class="text-[11px] font-bold text-[#f3d678]">Página 1 / 5</span>
-        <button type="button" id="btn-rules-next" class="px-3 py-2 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold active:scale-95">
-          Próxima
-        </button>
-      </div>
-    </div>
-  </div>
+    // ==========================================
+    // GAME RULES & BOARD STATE (XEKER 8x8)
+    // ==========================================
+    // Pieces: wP, wR, wN, wB, wQ, wK | bP, bR, bN, bB, bQ, bK
+    const INITIAL_BOARD = [
+      ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"],
+      ["bP", "bP", "bP", "bP", "bP", "bP", "bP", "bP"],
+      [null, null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null],
+      ["wP", "wP", "wP", "wP", "wP", "wP", "wP", "wP"],
+      ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]
+    ];
 
-  <!-- MODAL CONFIRMAÇÃO DE SURRENDER -->
-  <div id="surrender-modal" class="xeker-modal">
-    <div class="w-full max-w-[360px] rounded-2xl bg-[#111217] border border-red-400/60 p-5 text-center shadow-2xl space-y-3">
-      <div class="text-3xl">🏳️</div>
-      <h2 class="font-display font-bold text-lg text-[#f3d678]">Confirmar Rendição</h2>
-      <p id="surrender-desc" class="text-xs text-zinc-300 leading-relaxed">
-        Tem certeza de que deseja se render? Esta ação encerrará a partida imediatamente.
-      </p>
-      <div class="grid grid-cols-2 gap-2 pt-1">
-        <button type="button" id="btn-surrender-cancel" class="py-2.5 rounded-xl bg-[#161820] border border-white/15 text-zinc-200 font-bold text-xs active:scale-95">
-          Cancelar
-        </button>
-        <button type="button" id="btn-surrender-confirm" class="py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs shadow active:scale-95">
-          Sim, Render-se
-        </button>
-      </div>
-    </div>
-  </div>
+    const PIECE_UNICODE = {
+      wK: "♔", wQ: "♕", wR: "♖", wB: "♗", wN: "♘", wP: "♙",
+      bK: "♚", bQ: "♛", bR: "♜", bB: "♝", bN: "♞", bP: "♟"
+    };
 
-  <!-- MODAL FIM DE PARTIDA -->
-  <div id="gameover-modal" class="xeker-modal">
-    <div class="w-full max-w-[370px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-5 text-center shadow-2xl">
-      <div class="text-4xl mb-2">👑</div>
-      <h2 id="gameover-title" class="font-display font-black text-xl text-[#f3d678] mb-1">Fim de Partida</h2>
-      <p id="gameover-desc" class="text-xs text-zinc-300 mb-4"></p>
-      <button type="button" id="btn-back-menu" class="w-full py-3 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold text-sm active:scale-95">
-        Voltar ao Menu
-      </button>
-    </div>
-  </div>
+    let board = cloneBoard(INITIAL_BOARD);
+    let turn = "w"; // 'w' or 'b'
+    let selected = null;
+    let legalMoves = [];
+    let lastMove = null;
+    let gameOver = false;
 
-  <script>
-    (function () {
-      'use strict';
+    // Timers (15 minutes = 900 seconds)
+    const INITIAL_TIME = 900;
+    let whiteTime = INITIAL_TIME;
+    let blackTime = INITIAL_TIME;
+    let clockInterval = null;
 
-      function reportError(err) {
-        const el = document.getElementById('error-toast');
-        if (!el) return;
-        const msg = err && err.message ? err.message : String(err || 'Erro desconhecido');
-        el.textContent = 'Erro: ' + msg;
-        el.classList.remove('hidden');
-      }
+    // Online / Ranked state
+    let currentUser = null;
+    let userProfile = null;
+    let isRankedMatch = false;
+    let myColor = "w"; // 'w' or 'b'
+    let activeMatchId = null;
+    let matchUnsubscribe = null;
+    let queueUnsubscribe = null;
+    let queueSearchInterval = null;
 
-      window.addEventListener('error', (ev) => {
-        reportError(ev.error || ev.message);
-      });
+    // DOM Elements
+    const boardEl = document.getElementById("board");
+    const statusBanner = document.getElementById("statusBanner");
+    const topPlayerName = document.getElementById("topPlayerName");
+    const topPlayerElo = document.getElementById("topPlayerElo");
+    const topColorDot = document.getElementById("topColorDot");
+    const topClock = document.getElementById("topClock");
+    const bottomPlayerName = document.getElementById("bottomPlayerName");
+    const bottomPlayerElo = document.getElementById("bottomPlayerElo");
+    const bottomColorDot = document.getElementById("bottomColorDot");
+    const bottomClock = document.getElementById("bottomClock");
+    const resetLocalBtn = document.getElementById("resetLocalBtn");
+    const surrenderBtn = document.getElementById("surrenderBtn");
 
-      const MAX_HAND_SIZE = 6;
-      const INITIAL_CLOCK_SECONDS = 15 * 60;
+    const rankedModal = document.getElementById("rankedModal");
+    const openRankedBtn = document.getElementById("openRankedBtn");
+    const closeRankedBtn = document.getElementById("closeRankedBtn");
+    const authLoggedOut = document.getElementById("authLoggedOut");
+    const authLoggedIn = document.getElementById("authLoggedIn");
+    const googleLoginBtn = document.getElementById("googleLoginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const profileName = document.getElementById("profileName");
+    const profileStats = document.getElementById("profileStats");
+    const findMatchBtn = document.getElementById("findMatchBtn");
+    const cancelQueueBtn = document.getElementById("cancelQueueBtn");
+    const rankedFeedback = document.getElementById("rankedFeedback");
 
-      const RANK_TEXT = {
-        1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7',
-        8: '8', 9: '9', 10: '10', 11: 'J', 12: 'Q', 13: 'K'
-      };
+    const endModal = document.getElementById("endModal");
+    const endIcon = document.getElementById("endIcon");
+    const endTitle = document.getElementById("endTitle");
+    const endSubtitle = document.getElementById("endSubtitle");
+    const closeEndModalBtn = document.getElementById("closeEndModalBtn");
 
-      const PIECE_DATA = {
-        P: {
-          name: 'Peão',
-          hp: 1,
-          reward: 2,
-          cardVal: 2,
-          cardLabel: 'Coringa (2 a 9)',
-          white: '♙',
-          black: '♟',
-          reachLabel: '1 casa em todas as 8 direções',
-          activeText: 'Sacrifica-se causando 1♥ a todos os inimigos no alcance (1 casa em 8 direções).',
-          passiveText: 'Promovido a Rainha ao cruzar o tabuleiro (linha 0 para Brancas, linha 7 para Pretas).'
-        },
-        R: {
-          name: 'Torre',
-          hp: 3,
-          reward: 4,
-          cardVal: 10,
-          cardLabel: '10',
-          white: '♖',
-          black: '♜',
-          reachLabel: 'Até 3 casas ortogonais',
-          activeText: 'Troca de posição com outra peça (aliada ou inimiga) no alcance (até 3 ortogonal).',
-          passiveText: 'Sofre 0♥ de dano ao defender com sucesso (em vez de 1♥).'
-        },
-        B: {
-          name: 'Bispo',
-          hp: 3,
-          reward: 4,
-          cardVal: 11,
-          cardLabel: 'J',
-          white: '♗',
-          black: '♝',
-          reachLabel: 'Até 3 casas diagonais',
-          activeText: 'Cura todas as peças aliadas no alcance (até 3 diagonal) em +1♥ (até o máx.).',
-          passiveText: 'Causa 2♥ de dano mesmo que o alvo se defenda com sucesso.'
-        },
-        Q: {
-          name: 'Rainha',
-          hp: 5,
-          reward: 6,
-          cardVal: 12,
-          cardLabel: 'Q',
-          white: '♕',
-          black: '♛',
-          reachLabel: 'Até 3 casas em todas as 8 direções',
-          activeText: 'Copia e executa a ativa de outra peça (aliada ou inimiga) no alcance da Rainha.',
-          passiveText: 'Cura-se em +1♥ ao abater peças (até o HP máximo).'
-        },
-        K: {
-          name: 'Rei',
-          hp: 7,
-          reward: 0,
-          cardVal: 13,
-          cardLabel: 'K',
-          white: '♔',
-          black: '♚',
-          reachLabel: 'Até 2 casas em todas as 8 direções',
-          activeText: 'Causa 2♥ de dano direto a uma peça inimiga no alcance (até 2 em 8 direções).',
-          passiveText: 'Não possui habilidade passiva.'
-        },
-        N: {
-          name: 'Cavalo',
-          hp: 3,
-          reward: 4,
-          cardVal: 1,
-          cardLabel: 'A',
-          white: '♘',
-          black: '♞',
-          reachLabel: 'Salto em L (2+1)',
-          activeText: 'Causa 1♥ de dano direto a uma peça inimiga no alcance (salto 2+1 em L).',
-          passiveText: 'Ignora obstáculos ao mover-se, atacar ou usar habilidade ativa.'
+    function cloneBoard(b) {
+      return b.map(row => [...row]);
+    }
+
+    function formatClock(sec) {
+      const s = Math.max(0, Math.floor(sec));
+      const m = Math.floor(s / 60);
+      const r = s % 60;
+      return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
+    }
+
+    function startClock() {
+      stopClock();
+      clockInterval = setInterval(() => {
+        if (gameOver) return;
+        if (turn === "w") {
+          whiteTime--;
+          if (whiteTime <= 0) {
+            whiteTime = 0;
+            updateClocksUI();
+            handleTimeout("w");
+            return;
+          }
+        } else {
+          blackTime--;
+          if (blackTime <= 0) {
+            blackTime = 0;
+            updateClocksUI();
+            handleTimeout("b");
+            return;
+          }
         }
-      };
+        updateClocksUI();
+      }, 1000);
+    }
 
-      const COMBO_EFFECTS = {
-        0: 'Carta Alta: Sem efeito extra de combo.',
-        1: '1 Par: Cura a peça usada no combate em +2♥ (até o HP máximo).',
-        2: '2 Pares: Concede +4♦ de ouro ao vencedor do combo.',
-        3: 'Trinca: Causa +1♥ de dano extra.',
-        4: 'Sequência: Concede +1♣ (ação) e compra +1 carta.',
-        5: 'Full House: Causa +1♥ de dano extra e cura a peça usada em +2♥.',
-        6: 'Quadra: Abate imediato da peça adversária e concede +8♦ de ouro.'
-      };
-
-      const RULEBOOK_PAGES = [
-        {
-          title: '1. Objetivo, Relógios & Economia',
-          html: `
-            <p><strong class="text-[#f3d678]">Objetivo:</strong> Abater o <strong>Rei adversário (7♥)</strong> ou vencer quando o tempo do oponente zerar.</p>
-            <p><strong class="text-[#f3d678]">Relógios (15:00):</strong> Cada jogador tem 15:00. O relógio do jogador ativo corre apenas fora de modais/resumos e quando não está aguardando ação do Bot.</p>
-            <div class="p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/30 space-y-1">
-              <div class="font-bold text-[#f3d678]">Regras de Turno e Recursos:</div>
-              <p>• <strong>Ouro Inicial:</strong> Ambos os jogadores começam com <span class="sym-diamond">♦2</span>.</p>
-              <p>• <strong>Mão Inicial e Compra no Turno:</strong> Ambos os jogadores começam com <strong>3 cartas</strong> na mão; cada jogador recebe <strong>+1 carta a cada 2 turnos</strong> próprios (no 2º, 4º, 6º... turno de cada lado, máx. ${MAX_HAND_SIZE} cartas).</p>
-              <p>• <strong>Ações (<span class="sym-club">♣</span>):</strong> 2 ações por turno para mover/atacar. <strong>Cada peça faz no máximo 1 ação por turno.</strong></p>
-              <p>• <strong>Flop:</strong> 3 cartas comunitárias renovadas <strong>após cada embate</strong>.</p>
-              <p>• <strong>Comprar Carta:</strong> Custa <span class="sym-diamond">3♦</span> e <span class="sym-club">0♣</span> (puxa 1 carta do monte; máx. ${MAX_HAND_SIZE} na mão).</p>
-              <p>• <strong>Abates:</strong> Peão <span class="sym-diamond">+♦2</span> · Torre/Bispo/Cavalo <span class="sym-diamond">+♦4</span> · Rainha <span class="sym-diamond">+♦6</span> · Rei = Vitória.</p>
-            </div>
-          `
-        },
-        {
-          title: '2. Alcances, Vida & Habilidades Ativas (♠)',
-          html: `
-            <p class="text-[11px] text-zinc-300">Ativa (<span class="sym-spade">♠</span>) custa <span class="sym-diamond">1♦</span> e <span class="sym-club">0♣</span> (não gasta pontos de ação, mas conta como a jogada da peça no turno e impede outras ações dela no mesmo turno).</p>
-            <div class="space-y-1.5 text-[11px]">
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♟ Peão (1♥)</strong> · Alcance: 1 casa (8 direções)<br/>
-                <span class="sym-spade">♠</span> Sacrifica-se causando 1♥ a todos os inimigos no alcance.
-              </div>
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♜ Torre (3♥)</strong> · Alcance: até 3 ortogonal<br/>
-                <span class="sym-spade">♠</span> Troca de posição com outra peça (aliada ou inimiga) no alcance.
-              </div>
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♝ Bispo (3♥)</strong> · Alcance: até 3 diagonal<br/>
-                <span class="sym-spade">♠</span> Cura todas as peças aliadas no alcance em +1♥.
-              </div>
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♛ Rainha (5♥)</strong> · Alcance: até 3 (8 direções)<br/>
-                <span class="sym-spade">♠</span> Copia e executa a ativa de outra peça (aliada ou inimiga) no alcance.
-              </div>
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♚ Rei (7♥)</strong> · Alcance: até 2 (8 direções)<br/>
-                <span class="sym-spade">♠</span> Causa 2♥ de dano direto a 1 inimigo no alcance.
-              </div>
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♞ Cavalo (3♥)</strong> · Alcance: salto 2+1 em L<br/>
-                <span class="sym-spade">♠</span> Causa 1♥ de dano direto a 1 inimigo no alcance.
-              </div>
-            </div>
-          `
-        },
-        {
-          title: '3. Habilidades Passivas das Peças',
-          html: `
-            <div class="space-y-1.5 text-[11px]">
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♟ Peão:</strong> Promovido a Rainha ao cruzar para a última linha oposta.
-              </div>
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♜ Torre:</strong> Sofre 0♥ de dano ao defender com sucesso.
-              </div>
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♝ Bispo:</strong> Causa 2♥ de dano mesmo se o alvo defender com sucesso.
-              </div>
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♛ Rainha:</strong> Cura-se em +1♥ ao abater peças (até o HP máximo).
-              </div>
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♚ Rei:</strong> Não possui habilidade passiva.
-              </div>
-              <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-                <strong class="text-[#f3d678]">♞ Cavalo:</strong> Ignora obstáculos ao mover-se, atacar ou usar ativa.
-              </div>
-            </div>
-          `
-        },
-        {
-          title: '4. Baralho (39) & Cartas por Peças',
-          html: `
-            <p><strong class="text-[#f3d678]">Baralho (39 cartas):</strong> 3 cópias de cada valor de <strong>A</strong> a <strong>K</strong> (sem naipes e sem coringas no monte).</p>
-            <div class="p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/30 space-y-1 text-[11px]">
-              <div class="font-bold text-[#f3d678]">Cartas Representadas por Peças:</div>
-              <p>• <strong>Peão:</strong> Coringa, podendo assumir valor de <strong>2 a 9</strong>.</p>
-              <p>• <strong>Torre:</strong> <strong>10</strong></p>
-              <p>• <strong>Bispo:</strong> <strong>J</strong></p>
-              <p>• <strong>Rainha:</strong> <strong>Q</strong></p>
-              <p>• <strong>Rei:</strong> <strong>K</strong></p>
-              <p>• <strong>Cavalo:</strong> <strong>A</strong></p>
-            </div>
-            <p class="text-[11px] text-zinc-300">Na avaliação de pôquer, cada mão de 5 cartas usa: <strong>3 cartas do Flop + 1 carta da mão + carta da peça</strong>.</p>
-          `
-        },
-        {
-          title: '5. Combate & Bônus de Combos',
-          html: `
-            <div class="p-2 rounded-xl bg-[#161820] border border-[#d4af37]/30 space-y-1 text-[11px]">
-              <div class="font-bold text-[#f3d678]">Resolução do Combate:</div>
-              <p>• <strong>Ataque vence:</strong> Causa <strong>2♥</strong> ao defensor (+ bônus de combo).</p>
-              <p>• <strong>Defesa vence/empata:</strong> Causa <strong>1♥</strong> em ambas (Torre defensora sofre 0♥; Bispo ainda causa 2♥).</p>
-              <p>• <strong>Flop:</strong> Renovado após cada embate.</p>
-            </div>
-            <div class="p-2 rounded-xl bg-[#161820] border border-white/10 space-y-0.5 text-[11px]">
-              <div class="font-bold text-[#f3d678]">Bônus de Combos:</div>
-              <p>• <strong>1 Par:</strong> Cura a peça usada no combo em +2♥.</p>
-              <p>• <strong>2 Pares:</strong> Concede +<span class="sym-diamond">♦4</span> de ouro.</p>
-              <p>• <strong>Trinca:</strong> Causa +1♥ de dano extra.</p>
-              <p>• <strong>Sequência:</strong> Concede +<span class="sym-club">1♣</span> e compra +1 carta.</p>
-              <p>• <strong>Full House:</strong> Causa +1♥ de dano e cura a peça usada em +2♥.</p>
-              <p>• <strong>Quadra:</strong> Abate a peça inimiga e garante +<span class="sym-diamond">♦8</span> de ouro.</p>
-            </div>
-          `
-        }
-      ];
-
-      let selectedMode = 'pvp';
-      let state = null;
-      let duelContext = null;
-      let pendingCombatPassAction = null;
-      let rulesIdx = 0;
-      let timerId = null;
-
-      /* Camada de rede On-line (PeerJS / WebRTC) */
-      const net = {
-        peer: null,
-        conn: null,
-        role: null,
-        roomCode: null,
-        connected: false,
-        pendingCombat: null,
-        lastSummary: null
-      };
-
-      /* =====================================================================
-         MODO RANKEADO (FIREBASE AUTH GOOGLE + FIRESTORE + SISTEMA ELO)
-         Substitua os valores de FIREBASE_CONFIG pelo seu app Web no Firebase
-         (projeto: xeker-e5bc8).
-         ===================================================================== */
-      const FIREBASE_CONFIG = {
-        apiKey: "AIzaSyCxDrumqQH06FWXCMVICBIMSaJlkgh-OwM",
-        authDomain: "xeker-e5bc8.firebaseapp.com",
-        projectId: "xeker-e5bc8",
-        storageBucket: "xeker-e5bc8.firebasestorage.app",
-        messagingSenderId: "1046784254725",
-        appId: "1:1046784254725:web:0cbbd1a69be38b76c74d6c",
-        measurementId: "G-6WSW0WSY3F"
-      };
-
-      const ranked = {
-        app: null,
-        auth: null,
-        db: null,
-        ready: false,
-        user: null,
-        profile: { elo: 1200, wins: 0, losses: 0, draws: 0, gamesPlayed: 0 },
-        searching: false,
-        searchStartedAt: 0,
-        queueUnsub: null,
-        matchUnsub: null,
-        matchId: null,
-        matchDoc: null,
-        role: null,
-        side: null,
-        eloSettled: false
-      };
-
-      function isRankedMode() {
-        return Boolean(state && state.mode === 'ranked');
+    function stopClock() {
+      if (clockInterval) {
+        clearInterval(clockInterval);
+        clockInterval = null;
       }
+    }
 
-      function setRankedStatus(msg) {
-        const el = document.getElementById('ranked-status-text');
-        if (el) el.textContent = msg;
-      }
+    function updateClocksUI() {
+      const bottomIsWhite = !isRankedMatch || myColor === "w";
+      bottomClock.textContent = formatClock(bottomIsWhite ? whiteTime : blackTime);
+      topClock.textContent = formatClock(bottomIsWhite ? blackTime : whiteTime);
+    }
 
-      function hasValidFirebaseConfig() {
-        return Boolean(
-          FIREBASE_CONFIG &&
-          FIREBASE_CONFIG.apiKey &&
-          !FIREBASE_CONFIG.apiKey.startsWith('COLE_') &&
-          FIREBASE_CONFIG.projectId
+    function handleTimeout(loserColor) {
+      const winnerColor = loserColor === "w" ? "b" : "w";
+      if (isRankedMatch && activeMatchId) {
+        finishRankedMatch(winnerColor, "Tempo esgotado!");
+      } else {
+        gameOver = true;
+        stopClock();
+        showEndModal(
+          "⏱️",
+          "Tempo Esgotado",
+          `Vitória das ${winnerColor === "w" ? "Brancas" : "Pretas"} por tempo.`
         );
       }
-
-      function loadSavedFirebaseConfig() {
-        try {
-          const raw = localStorage.getItem('xeker_fb_config_v1');
-          if (!raw) return;
-          const parsed = JSON.parse(raw);
-          if (parsed && parsed.apiKey) FIREBASE_CONFIG.apiKey = parsed.apiKey;
-          if (parsed && parsed.messagingSenderId) FIREBASE_CONFIG.messagingSenderId = parsed.messagingSenderId;
-          if (parsed && parsed.appId) FIREBASE_CONFIG.appId = parsed.appId;
-        } catch (_) {}
-      }
-
-      function saveFirebaseConfigFromModal() {
-        const apiKey = (document.getElementById('input-fb-apikey').value || '').trim();
-        const messagingSenderId = (document.getElementById('input-fb-senderid').value || '').trim();
-        const appId = (document.getElementById('input-fb-appid').value || '').trim();
-        if (!apiKey || !messagingSenderId || !appId) {
-          setRankedStatus('Preencha apiKey, messagingSenderId e appId para conectar.');
-          return;
-        }
-        FIREBASE_CONFIG.apiKey = apiKey;
-        FIREBASE_CONFIG.messagingSenderId = messagingSenderId;
-        FIREBASE_CONFIG.appId = appId;
-        try {
-          localStorage.setItem('xeker_fb_config_v1', JSON.stringify({
-            apiKey,
-            messagingSenderId,
-            appId
-          }));
-        } catch (_) {}
-        initFirebaseRanked();
-      }
-
-      function initFirebaseRanked() {
-        try {
-          loadSavedFirebaseConfig();
-          const setupBox = document.getElementById('ranked-setup-box');
-          if (typeof firebase === 'undefined') {
-            setRankedStatus('SDK do Firebase não carregou.');
-            return;
-          }
-          if (!hasValidFirebaseConfig()) {
-            if (setupBox) setupBox.classList.remove('hidden');
-            setRankedStatus('Cole sua apiKey, messagingSenderId e appId do Firebase acima e toque em Salvar.');
-            return;
-          }
-          if (setupBox) setupBox.classList.add('hidden');
-          if (!firebase.apps.length) {
-            ranked.app = firebase.initializeApp(FIREBASE_CONFIG);
-          } else {
-            ranked.app = firebase.app();
-          }
-          ranked.auth = firebase.auth();
-          ranked.db = firebase.firestore();
-          ranked.ready = true;
-
-          ranked.auth.onAuthStateChanged(async (user) => {
-            try {
-              ranked.user = user || null;
-              if (!user) {
-                stopRankedListeners();
-                document.getElementById('ranked-auth-logged-out').classList.remove('hidden');
-                document.getElementById('ranked-auth-logged-in').classList.add('hidden');
-                setRankedStatus('Faça login com sua conta Google para buscar partida rankeada.');
-                return;
-              }
-              await ensureRankedUserProfile(user);
-              document.getElementById('ranked-auth-logged-out').classList.add('hidden');
-              document.getElementById('ranked-auth-logged-in').classList.remove('hidden');
-              refreshRankedProfileUI();
-              setRankedStatus(`Conectado como ${user.displayName || 'Jogador'} · Elo ${ranked.profile.elo}.`);
-            } catch (err) {
-              reportError(err);
-            }
-          });
-        } catch (err) {
-          reportError(err);
-        }
-      }
-
-      async function ensureRankedUserProfile(user) {
-        if (!ranked.db || !user) return;
-        const ref = ranked.db.collection('users').doc(user.uid);
-        const snap = await ref.get();
-        if (!snap.exists) {
-          const initialProfile = {
-            uid: user.uid,
-            displayName: user.displayName || 'Jogador XEKER',
-            photoURL: user.photoURL || '',
-            elo: 1200,
-            wins: 0,
-            losses: 0,
-            draws: 0,
-            gamesPlayed: 0,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-          };
-          await ref.set(initialProfile);
-          ranked.profile = initialProfile;
-        } else {
-          const data = snap.data() || {};
-          ranked.profile = {
-            uid: user.uid,
-            displayName: user.displayName || data.displayName || 'Jogador XEKER',
-            photoURL: user.photoURL || data.photoURL || '',
-            elo: typeof data.elo === 'number' ? data.elo : 1200,
-            wins: typeof data.wins === 'number' ? data.wins : 0,
-            losses: typeof data.losses === 'number' ? data.losses : 0,
-            draws: typeof data.draws === 'number' ? data.draws : 0,
-            gamesPlayed: typeof data.gamesPlayed === 'number' ? data.gamesPlayed : 0
-          };
-          await ref.set({
-            displayName: ranked.profile.displayName,
-            photoURL: ranked.profile.photoURL,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-          }, { merge: true });
-        }
-      }
-
-      function refreshRankedProfileUI() {
-        const nameEl = document.getElementById('ranked-user-name');
-        const eloEl = document.getElementById('ranked-user-elo');
-        const recEl = document.getElementById('ranked-user-record');
-        if (nameEl) nameEl.textContent = ranked.profile.displayName || 'Jogador';
-        if (eloEl) eloEl.textContent = String(ranked.profile.elo);
-        if (recEl) recEl.textContent = `${ranked.profile.wins}V - ${ranked.profile.losses}D`;
-      }
-
-      async function signInWithGoogleRanked() {
-        try {
-          if (!ranked.ready || !ranked.auth) {
-            setRankedStatus('Firebase ainda não configurado no código.');
-            return;
-          }
-          setRankedStatus('Abrindo login do Google...');
-          const provider = new firebase.auth.GoogleAuthProvider();
-          try {
-            await ranked.auth.signInWithPopup(provider);
-          } catch (popupErr) {
-            await ranked.auth.signInWithRedirect(provider);
-          }
-        } catch (err) {
-          setRankedStatus('Falha no login Google: ' + (err && err.message ? err.message : err));
-        }
-      }
-
-      async function signOutGoogleRanked() {
-        try {
-          await leaveRankedQueue(true);
-          stopRankedListeners();
-          if (ranked.auth) {
-            await ranked.auth.signOut();
-          }
-        } catch (err) {
-          reportError(err);
-        }
-      }
-
-      function stopRankedListeners() {
-        if (ranked.queueUnsub) {
-          try { ranked.queueUnsub(); } catch (_) {}
-          ranked.queueUnsub = null;
-        }
-        if (ranked.matchUnsub) {
-          try { ranked.matchUnsub(); } catch (_) {}
-          ranked.matchUnsub = null;
-        }
-      }
-
-      async function leaveRankedQueue(silent = false) {
-        ranked.searching = false;
-        if (ranked.queueUnsub) {
-          try { ranked.queueUnsub(); } catch (_) {}
-          ranked.queueUnsub = null;
-        }
-        const btn = document.getElementById('btn-ranked-queue');
-        if (btn) btn.textContent = 'Buscar Partida Rankeada';
-
-        if (ranked.db && ranked.user) {
-          try {
-            await ranked.db.collection('matchmaking_queue').doc(ranked.user.uid).delete();
-          } catch (_) {}
-        }
-        if (!silent) {
-          setRankedStatus('Busca cancelada.');
-        }
-      }
-
-      function getEloRangeByWaitSeconds(sec) {
-        if (sec < 10) return 120;
-        if (sec < 20) return 250;
-        if (sec < 35) return 500;
-        return 9999;
-      }
-
-      function calculateEloDelta(myElo, oppElo, score, kFactor = 32) {
-        const expected = 1 / (1 + Math.pow(10, (oppElo - myElo) / 400));
-        return Math.round(kFactor * (score - expected));
-      }
-
-      async function toggleRankedQueue() {
-        try {
-          if (!ranked.ready || !ranked.db || !ranked.user) {
-            setRankedStatus('Faça login com Google primeiro.');
-            return;
-          }
-          if (ranked.searching) {
-            await leaveRankedQueue(false);
-            return;
-          }
-
-          ranked.searching = true;
-          ranked.searchStartedAt = Date.now();
-          ranked.eloSettled = false;
-          const btn = document.getElementById('btn-ranked-queue');
-          if (btn) btn.textContent = 'Cancelar Busca...';
-          setRankedStatus(`Procurando oponente próximo ao Elo ${ranked.profile.elo}...`);
-
-          const myTicketRef = ranked.db.collection('matchmaking_queue').doc(ranked.user.uid);
-          await myTicketRef.set({
-            uid: ranked.user.uid,
-            displayName: ranked.profile.displayName || 'Jogador',
-            elo: ranked.profile.elo,
-            status: 'searching',
-            matchId: null,
-            role: null,
-            side: null,
-            joinedAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-
-          ranked.queueUnsub = myTicketRef.onSnapshot(async (docSnap) => {
-            if (!docSnap.exists) return;
-            const data = docSnap.data() || {};
-            if (data.status === 'matched' && data.matchId) {
-              ranked.searching = false;
-              if (ranked.queueUnsub) {
-                try { ranked.queueUnsub(); } catch (_) {}
-                ranked.queueUnsub = null;
-              }
-              if (btn) btn.textContent = 'Buscar Partida Rankeada';
-              await myTicketRef.delete().catch(() => {});
-              attachToRankedMatch(data.matchId, data.role || 'guest', data.side || 'black');
-            }
-          });
-
-          const qSnap = await ranked.db
-            .collection('matchmaking_queue')
-            .where('status', '==', 'searching')
-            .get();
-
-          const waitedSec = Math.floor((Date.now() - ranked.searchStartedAt) / 1000);
-          const maxDiff = getEloRangeByWaitSeconds(waitedSec);
-
-          let bestCandidate = null;
-          let bestDiff = Infinity;
-
-          qSnap.forEach((d) => {
-            if (d.id === ranked.user.uid) return;
-            const cand = d.data() || {};
-            const candElo = typeof cand.elo === 'number' ? cand.elo : 1200;
-            const diff = Math.abs(candElo - ranked.profile.elo);
-            if (diff <= maxDiff && diff < bestDiff) {
-              bestDiff = diff;
-              bestCandidate = { ref: d.ref, ...cand, elo: candElo };
-            }
-          });
-
-          if (bestCandidate && ranked.searching) {
-            const matchId = 'rk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
-            const hostIsWhite = Math.random() < 0.5;
-            const whiteUid = hostIsWhite ? ranked.user.uid : bestCandidate.uid;
-            const blackUid = hostIsWhite ? bestCandidate.uid : ranked.user.uid;
-            const whiteElo = hostIsWhite ? ranked.profile.elo : bestCandidate.elo;
-            const blackElo = hostIsWhite ? bestCandidate.elo : ranked.profile.elo;
-
-            const matchRef = ranked.db.collection('matches').doc(matchId);
-            await matchRef.set({
-              matchId,
-              mode: 'ranked',
-              whiteUid,
-              blackUid,
-              whiteName: hostIsWhite ? ranked.profile.displayName : bestCandidate.displayName,
-              blackName: hostIsWhite ? bestCandidate.displayName : ranked.profile.displayName,
-              whiteEloBefore: whiteElo,
-              blackEloBefore: blackElo,
-              status: 'active',
-              winnerSide: null,
-              reason: null,
-              eloApplied: false,
-              view: null,
-              createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            await bestCandidate.ref.set({
-              status: 'matched',
-              matchId,
-              role: 'guest',
-              side: hostIsWhite ? 'black' : 'white'
-            }, { merge: true });
-
-            await myTicketRef.set({
-              status: 'matched',
-              matchId,
-              role: 'host',
-              side: hostIsWhite ? 'white' : 'black'
-            }, { merge: true });
-          }
-        } catch (err) {
-          ranked.searching = false;
-          const btn = document.getElementById('btn-ranked-queue');
-          if (btn) btn.textContent = 'Buscar Partida Rankeada';
-          setRankedStatus('Erro na fila: ' + (err && err.message ? err.message : err));
-        }
-      }
-
-      function buildRankedViewForGuest() {
-        if (!state) return null;
-        return {
-          turn: state.turn,
-          round: state.round,
-          ownTurns: state.ownTurns,
-          actions: state.actions,
-          clocks: state.clocks,
-          board: state.board,
-          flop: state.flop,
-          status: document.getElementById('status-bar') ? document.getElementById('status-bar').textContent : '',
-          players: {
-            white: {
-              gold: state.players.white.gold,
-              handCount: state.players.white.hand.length
-            },
-            black: {
-              gold: state.players.black.gold,
-              hand: state.players.black.hand.slice()
-            }
-          },
-          gameOver: Boolean(state.gameOver),
-          gameOverData: state.gameOverData || null
-        };
-      }
-
-      async function syncRankedState() {
-        if (!isRankedMode() || ranked.role !== 'host' || !ranked.matchId || !ranked.db || !state) return;
-        try {
-          await ranked.db.collection('matches').doc(ranked.matchId).set({
-            view: buildRankedViewForGuest(),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-          }, { merge: true });
-        } catch (_) {}
-      }
-
-      function applyRankedGuestView(view, matchData) {
-        if (!view) return;
-        closeModal('ranked-modal');
-        closeModal('menu-modal');
-
-        state = {
-          mode: 'ranked',
-          turn: view.turn,
-          round: view.round,
-          ownTurns: view.ownTurns,
-          actions: view.actions,
-          clocks: view.clocks,
-          board: view.board,
-          deck: [],
-          discard: [],
-          flop: view.flop || [],
-          players: {
-            white: {
-              gold: view.players.white.gold,
-              hand: new Array(view.players.white.handCount || 0).fill(0)
-            },
-            black: {
-              gold: view.players.black.gold,
-              hand: view.players.black.hand || []
-            }
-          },
-          selected: null,
-          actionMode: null,
-          skillPhase: null,
-          copiedSkill: null,
-          gameOver: Boolean(view.gameOver),
-          gameOverData: view.gameOverData || null
-        };
-
-        if (view.status) setStatus(view.status);
-        renderAll();
-
-        if (matchData && matchData.status === 'finished' && matchData.winnerSide) {
-          const winLabel = matchData.winnerSide === 'white' ? '♔ Brancas' : '♚ Pretas';
-          document.getElementById('gameover-title').textContent = `Vitória das ${winLabel}`;
-          document.getElementById('gameover-desc').textContent = matchData.reason || 'Partida rankeada encerrada.';
-          openModal('gameover-modal');
-          settleRankedEloOnce(matchData);
-        }
-      }
-
-      async function settleRankedEloOnce(matchData) {
-        if (!ranked.db || !ranked.user || ranked.eloSettled || !matchData || !matchData.winnerSide) return;
-        ranked.eloSettled = true;
-        try {
-          const myUid = ranked.user.uid;
-          const amWhite = myUid === matchData.whiteUid;
-          const amBlack = myUid === matchData.blackUid;
-          if (!amWhite && !amBlack) return;
-
-          const mySide = amWhite ? 'white' : 'black';
-          const myElo = amWhite ? (matchData.whiteEloBefore || 1200) : (matchData.blackEloBefore || 1200);
-          const oppElo = amWhite ? (matchData.blackEloBefore || 1200) : (matchData.whiteEloBefore || 1200);
-
-          const score = matchData.winnerSide === 'draw' ? 0.5 : (matchData.winnerSide === mySide ? 1 : 0);
-          const delta = calculateEloDelta(myElo, oppElo, score, 32);
-          const newElo = Math.max(100, myElo + delta);
-
-          const userRef = ranked.db.collection('users').doc(myUid);
-          await userRef.set({
-            elo: newElo,
-            wins: ranked.profile.wins + (score === 1 ? 1 : 0),
-            losses: ranked.profile.losses + (score === 0 ? 1 : 0),
-            draws: ranked.profile.draws + (score === 0.5 ? 1 : 0),
-            gamesPlayed: ranked.profile.gamesPlayed + 1,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-          }, { merge: true });
-
-          ranked.profile.elo = newElo;
-          if (score === 1) ranked.profile.wins += 1;
-          else if (score === 0) ranked.profile.losses += 1;
-          else ranked.profile.draws += 1;
-          ranked.profile.gamesPlayed += 1;
-          refreshRankedProfileUI();
-
-          const sign = delta >= 0 ? `+${delta}` : `${delta}`;
-          setStatus(`🏆 Ranked encerrada · Seu Elo: ${newElo} (${sign})`);
-        } catch (err) {
-          reportError(err);
-        }
-      }
-
-      function attachToRankedMatch(matchId, role, side) {
-        ranked.matchId = matchId;
-        ranked.role = role;
-        ranked.side = side;
-        ranked.eloSettled = false;
-
-        closeModal('ranked-modal');
-        closeModal('menu-modal');
-
-        if (role === 'host') {
-          state = {
-            mode: 'ranked',
-            turn: 'white',
-            round: 1,
-            ownTurns: { white: 1, black: 0 },
-            actions: 2,
-            clocks: { white: INITIAL_CLOCK_SECONDS, black: INITIAL_CLOCK_SECONDS },
-            board: buildInitialBoard(),
-            deck: createDeck(),
-            discard: [],
-            flop: [],
-            players: {
-              white: { gold: 2, hand: [] },
-              black: { gold: 2, hand: [] }
-            },
-            selected: null,
-            actionMode: null,
-            skillPhase: null,
-            copiedSkill: null,
-            gameOver: false,
-            gameOverData: null
-          };
-          for (let i = 0; i < 3; i++) {
-            const wc = drawCard();
-            const bc = drawCard();
-            if (wc !== null) state.players.white.hand.push(wc);
-            if (bc !== null) state.players.black.hand.push(bc);
-          }
-          dealFlop();
-          startClock();
-          setStatus(`🏆 Partida Ranked iniciada · Você é ${side === 'white' ? 'Brancas (♔)' : 'Pretas (♚)'} · Elo ${ranked.profile.elo}.`);
-          renderAll();
-          syncRankedState();
-        } else {
-          setStatus(`🏆 Pareado! Aguardando sincronia da partida (${side === 'white' ? 'Brancas ♔' : 'Pretas ♚'})...`);
-        }
-
-        if (ranked.matchUnsub) {
-          try { ranked.matchUnsub(); } catch (_) {}
-        }
-
-        ranked.matchUnsub = ranked.db.collection('matches').doc(matchId).onSnapshot((snap) => {
-          if (!snap.exists) return;
-          const mData = snap.data() || {};
-          ranked.matchDoc = mData;
-
-          if (ranked.role === 'guest' && mData.view) {
-            applyRankedGuestView(mData.view, mData);
-          }
-
-          if (mData.status === 'finished' && mData.winnerSide && !ranked.eloSettled) {
-            if (state && !state.gameOver) {
-              state.gameOver = true;
-              const winLabel = mData.winnerSide === 'white' ? '♔ Brancas' : '♚ Pretas';
-              state.gameOverData = {
-                title: `Vitória das ${winLabel}`,
-                desc: mData.reason || 'Partida rankeada encerrada.',
-                winnerSide: mData.winnerSide,
-                reason: mData.reason || 'Partida rankeada encerrada.'
-              };
-              document.getElementById('gameover-title').textContent = state.gameOverData.title;
-              document.getElementById('gameover-desc').textContent = state.gameOverData.desc;
-              openModal('gameover-modal');
-            }
-            settleRankedEloOnce(mData);
-          }
-        });
-      }
-
-      function isOnlineMode() {
-        return Boolean(state && state.mode === 'online');
-      }
-
-      function myOnlineSide() {
-        if (isRankedMode()) return ranked.side || 'white';
-        if (!isOnlineMode()) return state ? state.turn : 'white';
-        return net.role === 'guest' ? 'black' : 'white';
-      }
-
-      function setOnlineStatus(msg) {
-        const el = document.getElementById('online-status-text');
-        if (el) el.textContent = msg;
-      }
-
-      function generateRoomCode() {
-        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-        let code = 'XK-';
-        for (let i = 0; i < 5; i++) {
-          code += chars[Math.floor(Math.random() * chars.length)];
-        }
-        return code;
-      }
-
-      function sendNet(payload) {
-        if (net.conn && net.conn.open) {
-          try {
-            net.conn.send(payload);
-          } catch (err) {
-            reportError(err);
-          }
-        }
-      }
-
-      function buildGuestSafeView() {
-        if (!state) return null;
-        return {
-          mode: 'online',
-          turn: state.turn,
-          round: state.round,
-          ownTurns: state.ownTurns,
-          actions: state.actions,
-          clocks: state.clocks,
-          board: state.board,
-          flop: state.flop,
-          status: document.getElementById('status-bar') ? document.getElementById('status-bar').textContent : '',
-          players: {
-            white: {
-              gold: state.players.white.gold,
-              handCount: state.players.white.hand.length
-            },
-            black: {
-              gold: state.players.black.gold,
-              hand: state.players.black.hand.slice()
-            }
-          },
-          pendingCombat: net.pendingCombat ? {
-            atkR: net.pendingCombat.atkR,
-            atkC: net.pendingCombat.atkC,
-            defR: net.pendingCombat.defR,
-            defC: net.pendingCombat.defC,
-            atkPiece: net.pendingCombat.atkPiece,
-            defPiece: net.pendingCombat.defPiece,
-            atkHandCount: net.pendingCombat.atkHandCount,
-            defHandCount: net.pendingCombat.defHandCount,
-            stage: net.pendingCombat.stage
-          } : null,
-          lastSummary: net.lastSummary,
-          gameOver: state.gameOver,
-          gameOverData: state.gameOverData || null
-        };
-      }
-
-      function syncOnlineState() {
-        if (!isOnlineMode() || net.role !== 'host' || !state) return;
-        sendNet({
-          type: 'state_sync',
-          view: buildGuestSafeView()
-        });
-      }
-
-      function applyGuestView(view) {
-        if (!view) return;
-        closeModal('menu-modal');
-        closeModal('online-modal');
-        const prevSummary = net.lastSummary;
-        state = {
-          mode: 'online',
-          turn: view.turn,
-          round: view.round,
-          ownTurns: view.ownTurns,
-          actions: view.actions,
-          clocks: view.clocks,
-          board: view.board,
-          deck: [],
-          discard: [],
-          flop: view.flop || [],
-          players: {
-            white: {
-              gold: view.players.white.gold,
-              hand: new Array(view.players.white.handCount || 0).fill(0)
-            },
-            black: {
-              gold: view.players.black.gold,
-              hand: view.players.black.hand || []
-            }
-          },
-          selected: null,
-          actionMode: null,
-          skillPhase: null,
-          copiedSkill: null,
-          gameOver: Boolean(view.gameOver),
-          gameOverData: view.gameOverData || null
-        };
-
-        if (view.status) {
-          setStatus(view.status);
-        }
-
-        net.pendingCombat = view.pendingCombat || null;
-        net.lastSummary = view.lastSummary || null;
-
-        if (net.pendingCombat && net.pendingCombat.stage === 'awaiting_defender' && net.pendingCombat.defPiece && net.pendingCombat.defPiece.color === 'black') {
-          closeModal('combat-pass-modal');
-          const flopEl = document.getElementById('combat-flop');
-          flopEl.innerHTML = '';
-          state.flop.forEach((v) => flopEl.appendChild(renderCard(v, 'w-9 h-12 rounded-md text-sm')));
-          const atkP = net.pendingCombat.atkPiece;
-          const defP = net.pendingCombat.defPiece;
-          document.getElementById('combat-heading').textContent = '⚔️ Combate de Pôquer';
-          document.getElementById('combat-atk-glyph').textContent = PIECE_DATA[atkP.type].white;
-          document.getElementById('combat-atk-info').textContent = `${PIECE_DATA[atkP.type].name} (${atkP.hp}♥)`;
-          document.getElementById('combat-atk-sub').innerHTML = `
-            <div>Carta jogada: <strong>oculta</strong></div>
-            <div class="text-[10px] text-amber-200">Peça: ${formatPieceRep(atkP)}</div>
-          `;
-          document.getElementById('combat-def-glyph').textContent = PIECE_DATA[defP.type].black;
-          document.getElementById('combat-def-info').textContent = `${PIECE_DATA[defP.type].name} (${defP.hp}♥)`;
-          document.getElementById('combat-def-sub').innerHTML = `
-            <div>Peça: ${formatPieceRep(defP)}</div>
-            <div class="text-[10px] text-red-300">Sua vez de defender</div>
-          `;
-          renderDefenderCardSelection(null, defP, state.players.black, (dIdx) => {
-            sendNet({ type: 'online_def_card', cardIdx: dIdx });
-          });
-        } else if (net.lastSummary && JSON.stringify(net.lastSummary) !== JSON.stringify(prevSummary)) {
-          const s = net.lastSummary;
-          const flopEl = document.getElementById('combat-flop');
-          flopEl.innerHTML = '';
-          state.flop.forEach((v) => flopEl.appendChild(renderCard(v, 'w-9 h-12 rounded-md text-sm')));
-          const atkP = s.atkPiece;
-          const defP = s.defPiece;
-          document.getElementById('combat-atk-glyph').textContent = atkP ? (atkP.color === 'white' ? PIECE_DATA[atkP.type].white : PIECE_DATA[atkP.type].black) : '⚔️';
-          document.getElementById('combat-atk-info').textContent = s.atkHeaderInfo || s.atkName;
-          document.getElementById('combat-def-glyph').textContent = defP ? (defP.color === 'white' ? PIECE_DATA[defP.type].white : PIECE_DATA[defP.type].black) : '🛡️';
-          document.getElementById('combat-def-info').textContent = s.defHeaderInfo || s.defName;
-          openModal('combat-modal');
-          showPostCombatSummary(s, () => {
-            closeModal('combat-modal');
-            sendNet({ type: 'online_summary_ack' });
-            renderAll();
-          });
-        } else if (!net.pendingCombat && !net.lastSummary) {
-          closeModal('combat-modal');
-        }
-
-        if (state.gameOver && state.gameOverData) {
-          document.getElementById('gameover-title').textContent = state.gameOverData.title;
-          document.getElementById('gameover-desc').textContent = state.gameOverData.desc;
-          openModal('gameover-modal');
-        }
-
-        renderAll();
-      }
-
-      function setupConnectionListeners(conn, role) {
-        net.conn = conn;
-        net.role = role;
-
-        conn.on('open', () => {
-          net.connected = true;
-          if (role === 'host') {
-            setOnlineStatus('Oponente conectado! Iniciando partida...');
-            closeModal('online-modal');
-            startMatch();
-          } else {
-            selectedMode = 'online';
-            syncModeButtons();
-            setOnlineStatus('Conectado à sala! Aguardando Brancas...');
-            closeModal('online-modal');
-            closeModal('menu-modal');
-            setStatus('Conectado à sala! Aguardando início da partida das Brancas (♔)...');
-          }
-        });
-
-        conn.on('data', (msg) => {
-          try {
-            if (!msg || !msg.type) return;
-
-            if (msg.type === 'state_sync' && net.role === 'guest') {
-              applyGuestView(msg.view);
-            } else if (msg.type === 'clock_sync' && net.role === 'guest') {
-              if (state && msg.clocks) {
-                state.clocks = msg.clocks;
-                refreshClocks();
-              }
-            } else if (msg.type === 'online_action' && net.role === 'host') {
-              handleGuestActionRequest(msg.action);
-            } else if (msg.type === 'online_atk_card' && net.role === 'host') {
-              handleGuestAttackerCard(msg.cardIdx);
-            } else if (msg.type === 'online_def_card' && net.role === 'host') {
-              handleGuestDefenderCard(msg.cardIdx);
-            } else if (msg.type === 'online_summary_ack' && net.role === 'host') {
-              net.lastSummary = null;
-              if (state && state.gameOver && state.gameOverData) {
-                endMatch(state.gameOverData.winnerSide, state.gameOverData.reason);
-              }
-              syncOnlineState();
-            }
-          } catch (err) {
-            reportError(err);
-          }
-        });
-
-        conn.on('close', () => {
-          net.connected = false;
-          setStatus('⚠️ Conexão on-line encerrada.');
-          setOnlineStatus('Conexão encerrada.');
-        });
-
-        conn.on('error', (err) => {
-          reportError(err);
-        });
-      }
-
-      function createOnlineRoom() {
-        try {
-          if (typeof Peer === 'undefined') {
-            setOnlineStatus('Biblioteca WebRTC indisponível no momento.');
-            return;
-          }
-          if (net.peer) {
-            try { net.peer.destroy(); } catch (_) {}
-          }
-          const code = generateRoomCode();
-          net.roomCode = code;
-          net.role = 'host';
-          net.connected = false;
-          setOnlineStatus('Criando sala on-line...');
-
-          const peer = new Peer(code);
-          net.peer = peer;
-
-          peer.on('open', (id) => {
-            document.getElementById('room-code-box').classList.remove('hidden');
-            document.getElementById('room-code-value').textContent = id;
-            setOnlineStatus('Sala criada. Envie o código para o oponente.');
-          });
-
-          peer.on('connection', (conn) => {
-            setupConnectionListeners(conn, 'host');
-          });
-
-          peer.on('error', (err) => {
-            setOnlineStatus('Erro ao criar sala: ' + (err && err.type ? err.type : err.message));
-          });
-        } catch (err) {
-          reportError(err);
-        }
-      }
-
-      function joinOnlineRoom() {
-        try {
-          if (typeof Peer === 'undefined') {
-            setOnlineStatus('Biblioteca WebRTC indisponível no momento.');
-            return;
-          }
-          const raw = (document.getElementById('input-join-code').value || '').trim().toUpperCase();
-          if (!raw) {
-            setOnlineStatus('Digite o código da sala.');
-            return;
-          }
-          if (net.peer) {
-            try { net.peer.destroy(); } catch (_) {}
-          }
-          net.roomCode = raw;
-          net.role = 'guest';
-          net.connected = false;
-          setOnlineStatus('Conectando à sala ' + raw + '...');
-
-          const peer = new Peer();
-          net.peer = peer;
-
-          peer.on('open', () => {
-            const conn = peer.connect(raw, { reliable: true });
-            setupConnectionListeners(conn, 'guest');
-          });
-
-          peer.on('error', (err) => {
-            setOnlineStatus('Falha ao entrar: ' + (err && err.type ? err.type : err.message));
-          });
-        } catch (err) {
-          reportError(err);
-        }
-      }
-
-      function handleGuestActionRequest(action) {
-        if (!state || state.gameOver || state.turn !== 'black' || !action) return;
-        if (action.kind === 'move') {
-          const p = state.board[action.fromR][action.fromC];
-          if (!p || p.color !== 'black' || p.acted || state.actions <= 0) return;
-          const reach = getReachInfo(action.fromR, action.fromC);
-          if (!reach.moves.some((m) => m.r === action.toR && m.c === action.toC)) return;
-          doMove(action.fromR, action.fromC, action.toR, action.toC);
-        } else if (action.kind === 'attack') {
-          const p = state.board[action.fromR][action.fromC];
-          if (!p || p.color !== 'black' || p.acted || state.actions <= 0) return;
-          const reach = getReachInfo(action.fromR, action.fromC);
-          if (!reach.attacks.some((a) => a.r === action.toR && a.c === action.toC)) return;
-          startCombat(action.fromR, action.fromC, action.toR, action.toC);
-        } else if (action.kind === 'skill') {
-          const p = state.board[action.fromR][action.fromC];
-          if (!p || p.color !== 'black' || p.acted || state.players.black.gold < 1) return;
-          executeActiveSkill(action.fromR, action.fromC, action.effType, action.toR, action.toC, Boolean(action.copiedFlag));
-        } else if (action.kind === 'buy') {
-          state.turn = 'black';
-          onBuyCard();
-        } else if (action.kind === 'end_turn') {
-          if (state.turn === 'black') {
-            onEndTurn();
-          }
-        }
-      }
-
-      function handleGuestAttackerCard(cardIdx) {
-        if (!net.pendingCombat || !duelContext) return;
-        const atkPlayer = state.players.black;
-        if (cardIdx < 0 || cardIdx >= atkPlayer.hand.length) return;
-        const chosenAtk = atkPlayer.hand.splice(cardIdx, 1)[0];
-        duelContext.atkCard = chosenAtk;
-
-        const defPiece = state.board[duelContext.defR][duelContext.defC];
-        const defPlayer = state.players.white;
-
-        if (defPlayer.hand.length === 0) {
-          settleCombat(chosenAtk, null);
-          return;
-        }
-
-        net.pendingCombat.stage = 'awaiting_defender';
-        net.pendingCombat.atkCard = chosenAtk;
-        syncOnlineState();
-
-        const flopEl = document.getElementById('combat-flop');
-        flopEl.innerHTML = '';
-        state.flop.forEach((v) => flopEl.appendChild(renderCard(v, 'w-9 h-12 rounded-md text-sm')));
-        const atkP = state.board[duelContext.atkR][duelContext.atkC];
-        document.getElementById('combat-heading').textContent = '⚔️ Combate de Pôquer';
-        document.getElementById('combat-atk-glyph').textContent = PIECE_DATA[atkP.type].black;
-        document.getElementById('combat-atk-info').textContent = `${PIECE_DATA[atkP.type].name} (${atkP.hp}♥)`;
-        document.getElementById('combat-atk-sub').innerHTML = `
-          <div>Carta jogada: <strong>oculta</strong></div>
-          <div class="text-[10px] text-amber-200">Peça: ${formatPieceRep(atkP)}</div>
-        `;
-        document.getElementById('combat-def-glyph').textContent = PIECE_DATA[defPiece.type].white;
-        document.getElementById('combat-def-info').textContent = `${PIECE_DATA[defPiece.type].name} (${defPiece.hp}♥)`;
-        document.getElementById('combat-def-sub').innerHTML = `
-          <div>Peça: ${formatPieceRep(defPiece)}</div>
-          <div class="text-[10px] text-red-300">Escolha sua carta</div>
-        `;
-        renderDefenderCardSelection(chosenAtk, defPiece, defPlayer);
-      }
-
-      function handleGuestDefenderCard(cardIdx) {
-        if (!duelContext || duelContext.atkCard === null || duelContext.atkCard === undefined) return;
-        const defPlayer = state.players.black;
-        if (cardIdx < 0 || cardIdx >= defPlayer.hand.length) return;
-        const chosenDef = defPlayer.hand.splice(cardIdx, 1)[0];
-        net.pendingCombat = null;
-        settleCombat(duelContext.atkCard, chosenDef);
-      }
-
-      function setStatus(msg) {
-        const el = document.getElementById('status-bar');
-        if (el) el.textContent = msg;
-      }
-
-      function formatTime(sec) {
-        const clamped = Math.max(0, Math.floor(sec));
-        const mm = String(Math.floor(clamped / 60)).padStart(2, '0');
-        const ss = String(clamped % 60).padStart(2, '0');
-        return `${mm}:${ss}`;
-      }
-
-      function refreshClocks() {
-        const wEl = document.getElementById('val-clock-white');
-        const bEl = document.getElementById('val-clock-black');
-        if (!state) {
-          if (wEl) wEl.textContent = '15:00';
-          if (bEl) bEl.textContent = '15:00';
-          return;
-        }
-        if (wEl) wEl.textContent = formatTime(state.clocks.white);
-        if (bEl) bEl.textContent = formatTime(state.clocks.black);
-      }
-
-      function hasOpenModal() {
-        return Boolean(document.querySelector('.xeker-modal.open'));
-      }
-
-      function openModal(id) {
-        const el = document.getElementById(id);
-        if (el) el.classList.add('open');
-      }
-
-      function closeModal(id) {
-        const el = document.getElementById(id);
-        if (el) el.classList.remove('open');
-      }
-
-      function closeAllModals() {
-        document.querySelectorAll('.xeker-modal').forEach((el) => el.classList.remove('open'));
-      }
-
-      function openCombatPrivacyPass(sideColor, descriptionText, onRevealCallback) {
-        const label = sideColor === 'white' ? 'Jogador Brancas (♔)' : 'Jogador Pretas (♚)';
-        document.getElementById('combat-pass-heading').textContent = `Passe para ${label}`;
-        document.getElementById('combat-pass-desc').textContent = descriptionText;
-        pendingCombatPassAction = onRevealCallback;
-        openModal('combat-pass-modal');
-      }
-
-      function startClock() {
-        if (timerId) clearInterval(timerId);
-        timerId = setInterval(() => {
-          try {
-            if (!state || state.gameOver) return;
-            if (isOnlineMode() && net.role === 'guest') return;
-            if (hasOpenModal()) return;
-            if (isOnlineMode() && !net.connected) return;
-
-            const active = state.turn;
-            state.clocks[active] = Math.max(0, state.clocks[active] - 1);
-            refreshClocks();
-
-            if (isOnlineMode() && net.role === 'host') {
-              sendNet({ type: 'clock_sync', clocks: state.clocks });
-            }
-
-            if (state.clocks[active] <= 0) {
-              const winner = active === 'white' ? 'black' : 'white';
-              endMatch(winner, 'O tempo de 15:00 se esgotou.');
-            }
-          } catch (err) {
-            reportError(err);
-          }
-        }, 1000);
-      }
-
-      function createDeck() {
-        const arr = [];
-        for (let val = 1; val <= 13; val++) {
-          for (let copy = 0; copy < 3; copy++) {
-            arr.push(val);
-          }
-        }
-        for (let i = arr.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          const temp = arr[i];
-          arr[i] = arr[j];
-          arr[j] = temp;
-        }
-        return arr;
-      }
-
-      function drawCard() {
-        if (!state) return null;
-        if (state.deck.length === 0 && state.discard.length > 0) {
-          state.deck = state.discard.splice(0, state.discard.length);
-          for (let i = state.deck.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            const temp = state.deck[i];
-            state.deck[i] = state.deck[j];
-            state.deck[j] = temp;
-          }
-        }
-        return state.deck.length > 0 ? state.deck.pop() : null;
-      }
-
-      function dealFlop() {
-        if (!state) return;
-        if (state.flop.length > 0) {
-          state.discard.push(...state.flop);
-        }
-        state.flop = [];
-        for (let i = 0; i < 3; i++) {
-          const c = drawCard();
-          if (c !== null) state.flop.push(c);
-        }
-      }
-
-      function maybeDrawEveryTwoOwnTurns(side) {
-        if (!state || !side) return null;
-        state.ownTurns[side] = (state.ownTurns[side] || 0) + 1;
-        if (state.ownTurns[side] % 2 !== 0) return null;
-
-        const hand = state.players[side].hand;
-        if (hand.length >= MAX_HAND_SIZE) return null;
-        const c = drawCard();
-        if (c !== null) {
-          hand.push(c);
-          return c;
-        }
-        return null;
-      }
-
-      function pokerRank(val) {
-        return val === 1 ? 14 : val;
-      }
-
-      function evaluateFixedRanks5(ranks) {
-        const counts = new Map();
-        for (const r of ranks) {
-          counts.set(r, (counts.get(r) || 0) + 1);
-        }
-
-        const sortedGroups = Array.from(counts.entries()).sort((a, b) => {
-          if (b[1] !== a[1]) return b[1] - a[1];
-          return b[0] - a[0];
-        });
-
-        const uniqueDesc = Array.from(counts.keys()).sort((a, b) => b - a);
-        let straight = false;
-        let straightTop = 0;
-
-        if (uniqueDesc.length === 5) {
-          if (uniqueDesc[0] - uniqueDesc[4] === 4) {
-            straight = true;
-            straightTop = uniqueDesc[0];
-          } else if (
-            uniqueDesc[0] === 14 &&
-            uniqueDesc[1] === 5 &&
-            uniqueDesc[2] === 4 &&
-            uniqueDesc[3] === 3 &&
-            uniqueDesc[4] === 2
-          ) {
-            straight = true;
-            straightTop = 5;
-          }
-        }
-
-        const fmt = (pr) => RANK_TEXT[pr === 14 ? 1 : pr];
-
-        if (sortedGroups[0][1] >= 4) {
-          const k = sortedGroups[1] ? fmt(sortedGroups[1][0]) : '';
-          return {
-            cat: 6,
-            name: `Quadra de ${fmt(sortedGroups[0][0])}${k ? ` (${k})` : ''}`,
-            tie: [sortedGroups[0][0], sortedGroups[1] ? sortedGroups[1][0] : 0]
-          };
-        }
-        if (sortedGroups[0][1] === 3 && sortedGroups[1] && sortedGroups[1][1] === 2) {
-          return {
-            cat: 5,
-            name: `Full House (${fmt(sortedGroups[0][0])} e ${fmt(sortedGroups[1][0])})`,
-            tie: [sortedGroups[0][0], sortedGroups[1][0]]
-          };
-        }
-        if (straight) {
-          return {
-            cat: 4,
-            name: `Sequência (maior ${fmt(straightTop)})`,
-            tie: [straightTop]
-          };
-        }
-        if (sortedGroups[0][1] === 3) {
-          const kickers = sortedGroups.slice(1).map((x) => x[0]).sort((a, b) => b - a);
-          return {
-            cat: 3,
-            name: `Trinca de ${fmt(sortedGroups[0][0])}`,
-            tie: [sortedGroups[0][0], ...kickers]
-          };
-        }
-        if (sortedGroups[0][1] === 2 && sortedGroups[1] && sortedGroups[1][1] === 2) {
-          const hi = Math.max(sortedGroups[0][0], sortedGroups[1][0]);
-          const lo = Math.min(sortedGroups[0][0], sortedGroups[1][0]);
-          const k = sortedGroups[2] ? sortedGroups[2][0] : 0;
-          return {
-            cat: 2,
-            name: `2 Pares (${fmt(hi)} e ${fmt(lo)})`,
-            tie: [hi, lo, k]
-          };
-        }
-        if (sortedGroups[0][1] === 2) {
-          const kickers = sortedGroups.slice(1).map((x) => x[0]).sort((a, b) => b - a);
-          return {
-            cat: 1,
-            name: `1 Par de ${fmt(sortedGroups[0][0])}`,
-            tie: [sortedGroups[0][0], ...kickers]
-          };
-        }
-        return {
-          cat: 0,
-          name: `Carta Alta (${fmt(uniqueDesc[0])})`,
-          tie: uniqueDesc
-        };
-      }
-
-      function comparePokerHands(h1, h2) {
-        if (h1.cat !== h2.cat) return h1.cat - h2.cat;
-        const len = Math.max(h1.tie.length, h2.tie.length);
-        for (let i = 0; i < len; i++) {
-          const v1 = h1.tie[i] || 0;
-          const v2 = h2.tie[i] || 0;
-          if (v1 !== v2) return v1 - v2;
-        }
-        return 0;
-      }
-
-      function evaluateCombatHand(cards4, piece) {
-        if (piece && piece.type === 'P') {
-          let best = null;
-          for (let wildVal = 2; wildVal <= 9; wildVal++) {
-            const ranks = [...cards4.map(pokerRank), wildVal];
-            const ev = evaluateFixedRanks5(ranks);
-            if (!best || comparePokerHands(ev, best) > 0) {
-              best = ev;
-            }
-          }
-          return best;
-        }
-        const ranks = [...cards4.map(pokerRank), pokerRank(piece ? piece.cardVal : 1)];
-        return evaluateFixedRanks5(ranks);
-      }
-
-      function buildInitialBoard() {
-        const grid = Array.from({ length: 8 }, () => Array(8).fill(null));
-        const backRank = ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'];
-
-        for (let col = 0; col < 8; col++) {
-          const bType = backRank[col];
-          grid[0][col] = {
-            id: `b_${bType}_${col}`,
-            color: 'black',
-            type: bType,
-            hp: PIECE_DATA[bType].hp,
-            maxHp: PIECE_DATA[bType].hp,
-            cardVal: PIECE_DATA[bType].cardVal,
-            acted: false
-          };
-          grid[1][col] = {
-            id: `b_P_${col}`,
-            color: 'black',
-            type: 'P',
-            hp: PIECE_DATA.P.hp,
-            maxHp: PIECE_DATA.P.hp,
-            cardVal: PIECE_DATA.P.cardVal,
-            acted: false
-          };
-
-          const wType = backRank[col];
-          grid[7][col] = {
-            id: `w_${wType}_${col}`,
-            color: 'white',
-            type: wType,
-            hp: PIECE_DATA[wType].hp,
-            maxHp: PIECE_DATA[wType].hp,
-            cardVal: PIECE_DATA[wType].cardVal,
-            acted: false
-          };
-          grid[6][col] = {
-            id: `w_P_${col}`,
-            color: 'white',
-            type: 'P',
-            hp: PIECE_DATA.P.hp,
-            maxHp: PIECE_DATA.P.hp,
-            cardVal: PIECE_DATA.P.cardVal,
-            acted: false
-          };
-        }
-        return grid;
-      }
-
-      function startMatch() {
-        try {
-          if (selectedMode === 'online' && (!net.connected || net.role !== 'host')) {
-            openModal('online-modal');
-            return;
-          }
-
-          closeAllModals();
-          duelContext = null;
-          pendingCombatPassAction = null;
-          net.pendingCombat = null;
-          net.lastSummary = null;
-
-          state = {
-            mode: selectedMode,
-            turn: 'white',
-            round: 1,
-            ownTurns: { white: 1, black: 0 },
-            actions: 2,
-            clocks: {
-              white: INITIAL_CLOCK_SECONDS,
-              black: INITIAL_CLOCK_SECONDS
-            },
-            board: buildInitialBoard(),
-            deck: createDeck(),
-            discard: [],
-            flop: [],
-            players: {
-              white: { gold: 2, hand: [] },
-              black: { gold: 2, hand: [] }
-            },
-            selected: null,
-            actionMode: null,
-            skillPhase: null,
-            copiedSkill: null,
-            gameOver: false,
-            gameOverData: null
-          };
-
-          for (let i = 0; i < 3; i++) {
-            const wc = drawCard();
-            const bc = drawCard();
-            if (wc !== null) state.players.white.hand.push(wc);
-            if (bc !== null) state.players.black.hand.push(bc);
-          }
-
-          dealFlop();
-          startClock();
-
-          if (state.mode === 'online') {
-            setStatus('Partida on-line iniciada · Você é Brancas (♔).');
-          } else {
-            setStatus('Partida iniciada (Passa e Joga) · Brancas (♣2, ♦2, 3 cartas).');
-          }
-
-          renderAll();
-          if (state.mode === 'online' && net.role === 'host') {
-            syncOnlineState();
-          }
-        } catch (err) {
-          reportError(err);
-        }
-      }
-
-      function insideBoard(r, c) {
-        return r >= 0 && r < 8 && c >= 0 && c < 8;
-      }
-
-      function getReachInfo(r, c) {
-        const piece = state.board[r][c];
-        const moves = [];
-        const attacks = [];
-        const allies = [];
-        const enemies = [];
-        const allPieces = [];
-
-        if (!piece) {
-          return { moves, attacks, allies, enemies, allPieces };
-        }
-
-        if (piece.type === 'N') {
-          const lOffsets = [
-            [-2, -1], [-2, 1], [-1, -2], [-1, 2],
-            [1, -2], [1, 2], [2, -1], [2, 1]
-          ];
-          for (const [dr, dc] of lOffsets) {
-            const nr = r + dr;
-            const nc = c + dc;
-            if (!insideBoard(nr, nc)) continue;
-            const occ = state.board[nr][nc];
-            if (!occ) {
-              moves.push({ r: nr, c: nc });
-            } else {
-              allPieces.push({ r: nr, c: nc, piece: occ });
-              if (occ.color === piece.color) {
-                allies.push({ r: nr, c: nc, piece: occ });
-              } else {
-                attacks.push({ r: nr, c: nc });
-                enemies.push({ r: nr, c: nc, piece: occ });
-              }
-            }
-          }
-          return { moves, attacks, allies, enemies, allPieces };
-        }
-
-        let dirs = [];
-        let steps = 1;
-
-        if (piece.type === 'P') {
-          dirs = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
-          steps = 1;
-        } else if (piece.type === 'R') {
-          dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
-          steps = 3;
-        } else if (piece.type === 'B') {
-          dirs = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
-          steps = 3;
-        } else if (piece.type === 'Q') {
-          dirs = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
-          steps = 3;
-        } else if (piece.type === 'K') {
-          dirs = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
-          steps = 2;
-        }
-
+    }
+
+    // ==========================================
+    // CHESS MOVE GENERATION & VALIDATION
+    // ==========================================
+    function inBounds(r, c) {
+      return r >= 0 && r < 8 && c >= 0 && c < 8;
+    }
+
+    function pieceColor(p) {
+      return p ? p[0] : null;
+    }
+
+    function getPseudoMoves(b, r, c) {
+      const p = b[r][c];
+      if (!p) return [];
+      const color = p[0];
+      const type = p[1];
+      const enemy = color === "w" ? "b" : "w";
+      const moves = [];
+
+      const addSlide = (dirs) => {
         for (const [dr, dc] of dirs) {
-          for (let s = 1; s <= steps; s++) {
-            const nr = r + dr * s;
-            const nc = c + dc * s;
-            if (!insideBoard(nr, nc)) break;
-            const occ = state.board[nr][nc];
-            if (!occ) {
-              moves.push({ r: nr, c: nc });
+          let nr = r + dr, nc = c + dc;
+          while (inBounds(nr, nc)) {
+            if (!b[nr][nc]) {
+              moves.push([nr, nc]);
             } else {
-              allPieces.push({ r: nr, c: nc, piece: occ });
-              if (occ.color === piece.color) {
-                allies.push({ r: nr, c: nc, piece: occ });
-              } else {
-                attacks.push({ r: nr, c: nc });
-                enemies.push({ r: nr, c: nc, piece: occ });
-              }
+              if (pieceColor(b[nr][nc]) === enemy) moves.push([nr, nc]);
               break;
             }
+            nr += dr;
+            nc += dc;
           }
         }
+      };
 
-        return { moves, attacks, allies, enemies, allPieces };
-      }
-
-      function endMatch(winnerColor, reason) {
-        if (!state) return;
-        state.gameOver = true;
-        const winnerName = winnerColor === 'white' ? '♔ Brancas' : '♚ Pretas';
-        const title = `Vitória das ${winnerName}`;
-        state.gameOverData = { title, desc: reason, winnerSide: winnerColor, reason };
-        document.getElementById('gameover-title').textContent = title;
-        document.getElementById('gameover-desc').textContent = reason;
-        renderAll();
-        if (isOnlineMode() && net.role === 'host') {
-          syncOnlineState();
+      if (type === "P") {
+        const dir = color === "w" ? -1 : 1;
+        const startRow = color === "w" ? 6 : 1;
+        if (inBounds(r + dir, c) && !b[r + dir][c]) {
+          moves.push([r + dir, c]);
+          if (r === startRow && !b[r + 2 * dir][c]) {
+            moves.push([r + 2 * dir, c]);
+          }
         }
-        if (isRankedMode() && ranked.role === 'host') {
-          syncRankedState();
+        for (const dc of [-1, 1]) {
+          const nr = r + dir, nc = c + dc;
+          if (inBounds(nr, nc) && b[nr][nc] && pieceColor(b[nr][nc]) === enemy) {
+            moves.push([nr, nc]);
+          }
         }
-        if (isRankedMode() && ranked.db && ranked.matchId) {
-          ranked.db.collection('matches').doc(ranked.matchId).set({
-            status: 'finished',
-            winnerSide: winnerColor,
-            reason: reason,
-            view: ranked.role === 'host' ? buildRankedViewForGuest() : (ranked.matchDoc ? ranked.matchDoc.view : null)
-          }, { merge: true }).then(() => {
-            if (ranked.matchDoc) settleRankedEloOnce({ ...ranked.matchDoc, winnerSide: winnerColor, reason });
-          }).catch(() => {});
+      } else if (type === "N") {
+        const jumps = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+        for (const [dr, dc] of jumps) {
+          const nr = r + dr, nc = c + dc;
+          if (inBounds(nr, nc) && pieceColor(b[nr][nc]) !== color) {
+            moves.push([nr, nc]);
+          }
         }
-        openModal('gameover-modal');
-      }
-
-      function applyQueenAbatePassive(side) {
-        if (!state || state.gameOver) return 0;
-        let healed = 0;
-        for (let r = 0; r < 8; r++) {
-          for (let c = 0; c < 8; c++) {
-            const p = state.board[r][c];
-            if (p && p.color === side && p.type === 'Q' && p.hp > 0 && p.hp < p.maxHp) {
-              p.hp = Math.min(p.maxHp, p.hp + 1);
-              healed += 1;
+      } else if (type === "B") {
+        addSlide([[-1,-1],[-1,1],[1,-1],[1,1]]);
+      } else if (type === "R") {
+        addSlide([[-1,0],[1,0],[0,-1],[0,1]]);
+      } else if (type === "Q") {
+        addSlide([[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]]);
+      } else if (type === "K") {
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (dr === 0 && dc === 0) continue;
+            const nr = r + dr, nc = c + dc;
+            if (inBounds(nr, nc) && pieceColor(b[nr][nc]) !== color) {
+              moves.push([nr, nc]);
             }
           }
         }
-        return healed;
       }
+      return moves;
+    }
 
-      function handleAbatement(killerSide, victimPiece) {
-        if (!victimPiece) return false;
-        applyQueenAbatePassive(killerSide);
-        if (victimPiece.type === 'K') {
-          endMatch(killerSide, 'O Rei adversário foi abatido!');
-          return true;
-        }
-        const goldReward = PIECE_DATA[victimPiece.type].reward || 0;
-        if (goldReward > 0) {
-          state.players[killerSide].gold += goldReward;
-        }
-        return false;
-      }
-
-      function promotePawnIfCrossed(piece, r, c) {
-        if (!piece || piece.type !== 'P') return false;
-        const crossed = (piece.color === 'white' && r === 0) || (piece.color === 'black' && r === 7);
-        if (!crossed) return false;
-
-        piece.type = 'Q';
-        piece.cardVal = PIECE_DATA.Q.cardVal;
-        piece.maxHp = PIECE_DATA.Q.hp;
-        piece.hp = Math.max(piece.hp, PIECE_DATA.Q.hp);
-        setStatus(`♛ Peão cruzou o tabuleiro e foi promovido a Rainha (5♥)!`);
-        return true;
-      }
-
-      function finishPieceAction(piece) {
-        state.actions = Math.max(0, state.actions - 1);
-        if (piece) piece.acted = true;
-        state.selected = null;
-        state.actionMode = null;
-        state.skillPhase = null;
-        state.copiedSkill = null;
-      }
-
-      function finishPieceSkillAction(piece) {
-        if (piece) piece.acted = true;
-        state.selected = null;
-        state.actionMode = null;
-        state.skillPhase = null;
-        state.copiedSkill = null;
-      }
-
-      function doMove(fromR, fromC, toR, toC) {
-        const piece = state.board[fromR][fromC];
-        if (!piece) return;
-        state.board[toR][toC] = piece;
-        state.board[fromR][fromC] = null;
-        finishPieceAction(piece);
-        const promoted = promotePawnIfCrossed(piece, toR, toC);
-        if (!promoted) {
-          setStatus(`${PIECE_DATA[piece.type].name} moveu-se.`);
-        }
-        renderAll();
-        if (isOnlineMode() && net.role === 'host') {
-          syncOnlineState();
-        }
-        if (isRankedMode() && ranked.role === 'host') {
-          syncRankedState();
-        }
-      }
-
-      function renderCard(val, classes) {
-        const card = document.createElement('div');
-        card.className = `xeker-card ${classes}`;
-        card.textContent = RANK_TEXT[val];
-        return card;
-      }
-
-      function renderCardBack(classes) {
-        const back = document.createElement('div');
-        back.className = `xeker-card-back ${classes}`;
-        back.textContent = 'X';
-        return back;
-      }
-
-      function formatPieceRep(piece) {
-        if (!piece) return '';
-        if (piece.type === 'P') return 'Peão (2-9)';
-        return RANK_TEXT[piece.cardVal];
-      }
-
-      function showPostCombatSummary(summary, onDoneOverride = null) {
-        document.getElementById('combat-heading').textContent = '📋 Resumo do Combate';
-        document.getElementById('combat-atk-sub').innerHTML = `
-          <div>Carta usada: <strong>${summary.atkCard !== null && summary.atkCard !== undefined ? RANK_TEXT[summary.atkCard] : 'Oculta'}</strong> · Peça: <strong>${summary.atkRep}</strong></div>
-          <div class="text-[10px] text-amber-200">${summary.atkHand ? summary.atkHand.name : ''}</div>
-        `;
-        document.getElementById('combat-def-sub').innerHTML = `
-          <div>Carta usada: <strong>${summary.defCard !== null && summary.defCard !== undefined ? RANK_TEXT[summary.defCard] : '—'}</strong> · Peça: <strong>${summary.defRep}</strong></div>
-          <div class="text-[10px] text-red-200">${summary.defHand ? summary.defHand.name : ''}</div>
-        `;
-
-        const body = document.getElementById('combat-body');
-        body.innerHTML = `
-          <div class="p-2.5 rounded-xl bg-[#d4af37]/15 border border-[#d4af37]/50 text-center">
-            <div class="text-xs font-extrabold text-[#f3d678]">${summary.winnerLabel}</div>
-            <div class="text-[11px] font-bold text-white mt-0.5">Combo Vencedor: ${summary.winHand ? summary.winHand.name : ''}</div>
-            <div class="text-[11px] text-amber-100 mt-1">${COMBO_EFFECTS[summary.winHand ? summary.winHand.cat : 0] || ''}</div>
-          </div>
-          <div class="p-2.5 rounded-xl bg-[#161820] border border-white/10 space-y-1 text-[11px]">
-            <div class="flex justify-between gap-2">
-              <span class="text-zinc-300">Atacante (${summary.atkName}):</span>
-              <span class="font-bold text-right ${summary.atkDmg > 0 ? 'text-red-400' : 'text-emerald-300'}">${summary.atkResultText}</span>
-            </div>
-            <div class="flex justify-between gap-2">
-              <span class="text-zinc-300">Defensor (${summary.defName}):</span>
-              <span class="font-bold text-right ${summary.defDmg > 0 ? 'text-red-400' : 'text-emerald-300'}">${summary.defResultText}</span>
-            </div>
-            ${summary.extraInfo ? `<div class="text-center font-bold text-[#f3d678] pt-1 border-t border-white/10">${summary.extraInfo}</div>` : ''}
-          </div>
-          <button type="button" id="btn-combat-done" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold text-xs shadow active:scale-95">
-            Continuar
-          </button>
-        `;
-
-        const rawDoneBtn = document.getElementById('btn-combat-done');
-        const doneBtn = rawDoneBtn.cloneNode(true);
-        rawDoneBtn.parentNode.replaceChild(doneBtn, rawDoneBtn);
-        doneBtn.addEventListener('click', () => {
-          if (typeof onDoneOverride === 'function') {
-            onDoneOverride();
-            return;
+    function isKingInCheck(b, color) {
+      let kr = -1, kc = -1;
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          if (b[r][c] === `${color}K`) {
+            kr = r;
+            kc = c;
+            break;
           }
-          closeModal('combat-modal');
-          duelContext = null;
-          net.lastSummary = null;
-          if (summary.winnerSideEnd) {
-            endMatch(summary.winnerSideEnd, 'O Rei adversário foi abatido!');
-            return;
+        }
+      }
+      if (kr === -1) return true;
+      const enemy = color === "w" ? "b" : "w";
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          if (pieceColor(b[r][c]) === enemy) {
+            const attacks = getPseudoMoves(b, r, c);
+            if (attacks.some(([ar, ac]) => ar === kr && ac === kc)) {
+              return true;
+            }
           }
-          renderAll();
-          if (isOnlineMode() && net.role === 'host') {
-            syncOnlineState();
+        }
+      }
+      return false;
+    }
+
+    function applyMoveOnBoard(b, fromR, fromC, toR, toC) {
+      const next = cloneBoard(b);
+      const piece = next[fromR][fromC];
+      next[fromR][fromC] = null;
+      // Auto-promote Pawn to Queen
+      if (piece === "wP" && toR === 0) next[toR][toC] = "wQ";
+      else if (piece === "bP" && toR === 7) next[toR][toC] = "bQ";
+      else next[toR][toC] = piece;
+      return next;
+    }
+
+    function getLegalMoves(b, r, c) {
+      const p = b[r][c];
+      if (!p) return [];
+      const color = p[0];
+      return getPseudoMoves(b, r, c).filter(([tr, tc]) => {
+        const next = applyMoveOnBoard(b, r, c, tr, tc);
+        return !isKingInCheck(next, color);
+      });
+    }
+
+    function hasAnyLegalMove(b, color) {
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          if (pieceColor(b[r][c]) === color && getLegalMoves(b, r, c).length > 0) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    // ==========================================
+    // RENDERING BOARD
+    // ==========================================
+    function renderBoard() {
+      boardEl.innerHTML = "";
+      const flipped = isRankedMatch && myColor === "b";
+
+      for (let i = 0; i < 64; i++) {
+        const displayR = Math.floor(i / 8);
+        const displayC = i % 8;
+        const r = flipped ? 7 - displayR : displayR;
+        const c = flipped ? 7 - displayC : displayC;
+
+        const isLight = (r + c) % 2 === 0;
+        const isSelected = selected && selected[0] === r && selected[1] === c;
+        const isTarget = legalMoves.some(([lr, lc]) => lr === r && lc === c);
+        const isLast = lastMove && (
+          (lastMove.from[0] === r && lastMove.from[1] === c) ||
+          (lastMove.to[0] === r && lastMove.to[1] === c)
+        );
+
+        const cell = document.createElement("button");
+        cell.type = "button";
+        cell.className = "relative flex items-center justify-center text-3xl sm:text-4xl font-normal transition-colors focus:outline-none";
+
+        if (isSelected) {
+          cell.style.backgroundColor = "#eab308";
+        } else if (isLast) {
+          cell.style.backgroundColor = isLight ? "#a18a3b" : "#6b5b24";
+        } else {
+          cell.style.backgroundColor = isLight ? "#d4d4d8" : "#27272a";
+        }
+
+        const p = board[r][c];
+        if (p) {
+          const span = document.createElement("span");
+          span.textContent = PIECE_UNICODE[p];
+          span.className = `piece-shadow leading-none ${p[0] === "w" ? "text-white" : "text-amber-400"}`;
+          cell.appendChild(span);
+        }
+
+        if (isTarget) {
+          const dot = document.createElement("span");
+          dot.className = p
+            ? "absolute inset-1 rounded-full border-4 border-yellow-400/80 pointer-events-none"
+            : "w-3.5 h-3.5 rounded-full bg-yellow-400/80 pointer-events-none";
+          cell.appendChild(dot);
+        }
+
+        cell.addEventListener("click", () => handleSquareClick(r, c));
+        boardEl.appendChild(cell);
+      }
+    }
+
+    async function handleSquareClick(r, c) {
+      if (gameOver) return;
+      if (isRankedMatch && turn !== myColor) return;
+
+      const clickedPiece = board[r][c];
+      const activeColor = isRankedMatch ? myColor : turn;
+
+      // Execute move if target square selected
+      if (selected && legalMoves.some(([lr, lc]) => lr === r && lc === c)) {
+        const [fromR, fromC] = selected;
+        const nextBoard = applyMoveOnBoard(board, fromR, fromC, r, c);
+        const nextTurn = turn === "w" ? "b" : "w";
+        const moveObj = { from: [fromR, fromC], to: [r, c] };
+
+        board = nextBoard;
+        turn = nextTurn;
+        lastMove = moveObj;
+        selected = null;
+        legalMoves = [];
+        renderBoard();
+        updateStatusBanner();
+
+        const enemyInCheck = isKingInCheck(board, nextTurn);
+        const enemyHasMoves = hasAnyLegalMove(board, nextTurn);
+
+        if (isRankedMatch && activeMatchId) {
+          await syncMoveToFirestore(nextBoard, nextTurn, moveObj, !enemyHasMoves, enemyInCheck);
+        } else if (!enemyHasMoves) {
+          gameOver = true;
+          stopClock();
+          if (enemyInCheck) {
+            const winner = activeColor === "w" ? "Brancas" : "Pretas";
+            showEndModal("👑", "Xeque-Mate!", `Vitória das ${winner}!`);
+          } else {
+            showEndModal("🤝", "Empate", "Rei afogado (sem movimentos legais).");
+          }
+        }
+        return;
+      }
+
+      // Select friendly piece
+      if (clickedPiece && pieceColor(clickedPiece) === activeColor) {
+        selected = [r, c];
+        legalMoves = getLegalMoves(board, r, c);
+      } else {
+        selected = null;
+        legalMoves = [];
+      }
+      renderBoard();
+    }
+
+    function updateStatusBanner() {
+      if (gameOver) return;
+      if (!isRankedMatch) {
+        statusBanner.textContent = `Modo Local • Vez das ${turn === "w" ? "Brancas" : "Pretas"}`;
+        return;
+      }
+      if (turn === myColor) {
+        statusBanner.textContent = "Sua vez de jogar!";
+        statusBanner.className = "w-full text-center text-xs font-bold uppercase tracking-wider py-1.5 px-3 rounded-lg bg-yellow-500/20 border border-yellow-400 text-yellow-300";
+      } else {
+        statusBanner.textContent = "Aguardando jogada do oponente...";
+        statusBanner.className = "w-full text-center text-xs font-semibold uppercase tracking-wider py-1.5 px-3 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400";
+      }
+    }
+
+    function resetToLocalMode() {
+      if (matchUnsubscribe) { matchUnsubscribe(); matchUnsubscribe = null; }
+      isRankedMatch = false;
+      activeMatchId = null;
+      myColor = "w";
+      board = cloneBoard(INITIAL_BOARD);
+      turn = "w";
+      selected = null;
+      legalMoves = [];
+      lastMove = null;
+      gameOver = false;
+      whiteTime = INITIAL_TIME;
+      blackTime = INITIAL_TIME;
+
+      topPlayerName.textContent = "Adversário (Pretas)";
+      topPlayerElo.textContent = "Modo Local";
+      topColorDot.className = "w-3 h-3 rounded-full bg-amber-400 shrink-0";
+
+      bottomPlayerName.textContent = userProfile ? `${userProfile.name} (Brancas)` : "Você (Brancas)";
+      bottomPlayerElo.textContent = userProfile ? `Elo: ${userProfile.elo}` : "Elo: 1200";
+      bottomColorDot.className = "w-3 h-3 rounded-full bg-white shrink-0";
+
+      resetLocalBtn.classList.remove("hidden");
+      surrenderBtn.classList.add("hidden");
+
+      updateClocksUI();
+      updateStatusBanner();
+      renderBoard();
+      startClock();
+    }
+
+    // ==========================================
+    // FIREBASE AUTH & PROFILE
+    // ==========================================
+    function showFeedback(msg, isError = false) {
+      rankedFeedback.textContent = msg;
+      rankedFeedback.classList.remove("hidden");
+      rankedFeedback.className = isError
+        ? "text-xs rounded-xl p-3 bg-red-950/60 border border-red-800/60 text-red-300"
+        : "text-xs rounded-xl p-3 bg-zinc-900 border border-yellow-500/30 text-yellow-200";
+    }
+
+    function hideFeedback() {
+      rankedFeedback.classList.add("hidden");
+    }
+
+    async function ensureUserProfile(user) {
+      const userRef = doc(db, "users", user.uid);
+      const snap = await getDoc(userRef);
+      if (!snap.exists()) {
+        const freshProfile = {
+          uid: user.uid,
+          name: user.displayName || "Jogador Xeker",
+          elo: 1200,
+          wins: 0,
+          losses: 0,
+          updatedAt: serverTimestamp()
+        };
+        await setDoc(userRef, freshProfile);
+        userProfile = freshProfile;
+      } else {
+        userProfile = snap.data();
+      }
+      updateProfileUI();
+    }
+
+    function updateProfileUI() {
+      if (!userProfile) return;
+      profileName.textContent = userProfile.name;
+      profileStats.textContent = `Elo: ${userProfile.elo} • ${userProfile.wins || 0}V - ${userProfile.losses || 0}D`;
+      if (!isRankedMatch) {
+        bottomPlayerName.textContent = `${userProfile.name} (Brancas)`;
+        bottomPlayerElo.textContent = `Elo: ${userProfile.elo}`;
+      }
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+      if (user) {
+        authLoggedOut.classList.add("hidden");
+        authLoggedIn.classList.remove("hidden");
+        try {
+          await ensureUserProfile(user);
+        } catch (err) {
+          showFeedback(`Erro ao carregar perfil: ${err.message}`, true);
+        }
+      } else {
+        userProfile = null;
+        authLoggedIn.classList.add("hidden");
+        authLoggedOut.classList.remove("hidden");
+      }
+    });
+
+    googleLoginBtn.addEventListener("click", async () => {
+      hideFeedback();
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (err) {
+        showFeedback(`Falha no login Google: ${err.message}`, true);
+      }
+    });
+
+    logoutBtn.addEventListener("click", async () => {
+      await leaveMatchmakingQueue();
+      await signOut(auth);
+      hideFeedback();
+    });
+
+    // ==========================================
+    // RANKED MATCHMAKING QUEUE
+    // ==========================================
+    async function enterMatchmakingQueue() {
+      if (!currentUser || !userProfile) return;
+      hideFeedback();
+      findMatchBtn.classList.add("hidden");
+      cancelQueueBtn.classList.remove("hidden");
+      showFeedback("Procurando oponente com Elo próximo...");
+
+      const myUid = currentUser.uid;
+      const myQueueRef = doc(db, "matchmaking_queue", myUid);
+
+      try {
+        // 1. Register self in queue
+        await setDoc(myQueueRef, {
+          uid: myUid,
+          name: userProfile.name,
+          elo: userProfile.elo,
+          status: "searching",
+          matchId: null,
+          createdAt: serverTimestamp()
+        });
+
+        // 2. Listen to own queue ticket in case another player pairs with us
+        if (queueUnsubscribe) queueUnsubscribe();
+        queueUnsubscribe = onSnapshot(myQueueRef, async (docSnap) => {
+          if (!docSnap.exists()) return;
+          const data = docSnap.data();
+          if (data.status === "matched" && data.matchId) {
+            cleanupQueueListeners();
+            await deleteDoc(myQueueRef).catch(() => {});
+            joinRankedMatch(data.matchId);
           }
         });
-      }
 
-      function settleCombat(atkCard, defCard) {
-        if (!duelContext) return;
-        const atkPiece = state.board[duelContext.atkR][duelContext.atkC];
-        const defPiece = state.board[duelContext.defR][duelContext.defC];
-        if (!atkPiece || !defPiece) {
-          closeModal('combat-modal');
-          duelContext = null;
-          renderAll();
-          return;
-        }
+        // 3. Actively search for waiting opponents
+        const tryFindOpponent = async () => {
+          const q = query(
+            collection(db, "matchmaking_queue"),
+            where("status", "==", "searching")
+          );
+          const snapshot = await getDocs(q);
+          let bestOpponent = null;
+          let smallestDiff = Infinity;
 
-        const atkSnap = { ...atkPiece };
-        const defSnap = { ...defPiece };
-        const atkName = PIECE_DATA[atkPiece.type].name;
-        const defName = PIECE_DATA[defPiece.type].name;
-        const cards4 = [...state.flop, atkCard];
-        const defCards4 = [...state.flop, defCard];
+          snapshot.forEach((docItem) => {
+            const candidate = docItem.data();
+            if (candidate.uid !== myUid && candidate.status === "searching") {
+              const diff = Math.abs((candidate.elo || 1200) - userProfile.elo);
+              if (diff < smallestDiff) {
+                smallestDiff = diff;
+                bestOpponent = candidate;
+              }
+            }
+          });
 
-        const atkHand = evaluateCombatHand(cards4, atkPiece);
-        const defHand = evaluateCombatHand(defCards4, defPiece);
-        const cmp = comparePokerHands(atkHand, defHand);
+          if (bestOpponent) {
+            const newMatchId = `rk_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+            const matchRef = doc(db, "matches", newMatchId);
+            const whiteIsMe = Math.random() < 0.5;
 
-        const attackWon = cmp > 0;
-        const winSide = attackWon ? 'atk' : 'def';
-        const winHand = attackWon ? atkHand : defHand;
-        const winColor = attackWon ? atkPiece.color : defPiece.color;
-        const winPiece = attackWon ? atkPiece : defPiece;
+            const whitePlayer = whiteIsMe
+              ? { uid: myUid, name: userProfile.name, elo: userProfile.elo }
+              : { uid: bestOpponent.uid, name: bestOpponent.name, elo: bestOpponent.elo || 1200 };
 
-        let atkDmg = 0;
-        let defDmg = 0;
-        let extraActions = 0;
-        let healedHp = 0;
-        const extras = [];
+            const blackPlayer = whiteIsMe
+              ? { uid: bestOpponent.uid, name: bestOpponent.name, elo: bestOpponent.elo || 1200 }
+              : { uid: myUid, name: userProfile.name, elo: userProfile.elo };
 
-        if (attackWon) {
-          defDmg = 2;
-          if (winHand.cat === 3 || winHand.cat === 5) {
-            defDmg += 1;
+            await setDoc(matchRef, {
+              matchId: newMatchId,
+              whiteUid: whitePlayer.uid,
+              whiteName: whitePlayer.name,
+              whiteEloBefore: whitePlayer.elo,
+              blackUid: blackPlayer.uid,
+              blackName: blackPlayer.name,
+              blackEloBefore: blackPlayer.elo,
+              boardJson: JSON.stringify(INITIAL_BOARD),
+              turn: "w",
+              lastMove: null,
+              status: "active",
+              winner: null,
+              endReason: null,
+              eloApplied: false,
+              createdAt: serverTimestamp()
+            });
+
+            // Notify opponent ticket
+            await updateDoc(doc(db, "matchmaking_queue", bestOpponent.uid), {
+              status: "matched",
+              matchId: newMatchId
+            });
+
+            cleanupQueueListeners();
+            await deleteDoc(myQueueRef).catch(() => {});
+            joinRankedMatch(newMatchId);
           }
-        } else {
-          atkDmg = 1;
-          defDmg = defPiece.type === 'R' ? 0 : 1;
-
-          if (atkPiece.type === 'B') {
-            defDmg = Math.max(defDmg, 2);
-            extras.push('Passiva do Bispo: 2♥ mesmo na defesa');
-          }
-          if (defPiece.type === 'R') {
-            extras.push('Passiva da Torre: 0♥ ao defender');
-          }
-          if (winHand.cat === 3 || winHand.cat === 5) {
-            atkDmg += 1;
-          }
-        }
-
-        if (winHand.cat === 1) {
-          const before = winPiece.hp;
-          winPiece.hp = Math.min(winPiece.maxHp, winPiece.hp + 2);
-          healedHp = winPiece.hp - before;
-        } else if (winHand.cat === 2) {
-          state.players[winColor].gold += 4;
-          extras.push('+♦4 (2 Pares)');
-        } else if (winHand.cat === 4) {
-          extraActions += 1;
-          if (state.players[winColor].hand.length < MAX_HAND_SIZE) {
-            const extraC = drawCard();
-            if (extraC !== null) state.players[winColor].hand.push(extraC);
-          }
-          extras.push('+1♣ e +1 carta (Sequência)');
-        } else if (winHand.cat === 5) {
-          const before = winPiece.hp;
-          winPiece.hp = Math.min(winPiece.maxHp, winPiece.hp + 2);
-          healedHp = winPiece.hp - before;
-        } else if (winHand.cat === 6) {
-          if (winSide === 'atk') {
-            defDmg = defPiece.hp + 99;
-          } else {
-            atkDmg = atkPiece.hp + 99;
-          }
-          state.players[winColor].gold += 8;
-          extras.push('Abate imediato + ♦8 (Quadra)');
-        }
-
-        const actualAtkDmg = Math.min(atkPiece.hp, Math.max(0, atkDmg));
-        const actualDefDmg = Math.min(defPiece.hp, Math.max(0, defDmg));
-
-        atkPiece.hp -= atkDmg;
-        defPiece.hp -= defDmg;
-
-        const atkDead = atkPiece.hp <= 0;
-        const defDead = defPiece.hp <= 0;
-
-        let winnerSideEnd = null;
-
-        if (defDead) {
-          state.board[duelContext.defR][duelContext.defC] = null;
-          const qHeal = applyQueenAbatePassive(atkPiece.color);
-          if (qHeal > 0) extras.push(`Passiva da Rainha: +${qHeal}♥`);
-          if (defPiece.type === 'K') {
-            winnerSideEnd = atkPiece.color;
-          } else {
-            const rwd = PIECE_DATA[defPiece.type].reward || 0;
-            state.players[atkPiece.color].gold += rwd;
-            extras.push(`Abate de ${defName}: +♦${rwd}`);
-          }
-        }
-
-        if (!winnerSideEnd && atkDead) {
-          state.board[duelContext.atkR][duelContext.atkC] = null;
-          const qHeal = applyQueenAbatePassive(defPiece.color);
-          if (qHeal > 0) extras.push(`Passiva da Rainha: +${qHeal}♥`);
-          if (atkPiece.type === 'K') {
-            winnerSideEnd = defPiece.color;
-          } else {
-            const rwd = PIECE_DATA[atkPiece.type].reward || 0;
-            state.players[defPiece.color].gold += rwd;
-            extras.push(`Abate de ${atkName}: +♦${rwd}`);
-          }
-        }
-
-        if (!winnerSideEnd) {
-          if (defDead && !atkDead) {
-            state.board[duelContext.defR][duelContext.defC] = atkPiece;
-            state.board[duelContext.atkR][duelContext.atkC] = null;
-            promotePawnIfCrossed(atkPiece, duelContext.defR, duelContext.defC);
-          } else if (atkDead && !defDead) {
-            state.board[duelContext.atkR][duelContext.atkC] = defPiece;
-            state.board[duelContext.defR][duelContext.defC] = null;
-            promotePawnIfCrossed(defPiece, duelContext.atkR, duelContext.atkC);
-          }
-        }
-
-        if (atkCard !== null && atkCard !== undefined) state.discard.push(atkCard);
-        if (defCard !== null && defCard !== undefined) state.discard.push(defCard);
-        dealFlop();
-
-        if (extraActions > 0 && state.turn === winColor) {
-          state.actions += extraActions;
-        }
-
-        finishPieceAction(atkPiece);
-
-        const atkParts = [`Dano: -${actualAtkDmg}♥`];
-        if (winSide === 'atk' && healedHp > 0) atkParts.push(`+${healedHp}♥ cura`);
-        atkParts.push(atkDead ? 'ABATIDO' : `Restante: ${Math.max(0, atkPiece.hp)}♥`);
-
-        const defParts = [`Dano: -${actualDefDmg}♥`];
-        if (winSide === 'def' && healedHp > 0) defParts.push(`+${healedHp}♥ cura`);
-        defParts.push(defDead ? 'ABATIDO' : `Restante: ${Math.max(0, defPiece.hp)}♥`);
-
-        const winnerLabel = attackWon
-          ? `⚔️ Vencedor: Atacante (${atkPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'})`
-          : `🛡️ Vencedor: Defensor (${defPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'})`;
-
-        setStatus(`${winnerLabel} · ${winHand.name} · Flop renovado`);
-
-        const summaryData = {
-          atkCard,
-          defCard,
-          atkPiece: atkSnap,
-          defPiece: defSnap,
-          atkHeaderInfo: `${atkName} (${atkSnap.hp}♥)`,
-          defHeaderInfo: `${defName} (${defSnap.hp}♥)`,
-          atkRep: formatPieceRep(atkPiece),
-          defRep: formatPieceRep(defPiece),
-          atkHand,
-          defHand,
-          winHand,
-          winnerLabel,
-          atkName,
-          defName,
-          atkDmg: actualAtkDmg,
-          defDmg: actualDefDmg,
-          atkResultText: atkParts.join(' · '),
-          defResultText: defParts.join(' · '),
-          extraInfo: extras.join(' · '),
-          winnerSideEnd
         };
 
-        renderAll();
+        await tryFindOpponent();
+        queueSearchInterval = setInterval(() => {
+          tryFindOpponent().catch(() => {});
+        }, 3000);
 
-        if (isOnlineMode() && net.role === 'host') {
-          if (winnerSideEnd) {
-            state.gameOver = true;
-            state.gameOverData = {
-              title: `Vitória das ${winnerSideEnd === 'white' ? '♔ Brancas' : '♚ Pretas'}`,
-              desc: 'O Rei adversário foi abatido!',
-              winnerSide: winnerSideEnd,
-              reason: 'O Rei adversário foi abatido!'
-            };
-          }
-          net.lastSummary = summaryData;
-          syncOnlineState();
-        }
-
-        openModal('combat-modal');
-        showPostCombatSummary(summaryData);
+      } catch (err) {
+        cleanupQueueListeners();
+        findMatchBtn.classList.remove("hidden");
+        cancelQueueBtn.classList.add("hidden");
+        showFeedback(`Erro na fila: ${err.message}`, true);
       }
+    }
 
-      function pickBotCard(hand, piece) {
-        if (hand.length <= 1) return 0;
-        let bestI = 0;
-        let bestEval = null;
-        hand.forEach((cVal, idx) => {
-          const ev = evaluateCombatHand([...state.flop, cVal], piece);
-          if (!bestEval || comparePokerHands(ev, bestEval) > 0) {
-            bestEval = ev;
-            bestI = idx;
-          }
-        });
-        return bestI;
+    function cleanupQueueListeners() {
+      if (queueUnsubscribe) { queueUnsubscribe(); queueUnsubscribe = null; }
+      if (queueSearchInterval) { clearInterval(queueSearchInterval); queueSearchInterval = null; }
+    }
+
+    async function leaveMatchmakingQueue() {
+      cleanupQueueListeners();
+      findMatchBtn.classList.remove("hidden");
+      cancelQueueBtn.classList.add("hidden");
+      hideFeedback();
+      if (currentUser) {
+        await deleteDoc(doc(db, "matchmaking_queue", currentUser.uid)).catch(() => {});
       }
-
-      function renderAttackerCardSelection(atkR, atkC, defR, defC, atkPiece, defPiece, atkPlayer, defPlayer, onSelectOverride = null) {
-        const body = document.getElementById('combat-body');
-        body.innerHTML = `<div class="text-xs font-bold text-[#f3d678] text-center">Atacante (${atkPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'}): escolha 1 carta da mão</div>`;
-
-        const atkCardsRow = document.createElement('div');
-        atkCardsRow.className = 'flex justify-center gap-1.5 flex-wrap';
-
-        atkPlayer.hand.forEach((cVal, idx) => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'xeker-card w-11 h-14 rounded-lg text-sm';
-          btn.textContent = RANK_TEXT[cVal];
-          btn.addEventListener('click', () => {
-            if (typeof onSelectOverride === 'function') {
-              onSelectOverride(idx);
-              return;
-            }
-            const chosenAtk = atkPlayer.hand.splice(idx, 1)[0];
-            duelContext.atkCard = chosenAtk;
-            document.getElementById('combat-atk-sub').innerHTML = `
-              <div>Carta jogada: <strong>oculta</strong></div>
-              <div class="text-[10px] text-amber-200">Peça: ${formatPieceRep(atkPiece)}</div>
-            `;
-
-            if (state.mode === 'bot' && defPiece.color === 'black') {
-              const bIdx = pickBotCard(defPlayer.hand, defPiece);
-              const chosenDef = defPlayer.hand.splice(bIdx, 1)[0];
-              settleCombat(chosenAtk, chosenDef);
-            } else if (state.mode === 'pvp') {
-              body.innerHTML = `<div class="text-xs text-zinc-400 text-center py-2">Aguardando transição privada para o defensor...</div>`;
-              openCombatPrivacyPass(
-                defPiece.color,
-                'Passe o dispositivo para o defensor escolher sua carta de defesa sem ver a mão do atacante.',
-                () => {
-                  renderDefenderCardSelection(chosenAtk, defPiece, defPlayer);
-                }
-              );
-            } else {
-              renderDefenderCardSelection(chosenAtk, defPiece, defPlayer);
-            }
-          });
-          atkCardsRow.appendChild(btn);
-        });
-
-        body.appendChild(atkCardsRow);
-        openModal('combat-modal');
-      }
-
-      function renderDefenderCardSelection(chosenAtk, defPiece, defPlayer, onSelectOverride = null) {
-        const body = document.getElementById('combat-body');
-        body.innerHTML = `<div class="text-xs font-bold text-red-300 text-center">Defensor (${defPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'}): escolha 1 carta para defender</div>`;
-        const defCardsRow = document.createElement('div');
-        defCardsRow.className = 'flex justify-center gap-1.5 flex-wrap';
-        defPlayer.hand.forEach((dVal, dIdx) => {
-          const dBtn = document.createElement('button');
-          dBtn.type = 'button';
-          dBtn.className = 'xeker-card w-11 h-14 rounded-lg text-sm';
-          dBtn.textContent = RANK_TEXT[dVal];
-          dBtn.addEventListener('click', () => {
-            if (typeof onSelectOverride === 'function') {
-              onSelectOverride(dIdx);
-              return;
-            }
-            const chosenDef = defPlayer.hand.splice(dIdx, 1)[0];
-            settleCombat(chosenAtk, chosenDef);
-          });
-          defCardsRow.appendChild(dBtn);
-        });
-        body.appendChild(defCardsRow);
-        openModal('combat-modal');
-      }
-
-      function startCombat(atkR, atkC, defR, defC) {
-        const atkPiece = state.board[atkR][atkC];
-        const defPiece = state.board[defR][defC];
-        if (!atkPiece || !defPiece) return;
-
-        const atkPlayer = state.players[atkPiece.color];
-        const defPlayer = state.players[defPiece.color];
-
-        if (atkPlayer.hand.length === 0) {
-          setStatus('⚠️ Sem cartas na mão para atacar.');
-          return;
-        }
-
-        document.getElementById('combat-heading').textContent = '⚔️ Combate de Pôquer';
-
-        const flopEl = document.getElementById('combat-flop');
-        flopEl.innerHTML = '';
-        state.flop.forEach((v) => flopEl.appendChild(renderCard(v, 'w-9 h-12 rounded-md text-sm')));
-
-        document.getElementById('combat-atk-glyph').textContent = atkPiece.color === 'white' ? PIECE_DATA[atkPiece.type].white : PIECE_DATA[atkPiece.type].black;
-        document.getElementById('combat-atk-info').textContent = `${PIECE_DATA[atkPiece.type].name} (${atkPiece.hp}♥)`;
-        document.getElementById('combat-atk-sub').innerHTML = `
-          <div>Peça: ${formatPieceRep(atkPiece)}</div>
-          <div class="text-[10px] text-zinc-400">Mão: ${atkPlayer.hand.length} oculta(s)</div>
-        `;
-
-        document.getElementById('combat-def-glyph').textContent = defPiece.color === 'white' ? PIECE_DATA[defPiece.type].white : PIECE_DATA[defPiece.type].black;
-        document.getElementById('combat-def-info').textContent = `${PIECE_DATA[defPiece.type].name} (${defPiece.hp}♥)`;
-        document.getElementById('combat-def-sub').innerHTML = `
-          <div>Peça: ${formatPieceRep(defPiece)}</div>
-          <div class="text-[10px] text-zinc-400">Mão: ${defPlayer.hand.length} oculta(s)</div>
-        `;
-
-        if (defPlayer.hand.length === 0) {
-          const used = atkPlayer.hand.pop();
-          state.discard.push(used);
-          dealFlop();
-          duelContext = { atkR, atkC, defR, defC, atkCard: used };
-          const dmg = 2;
-          const actualDmg = Math.min(defPiece.hp, dmg);
-          defPiece.hp -= dmg;
-          const dead = defPiece.hp <= 0;
-          const extras = ['Flop renovado'];
-          let winnerSideEnd = null;
-          if (dead) {
-            state.board[defR][defC] = atkPiece;
-            state.board[atkR][atkC] = null;
-            const qH = applyQueenAbatePassive(atkPiece.color);
-            if (qH > 0) extras.push(`Rainha +${qH}♥`);
-            if (defPiece.type === 'K') {
-              winnerSideEnd = atkPiece.color;
-            } else {
-              const rwd = PIECE_DATA[defPiece.type].reward || 0;
-              state.players[atkPiece.color].gold += rwd;
-              extras.push(`+♦${rwd}`);
-            }
-            if (!winnerSideEnd) promotePawnIfCrossed(atkPiece, defR, defC);
-          }
-          finishPieceAction(atkPiece);
-          renderAll();
-          if (isOnlineMode() && net.role === 'host') {
-            syncOnlineState();
-          }
-          openModal('combat-modal');
-          showPostCombatSummary({
-            atkCard: used,
-            defCard: null,
-            atkRep: formatPieceRep(atkPiece),
-            defRep: formatPieceRep(defPiece),
-            atkHand: { cat: 0, name: 'Ataque Direto' },
-            defHand: { cat: 0, name: 'Sem Cartas' },
-            winHand: { cat: 0, name: 'Ataque Direto' },
-            winnerLabel: `⚔️ Vencedor: Atacante (${atkPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'})`,
-            atkName: PIECE_DATA[atkPiece.type].name,
-            defName: PIECE_DATA[defPiece.type].name,
-            atkDmg: 0,
-            defDmg: actualDmg,
-            atkResultText: `Dano: 0♥ · Restante: ${atkPiece.hp}♥`,
-            defResultText: `Dano: -${actualDmg}♥ · ${dead ? 'ABATIDO' : `Restante: ${defPiece.hp}♥`}`,
-            extraInfo: extras.join(' · '),
-            winnerSideEnd
-          });
-          return;
-        }
-
-        duelContext = { atkR, atkC, defR, defC, atkCard: null };
-
-        if (isOnlineMode() && net.role === 'host') {
-          if (atkPiece.color === 'white') {
-            net.pendingCombat = {
-              atkR, atkC, defR, defC,
-              atkPiece: { ...atkPiece },
-              defPiece: { ...defPiece },
-              atkHandCount: atkPlayer.hand.length,
-              defHandCount: defPlayer.hand.length,
-              stage: 'awaiting_attacker'
-            };
-            syncOnlineState();
-            renderAttackerCardSelection(atkR, atkC, defR, defC, atkPiece, defPiece, atkPlayer, defPlayer);
-          } else {
-            net.pendingCombat = {
-              atkR, atkC, defR, defC,
-              atkPiece: { ...atkPiece },
-              defPiece: { ...defPiece },
-              atkHandCount: atkPlayer.hand.length,
-              defHandCount: defPlayer.hand.length,
-              stage: 'awaiting_attacker'
-            };
-            syncOnlineState();
-            document.getElementById('combat-body').innerHTML = `<div class="text-xs text-amber-200 text-center py-2">Aguardando atacante (Pretas) escolher sua carta...</div>`;
-            openModal('combat-modal');
-          }
-          return;
-        }
-
-        if (state.mode === 'pvp') {
-          document.getElementById('combat-body').innerHTML = `<div class="text-xs text-zinc-400 text-center py-2">Preparando transição privada para o atacante...</div>`;
-          openCombatPrivacyPass(
-            atkPiece.color,
-            'Passe o dispositivo para o atacante escolher sua carta de combate sem expor as mãos.',
-            () => {
-              renderAttackerCardSelection(atkR, atkC, defR, defC, atkPiece, defPiece, atkPlayer, defPlayer);
-            }
-          );
-        } else {
-          renderAttackerCardSelection(atkR, atkC, defR, defC, atkPiece, defPiece, atkPlayer, defPlayer);
-        }
-      }
-
-      function getValidSkillTargets(sr, sc, skillType, copiedSkill) {
-        const reach = getReachInfo(sr, sc);
-        if (skillType === 'Q' && !copiedSkill) {
-          return reach.allPieces.filter((entry) => entry.piece && entry.piece.type !== 'Q');
-        }
-        const effective = copiedSkill || skillType;
-        if (effective === 'B') return reach.allies;
-        if (effective === 'R') return reach.allPieces;
-        return reach.enemies;
-      }
-
-      function executeActiveSkill(userR, userC, skillType, targetR, targetC, isCopied = false) {
-        const userPiece = state.board[userR][userC];
-        const player = state.players[state.turn];
-        if (!userPiece || userPiece.acted || player.gold < 1) return;
-
-        if (skillType === 'Q' && !isCopied) {
-          const sourcePiece = state.board[targetR][targetC];
-          if (!sourcePiece || (targetR === userR && targetC === userC) || sourcePiece.type === 'Q') {
-            setStatus('⚠️ Escolha outra peça válida no alcance da Rainha.');
-            return;
-          }
-          const copied = sourcePiece.type;
-          if (copied === 'P' || copied === 'B') {
-            executeActiveSkill(userR, userC, copied, userR, userC, true);
-            return;
-          }
-          state.copiedSkill = copied;
-          state.skillPhase = 'copied_target';
-          setStatus(`♛ Rainha copiou ativa de ${PIECE_DATA[copied].name}: escolha o alvo no alcance.`);
-          renderAll();
-          return;
-        }
-
-        if (skillType === 'P') {
-          const reach = getReachInfo(userR, userC);
-          if (reach.enemies.length === 0) {
-            setStatus('⚠️ Nenhum inimigo no alcance para a ativa do Peão.');
-            return;
-          }
-          player.gold -= 1;
-          state.board[userR][userC] = null;
-
-          let hitCount = 0;
-          let endNow = false;
-          for (const item of reach.enemies) {
-            const enemy = state.board[item.r][item.c];
-            if (!enemy) continue;
-            enemy.hp -= 1;
-            hitCount += 1;
-            if (enemy.hp <= 0) {
-              state.board[item.r][item.c] = null;
-              if (handleAbatement(state.turn, enemy)) {
-                endNow = true;
-                break;
-              }
-            }
-          }
-          finishPieceSkillAction(userPiece);
-          if (!endNow) {
-            setStatus(`♠ ${isCopied ? 'Rainha (Peão)' : 'Peão'} sacrificou-se causando 1♥ a ${hitCount} inimigo(s) (♦1 · 0♣).`);
-          }
-          renderAll();
-          if (isOnlineMode() && net.role === 'host') syncOnlineState();
-          return;
-        }
-
-        if (skillType === 'B') {
-          const reach = getReachInfo(userR, userC);
-          if (reach.allies.length === 0) {
-            setStatus('⚠️ Nenhum aliado no alcance do Bispo.');
-            return;
-          }
-          player.gold -= 1;
-          let healedCount = 0;
-          for (const item of reach.allies) {
-            const ally = state.board[item.r][item.c];
-            if (!ally) continue;
-            const prev = ally.hp;
-            ally.hp = Math.min(ally.maxHp, ally.hp + 1);
-            if (ally.hp > prev) healedCount += 1;
-          }
-          finishPieceSkillAction(userPiece);
-          setStatus(`♠ ${isCopied ? 'Rainha (Bispo)' : 'Bispo'} curou +1♥ em ${healedCount} aliado(s) no alcance (♦1 · 0♣).`);
-          renderAll();
-          if (isOnlineMode() && net.role === 'host') syncOnlineState();
-          return;
-        }
-
-        if (skillType === 'R') {
-          const targetPiece = state.board[targetR][targetC];
-          if (!targetPiece || (targetR === userR && targetC === userC)) {
-            setStatus('⚠️ Escolha outra peça no alcance para trocar de posição.');
-            return;
-          }
-          player.gold -= 1;
-          state.board[targetR][targetC] = userPiece;
-          state.board[userR][userC] = targetPiece;
-          finishPieceSkillAction(userPiece);
-          setStatus(`♠ ${isCopied ? 'Rainha (Torre)' : 'Torre'} trocou de posição com ${PIECE_DATA[targetPiece.type].name} (♦1 · 0♣).`);
-          renderAll();
-          if (isOnlineMode() && net.role === 'host') syncOnlineState();
-          return;
-        }
-
-        const enemy = state.board[targetR][targetC];
-        if (!enemy || enemy.color === userPiece.color) {
-          setStatus('⚠️ Escolha um inimigo no alcance.');
-          return;
-        }
-
-        const dmg = skillType === 'K' ? 2 : 1;
-        player.gold -= 1;
-        enemy.hp -= dmg;
-        let ended = false;
-        if (enemy.hp <= 0) {
-          state.board[targetR][targetC] = null;
-          ended = handleAbatement(state.turn, enemy);
-        }
-        finishPieceSkillAction(userPiece);
-        if (!ended) {
-          setStatus(`♠ ${isCopied ? `Rainha (${PIECE_DATA[skillType].name})` : PIECE_DATA[userPiece.type].name} causou ${dmg}♥ em ${PIECE_DATA[enemy.type].name} (♦1 · 0♣).`);
-        }
-        renderAll();
-        if (isOnlineMode() && net.role === 'host') syncOnlineState();
-      }
-
-      function onActiveSkillClick() {
-        if (!state || state.gameOver || !state.selected) return;
-        const { r, c } = state.selected;
-        const piece = state.board[r][c];
-        const player = state.players[state.turn];
-        if (!piece || piece.color !== state.turn) return;
-        if (isOnlineMode() && state.turn !== myOnlineSide()) return;
-
-        if (state.skillPhase) {
-          state.skillPhase = null;
-          state.copiedSkill = null;
-          setStatus('Habilidade ativa cancelada.');
-          renderAll();
-          return;
-        }
-
-        if (piece.acted) {
-          setStatus('⚠️ Esta peça já realizou sua jogada neste turno.');
-          return;
-        }
-        if (player.gold < 1) {
-          setStatus('⚠️ Requer ♦1 para usar habilidade ativa.');
-          return;
-        }
-
-        state.actionMode = null;
-        state.copiedSkill = null;
-
-        const targets = getValidSkillTargets(r, c, piece.type, null);
-        if (targets.length === 0) {
-          setStatus(`⚠️ Nenhum alvo válido no alcance para a ativa de ${PIECE_DATA[piece.type].name}.`);
-          renderAll();
-          return;
-        }
-
-        if (piece.type === 'P' || piece.type === 'B') {
-          if (isOnlineMode() && net.role === 'guest') {
-            sendNet({
-              type: 'online_action',
-              action: { kind: 'skill', fromR: r, fromC: c, effType: piece.type, toR: r, toC: c, copiedFlag: false }
-            });
-            state.selected = null;
-            renderAll();
-            return;
-          }
-          executeActiveSkill(r, c, piece.type, r, c, false);
-          return;
-        }
-
-        if (piece.type === 'Q') {
-          state.skillPhase = 'copy_target';
-          setStatus('♛ Rainha: toque em uma peça destacada em azul para copiar a ativa.');
-          renderAll();
-          return;
-        }
-
-        if (piece.type === 'R') {
-          state.skillPhase = 'swap_target';
-          setStatus('♜ Torre: toque em uma peça destacada em azul para trocar de posição.');
-          renderAll();
-          return;
-        }
-
-        state.skillPhase = 'enemy_target';
-        const dmgVal = piece.type === 'K' ? 2 : 1;
-        setStatus(`♠ ${PIECE_DATA[piece.type].name}: toque em um inimigo azul (${dmgVal}♥ de dano).`);
-        renderAll();
-      }
-
-      function onTileTap(r, c) {
-        if (!state || state.gameOver) return;
-        if (isOnlineMode() && state.turn !== myOnlineSide()) return;
-
-        if (state.selected && state.skillPhase) {
-          const { r: sr, c: sc } = state.selected;
-          const sel = state.board[sr][sc];
-          if (sel) {
-            const validTargets = getValidSkillTargets(sr, sc, sel.type, state.copiedSkill);
-            if (validTargets.some((t) => t.r === r && t.c === c)) {
-              const effType = state.copiedSkill || sel.type;
-              const copiedFlag = Boolean(state.copiedSkill);
-              if (isOnlineMode() && net.role === 'guest') {
-                sendNet({
-                  type: 'online_action',
-                  action: { kind: 'skill', fromR: sr, fromC: sc, effType, toR: r, toC: c, copiedFlag }
-                });
-                state.selected = null;
-                state.actionMode = null;
-                state.skillPhase = null;
-                state.copiedSkill = null;
-                renderAll();
-                return;
-              }
-              executeActiveSkill(sr, sc, effType, r, c, copiedFlag);
-              return;
-            }
-          }
-          setStatus('⚠️ Selecione um alvo destacado em azul.');
-          return;
-        }
-
-        if (state.selected && state.actionMode) {
-          const { r: sr, c: sc } = state.selected;
-          const sel = state.board[sr][sc];
-          if (sel && sel.color === state.turn && !sel.acted && state.actions > 0) {
-            const reach = getReachInfo(sr, sc);
-            if (state.actionMode === 'move' && reach.moves.some((m) => m.r === r && m.c === c)) {
-              if (isOnlineMode() && net.role === 'guest') {
-                sendNet({
-                  type: 'online_action',
-                  action: { kind: 'move', fromR: sr, fromC: sc, toR: r, toC: c }
-                });
-                state.selected = null;
-                state.actionMode = null;
-                renderAll();
-                return;
-              }
-              doMove(sr, sc, r, c);
-              return;
-            }
-            if (state.actionMode === 'attack' && reach.attacks.some((a) => a.r === r && a.c === c)) {
-              if (isOnlineMode() && net.role === 'guest') {
-                sendNet({
-                  type: 'online_action',
-                  action: { kind: 'attack', fromR: sr, fromC: sc, toR: r, toC: c }
-                });
-                state.selected = null;
-                state.actionMode = null;
-                renderAll();
-                return;
-              }
-              startCombat(sr, sc, r, c);
-              return;
-            }
-          }
-        }
-
-        const tappedPiece = state.board[r][c];
-        if (tappedPiece && tappedPiece.color === state.turn) {
-          if (tappedPiece.acted) {
-            setStatus(`⚠️ ${PIECE_DATA[tappedPiece.type].name} já agiu neste turno.`);
-            return;
-          }
-          state.selected = { r, c };
-          state.actionMode = state.actions > 0 ? 'move' : null;
-          state.skillPhase = null;
-          state.copiedSkill = null;
-          setStatus(
-            state.actions > 0
-              ? `${PIECE_DATA[tappedPiece.type].name} selecionado: toque em uma casa livre para mover ou escolha Atacar / Ativa.`
-              : `${PIECE_DATA[tappedPiece.type].name} selecionado (sem ações ♣): escolha Ativa ou Fim Turno.`
-          );
-          renderAll();
-          return;
-        }
-
-        state.selected = null;
-        state.actionMode = null;
-        state.skillPhase = null;
-        state.copiedSkill = null;
-        renderAll();
-      }
-
-      function onSelectActionMode(mode) {
-        if (!state || state.gameOver || !state.selected) return;
-        state.skillPhase = null;
-        state.copiedSkill = null;
-        if (state.actionMode === mode) {
-          state.actionMode = state.actions > 0 ? 'move' : null;
-          setStatus(state.actionMode === 'move' ? 'Modo padrão: toque em uma casa livre para mover.' : 'Ação desmarcada.');
-        } else {
-          state.actionMode = mode;
-          setStatus(mode === 'move' ? 'Escolha uma casa livre destacada.' : 'Escolha um inimigo em vermelho para atacar.');
-        }
-        renderAll();
-      }
-
-      function onBuyCard() {
-        if (!state || state.gameOver) return;
-        if (isOnlineMode() && state.turn !== myOnlineSide()) return;
-
-        if (isOnlineMode() && net.role === 'guest') {
-          sendNet({ type: 'online_action', action: { kind: 'buy' } });
-          return;
-        }
-
-        const player = state.players[state.turn];
-
-        if (player.gold < 3) {
-          setStatus('⚠️ Requer ♦3 de ouro para comprar carta.');
-          return;
-        }
-        if (player.hand.length >= MAX_HAND_SIZE) {
-          setStatus(`⚠️ Mão cheia (máximo de ${MAX_HAND_SIZE} cartas).`);
-          return;
-        }
-        const drawn = drawCard();
-        if (drawn === null) {
-          setStatus('⚠️ Sem cartas disponíveis no monte.');
-          return;
-        }
-
-        player.gold -= 3;
-        player.hand.push(drawn);
-        setStatus(`🃏 Comprou carta [${RANK_TEXT[drawn]}] por ♦3 e 0♣.`);
-        renderAll();
-        if (isOnlineMode() && net.role === 'host') {
-          syncOnlineState();
-        }
-        if (isRankedMode() && ranked.role === 'host') {
-          syncRankedState();
-        }
-      }
-
-      function onEndTurn() {
-        if (!state || state.gameOver) return;
-        if (isOnlineMode() && state.turn !== myOnlineSide()) return;
-
-        if (isOnlineMode() && net.role === 'guest') {
-          sendNet({ type: 'online_action', action: { kind: 'end_turn' } });
-          return;
-        }
-
-        state.selected = null;
-        state.actionMode = null;
-        state.skillPhase = null;
-        state.copiedSkill = null;
-
-        for (let r = 0; r < 8; r++) {
-          for (let c = 0; c < 8; c++) {
-            const p = state.board[r][c];
-            if (p) p.acted = false;
-          }
-        }
-
-        if (state.turn === 'white') {
-          state.turn = 'black';
-          state.actions = 2;
-          const bCard = maybeDrawEveryTwoOwnTurns('black');
-          const bDrawMsg = bCard !== null ? ` · Pretas receberam +1 carta [${RANK_TEXT[bCard]}]` : '';
-
-          if (state.mode === 'online') {
-            setStatus(`Turno das Pretas · ♣2${bDrawMsg}`);
-            renderAll();
-            if (net.role === 'host') syncOnlineState();
-          } else {
-            document.getElementById('pass-heading').textContent = 'Vez das Pretas (♚)';
-            setStatus(`Turno das Pretas · ♣2${bDrawMsg}`);
-            renderAll();
-            openModal('pass-modal');
-          }
-        } else {
-          state.turn = 'white';
-          state.round += 1;
-          state.actions = 2;
-          const wCard = maybeDrawEveryTwoOwnTurns('white');
-          const wDrawMsg = wCard !== null ? ` · Brancas receberam +1 carta [${RANK_TEXT[wCard]}]` : '';
-
-          if (state.mode === 'pvp') {
-            document.getElementById('pass-heading').textContent = 'Vez das Brancas (♔)';
-            setStatus(`Rodada ${state.round} · Brancas · ♣2${wDrawMsg}`);
-            renderAll();
-            openModal('pass-modal');
-          } else {
-            setStatus(`Rodada ${state.round} · Brancas · ♣2${wDrawMsg}`);
-            renderAll();
-            if (isOnlineMode() && net.role === 'host') syncOnlineState();
-          }
-        }
-      }
-
-      function renderAll() {
-        if (!state) return;
-
-        document.getElementById('val-gold-white').textContent = String(state.players.white.gold);
-        document.getElementById('val-gold-black').textContent = String(state.players.black.gold);
-        document.getElementById('val-cards-white').textContent = String(state.players.white.hand.length);
-        document.getElementById('val-cards-black').textContent = String(state.players.black.hand.length);
-        document.getElementById('val-actions').textContent = String(state.actions);
-        refreshClocks();
-
-        const wHud = document.getElementById('hud-white');
-        const bHud = document.getElementById('hud-black');
-        wHud.className = `flex items-center gap-1 px-1.5 py-1 rounded-lg text-[11px] font-bold border ${state.turn === 'white' ? 'bg-[#d4af37]/15 border-[#d4af37]' : 'bg-[#161820] border-white/10'}`;
-        bHud.className = `flex items-center gap-1 px-1.5 py-1 rounded-lg text-[11px] font-bold border ${state.turn === 'black' ? 'bg-[#d4af37]/15 border-[#d4af37]' : 'bg-[#161820] border-white/10'}`;
-
-        const activePlayer = state.players[state.turn];
-        const mySide = myOnlineSide();
-        const canActOnMyTurn = !state.gameOver && (!isOnlineMode() || state.turn === mySide);
-
-        document.getElementById('btn-draw-card').disabled =
-          !canActOnMyTurn ||
-          activePlayer.gold < 3 ||
-          activePlayer.hand.length >= MAX_HAND_SIZE ||
-          (!isOnlineMode() && state.deck.length === 0 && state.discard.length === 0);
-
-        const flopEl = document.getElementById('flop-container');
-        flopEl.innerHTML = '';
-        state.flop.forEach((v) => {
-          flopEl.appendChild(renderCard(v, 'w-8 h-10 rounded-md text-xs'));
-        });
-
-        let moveList = [];
-        let attackList = [];
-        let skillList = [];
-
-        if (state.selected) {
-          const selPiece = state.board[state.selected.r][state.selected.c];
-          const reach = getReachInfo(state.selected.r, state.selected.c);
-          if (state.skillPhase && selPiece) {
-            skillList = getValidSkillTargets(state.selected.r, state.selected.c, selPiece.type, state.copiedSkill).map((x) => ({ r: x.r, c: x.c }));
-          } else if (state.actionMode === 'move') {
-            moveList = reach.moves;
-          } else if (state.actionMode === 'attack') {
-            attackList = reach.attacks;
-          }
-        }
-
-        const boardEl = document.getElementById('board-grid');
-        boardEl.innerHTML = '';
-        for (let r = 0; r < 8; r++) {
-          for (let c = 0; c < 8; c++) {
-            const tile = document.createElement('div');
-            tile.className = `tile ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
-
-            if (state.selected && state.selected.r === r && state.selected.c === c) {
-              tile.classList.add('selected');
-            }
-            if (moveList.some((m) => m.r === r && m.c === c)) tile.classList.add('can-move');
-            if (attackList.some((a) => a.r === r && a.c === c)) tile.classList.add('can-attack');
-            if (skillList.some((s) => s.r === r && s.c === c)) tile.classList.add('can-skill');
-
-            const piece = state.board[r][c];
-            if (piece) {
-              const info = PIECE_DATA[piece.type];
-              const token = document.createElement('div');
-              token.className = `piece-token ${piece.color} ${piece.acted ? 'acted' : ''}`;
-
-              const rankBadge = document.createElement('span');
-              rankBadge.className = 'piece-badge-rank';
-              rankBadge.textContent = piece.type === 'P' ? '2-9' : RANK_TEXT[piece.cardVal];
-
-              const glyph = document.createElement('span');
-              glyph.className = 'piece-glyph';
-              glyph.textContent = piece.color === 'white' ? info.white : info.black;
-
-              const hpBadge = document.createElement('span');
-              hpBadge.className = 'piece-badge-hp';
-              hpBadge.textContent = String(Math.max(0, piece.hp));
-
-              token.appendChild(rankBadge);
-              token.appendChild(glyph);
-              token.appendChild(hpBadge);
-              tile.appendChild(token);
-            }
-
-            tile.addEventListener('click', () => onTileTap(r, c));
-            boardEl.appendChild(tile);
-          }
-        }
-
-        const menuBox = document.getElementById('piece-menu');
-        const infoCard = document.getElementById('piece-info-card');
-        if (!state.selected) {
-          menuBox.innerHTML = '<span class="text-[11px] text-zinc-400">Toque em uma peça aliada</span>';
-          if (infoCard) {
-            infoCard.innerHTML = '<span class="text-zinc-400">Selecione uma peça no tabuleiro para ver <strong class="text-[#f3d678]">♠ Ativa</strong>, <strong class="text-amber-200">Passiva</strong> e <strong class="text-zinc-200">Alcance</strong>.</span>';
-          }
-        } else {
-          const piece = state.board[state.selected.r][state.selected.c];
-          if (!piece) {
-            menuBox.innerHTML = '<span class="text-[11px] text-zinc-400">Toque em uma peça aliada</span>';
-            if (infoCard) {
-              infoCard.innerHTML = '<span class="text-zinc-400">Selecione uma peça no tabuleiro para ver <strong class="text-[#f3d678]">♠ Ativa</strong>, <strong class="text-amber-200">Passiva</strong> e <strong class="text-zinc-200">Alcance</strong>.</span>';
-            }
-          } else {
-            const pInfo = PIECE_DATA[piece.type];
-            if (infoCard) {
-              const copiedTag = state.copiedSkill ? ` [${PIECE_DATA[state.copiedSkill].name}]` : '';
-              infoCard.innerHTML = `
-                <div class="flex items-center justify-between gap-2 text-[10px]">
-                  <span class="font-bold text-[#f3d678] shrink-0">${pInfo.name} · ${piece.hp}/${pInfo.hp}♥ · ${pInfo.cardLabel}</span>
-                  <span class="text-zinc-400 truncate">${pInfo.reachLabel}</span>
-                </div>
-                <div class="truncate text-[10px] text-zinc-200"><span class="sym-spade">♠</span> ${pInfo.activeText}${copiedTag}</div>
-                <div class="truncate text-[10px] text-amber-200/90">Passiva: ${pInfo.passiveText}</div>
-              `;
-            }
-            const info = PIECE_DATA[piece.type];
-            const reach = getReachInfo(state.selected.r, state.selected.c);
-            const canDo = canActOnMyTurn && state.actions > 0 && piece.color === state.turn && !piece.acted;
-            const canAttack = canDo && reach.attacks.length > 0 && activePlayer.hand.length > 0;
-            const hasSkill = getValidSkillTargets(state.selected.r, state.selected.c, piece.type, null).length > 0;
-            const canSkill = Boolean(state.skillPhase) || (canActOnMyTurn && piece.color === state.turn && !piece.acted && activePlayer.gold >= 1 && hasSkill);
-
-            menuBox.innerHTML = `
-              <span class="text-xs font-bold text-[#f3d678] truncate pr-1">${info.name} <span class="text-[10px] font-normal text-emerald-300/90">(Mover padrão)</span></span>
-              <div class="flex items-center gap-1">
-                <button type="button" id="act-attack" class="px-2 py-1 rounded-lg text-[11px] font-bold border ${state.actionMode === 'attack' ? 'bg-red-500/25 border-red-400 text-red-200' : 'bg-[#111217] border-white/15 text-zinc-200'} disabled:opacity-35" ${canAttack ? '' : 'disabled'}>
-                  Atacar
-                </button>
-                <button type="button" id="act-skill" class="px-2 py-1 rounded-lg text-[11px] font-bold border ${state.skillPhase ? 'bg-blue-500/25 border-blue-400 text-blue-200' : 'bg-blue-500/10 border-blue-400/40 text-blue-200'} disabled:opacity-35" ${canSkill ? '' : 'disabled'}>
-                  <span class="sym-spade">♠</span> Ativa
-                </button>
-              </div>
-            `;
-
-            document.getElementById('act-attack').addEventListener('click', () => onSelectActionMode('attack'));
-            document.getElementById('act-skill').addEventListener('click', onActiveSkillClick);
-          }
-        }
-
-        const handBox = document.getElementById('hand-container');
-        handBox.innerHTML = '';
-
-        const passTurnOpen = document.getElementById('pass-modal').classList.contains('open');
-        const combatModalOpen = document.getElementById('combat-modal').classList.contains('open');
-        const combatPassOpen = document.getElementById('combat-pass-modal').classList.contains('open');
-
-        if (isOnlineMode()) {
-          const myHand = state.players[mySide].hand;
-          if (myHand.length === 0) {
-            handBox.innerHTML = '<span class="text-xs text-zinc-500">Sem cartas na mão.</span>';
-          } else {
-            myHand.forEach((v) => {
-              if (v === 0) {
-                handBox.appendChild(renderCardBack('w-11 h-14 shrink-0 rounded-lg text-base'));
-              } else {
-                handBox.appendChild(renderCard(v, 'w-11 h-14 shrink-0 rounded-lg text-base'));
-              }
-            });
-          }
-        } else if (state.mode === 'pvp' && (passTurnOpen || combatModalOpen || combatPassOpen)) {
-          if (activePlayer.hand.length === 0) {
-            handBox.innerHTML = '<span class="text-xs text-zinc-500">Sem cartas na mão.</span>';
-          } else {
-            activePlayer.hand.forEach(() => {
-              handBox.appendChild(renderCardBack('w-11 h-14 shrink-0 rounded-lg text-base'));
-            });
-          }
-        } else {
-          const handToShow = activePlayer.hand;
-
-          if (handToShow.length === 0) {
-            handBox.innerHTML = '<span class="text-xs text-zinc-500">Sem cartas na mão.</span>';
-          } else {
-            handToShow.forEach((v) => {
-              handBox.appendChild(renderCard(v, 'w-11 h-14 shrink-0 rounded-lg text-base'));
-            });
-          }
-        }
-      }
-
-      function renderRulebookPage() {
-        const total = RULEBOOK_PAGES.length;
-        if (rulesIdx < 0) rulesIdx = 0;
-        if (rulesIdx >= total) rulesIdx = total - 1;
-
-        const page = RULEBOOK_PAGES[rulesIdx];
-        document.getElementById('rules-title').textContent = page.title;
-        document.getElementById('rules-counter').textContent = `Página ${rulesIdx + 1} de ${total}`;
-        document.getElementById('rules-page-label').textContent = `Página ${rulesIdx + 1} / ${total}`;
-        document.getElementById('rules-content').innerHTML = page.html;
-
-        document.getElementById('btn-rules-prev').disabled = rulesIdx === 0;
-        document.getElementById('btn-rules-next').textContent = rulesIdx === total - 1 ? 'Fechar' : 'Próxima';
-      }
-
-      function openRulebook() {
-        rulesIdx = 0;
-        renderRulebookPage();
-        openModal('rules-modal');
-      }
-
-      function syncModeButtons() {
-        const pvpBtn = document.getElementById('btn-select-pvp');
-        const onlineBtn = document.getElementById('btn-select-online');
-        const rankedBtn = document.getElementById('btn-select-ranked');
-
-        const activeCls = 'py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95';
-        const idleCls = 'py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95';
-
-        pvpBtn.className = selectedMode === 'pvp' ? activeCls : idleCls;
-        onlineBtn.className = selectedMode === 'online' ? activeCls : idleCls;
-        if (rankedBtn) rankedBtn.className = selectedMode === 'ranked' ? activeCls : idleCls;
-      }
-
-      function openSurrenderModal() {
-        if (!state || state.gameOver) return;
-        const sideToSurrender = isOnlineMode() ? myOnlineSide() : state.turn;
-        const label = sideToSurrender === 'white' ? 'Brancas (♔)' : 'Pretas (♚)';
-        document.getElementById('surrender-desc').textContent =
-          `Tem certeza de que ${label} deseja se render? O oponente vencerá a partida imediatamente.`;
-        openModal('surrender-modal');
-      }
-
-      function confirmSurrender() {
-        closeModal('surrender-modal');
-        if (!state || state.gameOver) return;
-        const surrenderingSide = isOnlineMode() ? myOnlineSide() : state.turn;
-        const winnerSide = surrenderingSide === 'white' ? 'black' : 'white';
-        const surrenderingLabel = surrenderingSide === 'white' ? 'Brancas (♔)' : 'Pretas (♚)';
-        endMatch(winnerSide, `${surrenderingLabel} se rendeu.`);
-      }
-
-      function bindEvents() {
-        document.getElementById('btn-select-pvp').addEventListener('click', () => {
-          selectedMode = 'pvp';
-          syncModeButtons();
-        });
-        document.getElementById('btn-select-online').addEventListener('click', () => {
-          selectedMode = 'online';
-          syncModeButtons();
-          openModal('online-modal');
-        });
-        document.getElementById('btn-select-ranked').addEventListener('click', () => {
-          selectedMode = 'ranked';
-          syncModeButtons();
-          initFirebaseRanked();
-          openModal('ranked-modal');
-        });
-        document.getElementById('btn-close-ranked').addEventListener('click', () => {
-          leaveRankedQueue(true);
-          closeModal('ranked-modal');
-        });
-        document.getElementById('btn-save-fb-config').addEventListener('click', saveFirebaseConfigFromModal);
-        document.getElementById('btn-google-signin').addEventListener('click', signInWithGoogleRanked);
-        document.getElementById('btn-google-signout').addEventListener('click', signOutGoogleRanked);
-        document.getElementById('btn-ranked-queue').addEventListener('click', toggleRankedQueue);
-
-        document.getElementById('btn-close-online').addEventListener('click', () => closeModal('online-modal'));
-        document.getElementById('btn-create-room').addEventListener('click', createOnlineRoom);
-        document.getElementById('btn-join-room').addEventListener('click', joinOnlineRoom);
-        document.getElementById('btn-copy-room').addEventListener('click', () => {
-          const code = document.getElementById('room-code-value').textContent;
-          if (code && navigator.clipboard) {
-            navigator.clipboard.writeText(code).catch(() => {});
-          }
-          setOnlineStatus('Código copiado: ' + code);
-        });
-
-        document.getElementById('btn-start-match').addEventListener('click', startMatch);
-
-        document.getElementById('btn-top-menu').addEventListener('click', () => openModal('menu-modal'));
-        document.getElementById('btn-back-menu').addEventListener('click', () => {
-          closeModal('gameover-modal');
-          openModal('menu-modal');
-        });
-
-        document.getElementById('btn-open-rules').addEventListener('click', openRulebook);
-        document.getElementById('btn-top-rules').addEventListener('click', openRulebook);
-        document.getElementById('btn-close-rules').addEventListener('click', () => closeModal('rules-modal'));
-
-        document.getElementById('btn-rules-prev').addEventListener('click', () => {
-          if (rulesIdx > 0) {
-            rulesIdx -= 1;
-            renderRulebookPage();
-          }
-        });
-        document.getElementById('btn-rules-next').addEventListener('click', () => {
-          if (rulesIdx < RULEBOOK_PAGES.length - 1) {
-            rulesIdx += 1;
-            renderRulebookPage();
-          } else {
-            closeModal('rules-modal');
-          }
-        });
-
-        document.getElementById('btn-draw-card').addEventListener('click', onBuyCard);
-        document.getElementById('btn-surrender').addEventListener('click', openSurrenderModal);
-        document.getElementById('btn-surrender-cancel').addEventListener('click', () => closeModal('surrender-modal'));
-        document.getElementById('btn-surrender-confirm').addEventListener('click', confirmSurrender);
-        document.getElementById('btn-end-turn').addEventListener('click', onEndTurn);
-        document.getElementById('btn-pass-ok').addEventListener('click', () => {
-          closeModal('pass-modal');
-          renderAll();
-        });
-        document.getElementById('btn-combat-pass-ok').addEventListener('click', () => {
-          closeModal('combat-pass-modal');
-          const fn = pendingCombatPassAction;
-          pendingCombatPassAction = null;
-          if (typeof fn === 'function') {
-            fn();
-          }
-        });
-      }
-
-      window.addEventListener('DOMContentLoaded', () => {
-        try {
-          bindEvents();
-          syncModeButtons();
-          startClock();
-        } catch (err) {
-          reportError(err);
+    }
+
+    findMatchBtn.addEventListener("click", enterMatchmakingQueue);
+    cancelQueueBtn.addEventListener("click", leaveMatchmakingQueue);
+
+    // ==========================================
+    // ACTIVE RANKED SESSION & ELO UPDATE
+    // ==========================================
+    function joinRankedMatch(matchId) {
+      rankedModal.classList.add("hidden");
+      rankedModal.classList.remove("flex");
+      findMatchBtn.classList.remove("hidden");
+      cancelQueueBtn.classList.add("hidden");
+      hideFeedback();
+
+      activeMatchId = matchId;
+      isRankedMatch = true;
+      gameOver = false;
+      selected = null;
+      legalMoves = [];
+      whiteTime = INITIAL_TIME;
+      blackTime = INITIAL_TIME;
+
+      resetLocalBtn.classList.add("hidden");
+      surrenderBtn.classList.remove("hidden");
+
+      if (matchUnsubscribe) matchUnsubscribe();
+      const matchRef = doc(db, "matches", matchId);
+
+      matchUnsubscribe = onSnapshot(matchRef, async (snap) => {
+        if (!snap.exists()) return;
+        const m = snap.data();
+
+        myColor = m.whiteUid === currentUser.uid ? "w" : "b";
+        const amWhite = myColor === "w";
+
+        bottomPlayerName.textContent = amWhite ? `${m.whiteName} (Brancas)` : `${m.blackName} (Pretas)`;
+        bottomPlayerElo.textContent = `Elo: ${amWhite ? m.whiteEloBefore : m.blackEloBefore}`;
+        bottomColorDot.className = `w-3 h-3 rounded-full shrink-0 ${amWhite ? "bg-white" : "bg-amber-400"}`;
+
+        topPlayerName.textContent = amWhite ? `${m.blackName} (Pretas)` : `${m.whiteName} (Brancas)`;
+        topPlayerElo.textContent = `Elo: ${amWhite ? m.blackEloBefore : m.whiteEloBefore}`;
+        topColorDot.className = `w-3 h-3 rounded-full shrink-0 ${amWhite ? "bg-amber-400" : "bg-white"}`;
+
+        board = JSON.parse(m.boardJson);
+        turn = m.turn;
+        lastMove = m.lastMove || null;
+
+        updateClocksUI();
+        renderBoard();
+
+        if (m.status === "active") {
+          updateStatusBanner();
+          if (!clockInterval) startClock();
+        } else if (m.status === "finished" && !gameOver) {
+          gameOver = true;
+          stopClock();
+          await applyEloResultIfNeeded(m);
         }
       });
-    })();
+    }
+
+    async function syncMoveToFirestore(nextBoard, nextTurn, moveObj, noLegalMoves, inCheck) {
+      const matchRef = doc(db, "matches", activeMatchId);
+      const payload = {
+        boardJson: JSON.stringify(nextBoard),
+        turn: nextTurn,
+        lastMove: moveObj
+      };
+
+      if (noLegalMoves) {
+        payload.status = "finished";
+        if (inCheck) {
+          payload.winner = myColor;
+          payload.endReason = "Xeque-Mate!";
+        } else {
+          payload.winner = "draw";
+          payload.endReason = "Empate por afogamento.";
+        }
+      }
+
+      await updateDoc(matchRef, payload);
+    }
+
+    async function finishRankedMatch(winnerColor, reason) {
+      if (!activeMatchId || gameOver) return;
+      const matchRef = doc(db, "matches", activeMatchId);
+      await updateDoc(matchRef, {
+        status: "finished",
+        winner: winnerColor,
+        endReason: reason
+      });
+    }
+
+    function calculateEloDelta(myElo, oppElo, score) {
+      const K = 32;
+      const expected = 1 / (1 + Math.pow(10, (oppElo - myElo) / 400));
+      return Math.round(K * (score - expected));
+    }
+
+    async function applyEloResultIfNeeded(matchData) {
+      const amWhite = myColor === "w";
+      const myBefore = amWhite ? matchData.whiteEloBefore : matchData.blackEloBefore;
+      const oppBefore = amWhite ? matchData.blackEloBefore : matchData.whiteEloBefore;
+
+      let score = 0.5;
+      let icon = "🤝";
+      let title = "Empate";
+
+      if (matchData.winner === myColor) {
+        score = 1;
+        icon = "🏆";
+        title = "Vitória!";
+      } else if (matchData.winner !== "draw") {
+        score = 0;
+        icon = "💀";
+        title = "Derrota";
+      }
+
+      const delta = calculateEloDelta(myBefore, oppBefore, score);
+      const newElo = Math.max(100, myBefore + delta);
+      const sign = delta >= 0 ? `+${delta}` : `${delta}`;
+
+      try {
+        const userRef = doc(db, "users", currentUser.uid);
+        const snap = await getDoc(userRef);
+        const currentStats = snap.exists() ? snap.data() : userProfile;
+        const wins = (currentStats.wins || 0) + (score === 1 ? 1 : 0);
+        const losses = (currentStats.losses || 0) + (score === 0 ? 1 : 0);
+
+        await updateDoc(userRef, {
+          elo: newElo,
+          wins,
+          losses,
+          updatedAt: serverTimestamp()
+        });
+
+        userProfile = { ...currentStats, elo: newElo, wins, losses };
+        updateProfileUI();
+      } catch (_) {}
+
+      showEndModal(
+        icon,
+        title,
+        `${matchData.endReason || "Partida encerrada."} Novo Elo: ${newElo} (${sign})`
+      );
+    }
+
+    surrenderBtn.addEventListener("click", async () => {
+      if (!isRankedMatch || !activeMatchId || gameOver) return;
+      const opponentColor = myColor === "w" ? "b" : "w";
+      await finishRankedMatch(opponentColor, "Oponente rendeu-se.");
+    });
+
+    // ==========================================
+    // MODALS & CONTROLS
+    // ==========================================
+    openRankedBtn.addEventListener("click", () => {
+      rankedModal.classList.remove("hidden");
+      rankedModal.classList.add("flex");
+    });
+
+    closeRankedBtn.addEventListener("click", () => {
+      rankedModal.classList.add("hidden");
+      rankedModal.classList.remove("flex");
+    });
+
+    resetLocalBtn.addEventListener("click", resetToLocalMode);
+
+    function showEndModal(icon, title, subtitle) {
+      endIcon.textContent = icon;
+      endTitle.textContent = title;
+      endSubtitle.textContent = subtitle;
+      endModal.classList.remove("hidden");
+      endModal.classList.add("flex");
+    }
+
+    closeEndModalBtn.addEventListener("click", () => {
+      endModal.classList.add("hidden");
+      endModal.classList.remove("flex");
+      resetToLocalMode();
+    });
+
+    // Initialize local board on load
+    resetToLocalMode();
   </script>
 </body>
 </html>
