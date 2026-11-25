@@ -861,6 +861,7 @@
     let pendingCombatPassAction = null;
     let rulesIdx = 0;
     let timerId = null;
+    let actionSeqCounter = 0;
 
     const net = {
       role: null,
@@ -1004,20 +1005,24 @@
             clocksJson: JSON.stringify(payload.clocks)
           });
         } else if (payload.type === 'online_action' && net.role === 'guest') {
+          actionSeqCounter += 1;
           await updateDoc(matchRef, {
-            guestActionJson: JSON.stringify({ seq: Date.now() + Math.random(), action: payload.action })
+            guestActionJson: JSON.stringify({ seq: `${Date.now()}_${actionSeqCounter}`, action: payload.action })
           });
         } else if (payload.type === 'online_atk_card' && net.role === 'guest') {
+          actionSeqCounter += 1;
           await updateDoc(matchRef, {
-            guestAtkCardJson: JSON.stringify({ seq: Date.now() + Math.random(), cardIdx: payload.cardIdx })
+            guestAtkCardJson: JSON.stringify({ seq: `${Date.now()}_${actionSeqCounter}`, cardIdx: payload.cardIdx })
           });
         } else if (payload.type === 'online_def_card' && net.role === 'guest') {
+          actionSeqCounter += 1;
           await updateDoc(matchRef, {
-            guestDefCardJson: JSON.stringify({ seq: Date.now() + Math.random(), cardIdx: payload.cardIdx })
+            guestDefCardJson: JSON.stringify({ seq: `${Date.now()}_${actionSeqCounter}`, cardIdx: payload.cardIdx })
           });
         } else if (payload.type === 'online_summary_ack' && net.role === 'guest') {
+          actionSeqCounter += 1;
           await updateDoc(matchRef, {
-            guestSummaryAckSeq: Date.now() + Math.random()
+            guestSummaryAckSeq: `${Date.now()}_${actionSeqCounter}`
           });
         }
       } catch (err) {
@@ -1243,6 +1248,7 @@
       if (amWhite) {
         startMatch();
         setStatus(`🏆 Ranked Elo: Você é Brancas (♔ ${mData.whiteName} · ${mData.whiteEloBefore}) vs ♚ ${mData.blackName} (${mData.blackEloBefore})`);
+        syncOnlineState();
         showRankedTurnIndicator('white', 1);
       } else {
         setStatus(`🏆 Ranked Elo: Você é Pretas (♚ ${mData.blackName} · ${mData.blackEloBefore}) vs ♔ ${mData.whiteName} (${mData.whiteEloBefore}) · Aguardando Brancas...`);
@@ -1358,6 +1364,36 @@
       closeModal('menu-modal');
       closeModal('ranked-modal');
       const prevSummary = net.lastSummary;
+      const prevTurn = state ? state.turn : null;
+      const prevActions = state ? state.actions : null;
+      const prevSelected = state ? state.selected : null;
+      const prevActionMode = state ? state.actionMode : null;
+      const prevSkillPhase = state ? state.skillPhase : null;
+      const prevCopiedSkill = state ? state.copiedSkill : null;
+
+      let nextSelected = null;
+      let nextActionMode = null;
+      let nextSkillPhase = null;
+      let nextCopiedSkill = null;
+
+      if (
+        prevSelected &&
+        prevTurn === view.turn &&
+        !view.gameOver &&
+        !view.pendingCombat &&
+        view.board &&
+        view.board[prevSelected.r] &&
+        view.board[prevSelected.r][prevSelected.c]
+      ) {
+        const curPiece = view.board[prevSelected.r][prevSelected.c];
+        if (curPiece.color === view.turn && !curPiece.acted) {
+          nextSelected = { r: prevSelected.r, c: prevSelected.c };
+          nextActionMode = prevActionMode || (view.actions > 0 ? 'move' : null);
+          nextSkillPhase = prevSkillPhase;
+          nextCopiedSkill = prevCopiedSkill;
+        }
+      }
+
       state = {
         mode: view.mode || 'ranked',
         turn: view.turn,
@@ -1372,17 +1408,17 @@
         players: {
           white: {
             gold: view.players.white.gold,
-            hand: new Array(view.players.white.handCount || 0).fill(0)
+            handCount: view.players.white.handCount || 0
           },
           black: {
             gold: view.players.black.gold,
             hand: view.players.black.hand || []
           }
         },
-        selected: null,
-        actionMode: null,
-        skillPhase: null,
-        copiedSkill: null,
+        selected: nextSelected,
+        actionMode: nextActionMode,
+        skillPhase: nextSkillPhase,
+        copiedSkill: nextCopiedSkill,
         gameOver: Boolean(view.gameOver),
         gameOverData: view.gameOverData || null
       };
@@ -1484,32 +1520,51 @@
     }
 
     function handleGuestActionRequest(action) {
-      if (!state || state.gameOver || state.turn !== 'black' || !action) return;
+      if (!state || state.gameOver || !action) return;
+      if (action.kind === 'surrender') {
+        endMatch('white', 'Pretas (♚) se renderam.');
+        return;
+      }
+      if (state.turn !== 'black') {
+        syncOnlineState();
+        return;
+      }
       if (action.kind === 'move') {
         const p = state.board[action.fromR][action.fromC];
-        if (!p || p.color !== 'black' || p.acted || state.actions <= 0) return;
+        if (!p || p.color !== 'black' || p.acted || state.actions <= 0) {
+          syncOnlineState();
+          return;
+        }
         const reach = getReachInfo(action.fromR, action.fromC);
-        if (!reach.moves.some((m) => m.r === action.toR && m.c === action.toC)) return;
+        if (!reach.moves.some((m) => m.r === action.toR && m.c === action.toC)) {
+          syncOnlineState();
+          return;
+        }
         doMove(action.fromR, action.fromC, action.toR, action.toC);
       } else if (action.kind === 'attack') {
         const p = state.board[action.fromR][action.fromC];
-        if (!p || p.color !== 'black' || p.acted || state.actions <= 0) return;
+        if (!p || p.color !== 'black' || p.acted || state.actions <= 0) {
+          syncOnlineState();
+          return;
+        }
         const reach = getReachInfo(action.fromR, action.fromC);
-        if (!reach.attacks.some((a) => a.r === action.toR && a.c === action.toC)) return;
+        if (!reach.attacks.some((a) => a.r === action.toR && a.c === action.toC)) {
+          syncOnlineState();
+          return;
+        }
         startCombat(action.fromR, action.fromC, action.toR, action.toC);
       } else if (action.kind === 'skill') {
         const p = state.board[action.fromR][action.fromC];
-        if (!p || p.color !== 'black' || p.acted || state.players.black.gold < 1) return;
+        if (!p || p.color !== 'black' || p.acted || state.players.black.gold < 1) {
+          syncOnlineState();
+          return;
+        }
         executeActiveSkill(action.fromR, action.fromC, action.effType, action.toR, action.toC, Boolean(action.copiedFlag));
       } else if (action.kind === 'buy') {
-        state.turn = 'black';
         onBuyCard();
       } else if (action.kind === 'end_turn') {
-        if (state.turn === 'black') {
-          onEndTurn();
-        }
-      } else if (action.kind === 'surrender') {
-        endMatch('white', 'Pretas (♚) se renderam.');
+        state.turn = 'black';
+        onEndTurn();
       }
     }
 
@@ -2754,12 +2809,12 @@
 
       if (piece.type === 'P' || piece.type === 'B') {
         if (isRankedMode() && net.role === 'guest') {
+          state.selected = null;
+          renderAll();
           sendNet({
             type: 'online_action',
             action: { kind: 'skill', fromR: r, fromC: c, effType: piece.type, toR: r, toC: c, copiedFlag: false }
           });
-          state.selected = null;
-          renderAll();
           return;
         }
         executeActiveSkill(r, c, piece.type, r, c, false);
@@ -2799,15 +2854,15 @@
             const effType = state.copiedSkill || sel.type;
             const copiedFlag = Boolean(state.copiedSkill);
             if (isRankedMode() && net.role === 'guest') {
-              sendNet({
-                type: 'online_action',
-                action: { kind: 'skill', fromR: sr, fromC: sc, effType, toR: r, toC: c, copiedFlag }
-              });
               state.selected = null;
               state.actionMode = null;
               state.skillPhase = null;
               state.copiedSkill = null;
               renderAll();
+              sendNet({
+                type: 'online_action',
+                action: { kind: 'skill', fromR: sr, fromC: sc, effType, toR: r, toC: c, copiedFlag }
+              });
               return;
             }
             executeActiveSkill(sr, sc, effType, r, c, copiedFlag);
@@ -2825,13 +2880,13 @@
           const reach = getReachInfo(sr, sc);
           if (state.actionMode === 'move' && reach.moves.some((m) => m.r === r && m.c === c)) {
             if (isRankedMode() && net.role === 'guest') {
+              state.selected = null;
+              state.actionMode = null;
+              renderAll();
               sendNet({
                 type: 'online_action',
                 action: { kind: 'move', fromR: sr, fromC: sc, toR: r, toC: c }
               });
-              state.selected = null;
-              state.actionMode = null;
-              renderAll();
               return;
             }
             doMove(sr, sc, r, c);
@@ -2839,13 +2894,13 @@
           }
           if (state.actionMode === 'attack' && reach.attacks.some((a) => a.r === r && a.c === c)) {
             if (isRankedMode() && net.role === 'guest') {
+              state.selected = null;
+              state.actionMode = null;
+              renderAll();
               sendNet({
                 type: 'online_action',
                 action: { kind: 'attack', fromR: sr, fromC: sc, toR: r, toC: c }
               });
-              state.selected = null;
-              state.actionMode = null;
-              renderAll();
               return;
             }
             startCombat(sr, sc, r, c);
@@ -2860,6 +2915,15 @@
           setStatus(`⚠️ ${PIECE_DATA[tappedPiece.type].name} já agiu neste turno.`);
           return;
         }
+        if (state.selected && state.selected.r === r && state.selected.c === c) {
+          state.selected = null;
+          state.actionMode = null;
+          state.skillPhase = null;
+          state.copiedSkill = null;
+          setStatus('Seleção desfeita.');
+          renderAll();
+          return;
+        }
         state.selected = { r, c };
         state.actionMode = state.actions > 0 ? 'move' : null;
         state.skillPhase = null;
@@ -2871,6 +2935,14 @@
         );
         renderAll();
         return;
+      }
+
+      if (state.selected) {
+        const sel = state.board[state.selected.r] && state.board[state.selected.r][state.selected.c];
+        if (sel && sel.color === state.turn && !sel.acted) {
+          setStatus(`⚠️ Destino fora do alcance de ${PIECE_DATA[sel.type].name}. Toque em um destino válido ou na própria peça para desselecionar.`);
+          return;
+        }
       }
 
       state.selected = null;
@@ -2930,9 +3002,18 @@
 
     function onEndTurn() {
       if (!state || state.gameOver) return;
-      if (isRankedMode() && state.turn !== myOnlineSide()) return;
+      if (isRankedMode() && state.turn !== myOnlineSide()) {
+        setStatus(`⚠️ Aguarde sua vez (${myOnlineSide() === 'black' ? 'Pretas ♚' : 'Brancas ♔'}).`);
+        return;
+      }
 
       if (isRankedMode() && net.role === 'guest') {
+        state.selected = null;
+        state.actionMode = null;
+        state.skillPhase = null;
+        state.copiedSkill = null;
+        setStatus('Passando a vez para as Brancas...');
+        renderAll();
         sendNet({ type: 'online_action', action: { kind: 'end_turn' } });
         return;
       }
