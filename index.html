@@ -49,7 +49,7 @@
     .sym-diamond { color: #fbbf24; font-weight: 800; }
     .sym-heart { color: #f87171; font-weight: 800; }
 
-    /* Carta sem naipe: valor exibido apenas 1 vez, centralizado */
+    /* Carta com valor no canto superior esquerdo e 1 ícone grande centralizado da peça */
     .xeker-card {
       background: linear-gradient(155deg, var(--parchment-top) 0%, var(--parchment-bot) 100%);
       border: 1.5px solid #9e7923;
@@ -61,13 +61,32 @@
       justify-content: center;
       box-shadow: 0 3px 8px rgba(0, 0, 0, 0.55);
       transition: transform 0.12s ease, border-color 0.12s ease;
+      overflow: hidden;
     }
     .xeker-card::after {
       content: '';
       position: absolute;
-      inset: 3px;
+      inset: 2px;
       border: 1px solid rgba(158, 121, 35, 0.35);
       border-radius: 5px;
+      pointer-events: none;
+    }
+    .xeker-card-rank {
+      position: absolute;
+      top: 2px;
+      left: 3px;
+      font-size: 0.62rem;
+      line-height: 1;
+      font-weight: 900;
+      color: #111216;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .xeker-card-piece {
+      font-size: 1.15rem;
+      line-height: 1;
+      color: #111216;
+      z-index: 1;
       pointer-events: none;
     }
     .xeker-card:active:not(:disabled) {
@@ -729,7 +748,7 @@
         black: '♝',
         reachLabel: 'Até 3 casas diagonais',
         activeText: 'Cura todas as peças aliadas no alcance (até 3 diagonal) em +1♥ (até o máx.).',
-        passiveText: 'Causa 2♥ de dano mesmo que o alvo se defenda com sucesso.'
+        passiveText: 'Não recebe dano caso defendam seus ataques.'
       },
       Q: {
         name: 'Rainha',
@@ -839,7 +858,7 @@
               <strong class="text-[#f3d678]">♜ Torre:</strong> Sofre 0♥ de dano ao defender com sucesso.
             </div>
             <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-              <strong class="text-[#f3d678]">♝ Bispo:</strong> Causa 2♥ de dano mesmo se o alvo defender com sucesso.
+              <strong class="text-[#f3d678]">♝ Bispo:</strong> Não recebe dano caso defendam seus ataques.
             </div>
             <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
               <strong class="text-[#f3d678]">♛ Rainha:</strong> Cura-se em +1♥ ao abater peças (até o HP máximo).
@@ -875,7 +894,7 @@
           <div class="p-2 rounded-xl bg-[#161820] border border-[#d4af37]/30 space-y-1 text-[11px]">
             <div class="font-bold text-[#f3d678]">Resolução do Combate:</div>
             <p>• <strong>Ataque vence:</strong> Causa <strong>2♥</strong> ao defensor (+ bônus de combo).</p>
-            <p>• <strong>Defesa vence/empata:</strong> Causa <strong>1♥</strong> em ambas (Torre defensora sofre 0♥; Bispo ainda causa 2♥).</p>
+            <p>• <strong>Defesa vence/empata:</strong> Causa <strong>1♥</strong> em ambas (Torre defensora sofre 0♥; Bispo não recebe dano caso defendam seus ataques).</p>
             <p>• <strong>Flop:</strong> Renovado após cada embate.</p>
           </div>
           <div class="p-2 rounded-xl bg-[#161820] border border-white/10 space-y-0.5 text-[11px]">
@@ -2144,12 +2163,16 @@
       timerId = setInterval(() => {
         try {
           if (!state || state.gameOver) return;
-          if (isRankedMode() && net.role === 'guest') return;
           if (hasOpenModal()) return;
           if (isRankedMode() && !net.connected) return;
 
-          const active = state.turn;
-          state.clocks[active] = Math.max(0, state.clocks[active] - 1);
+          if (!state.clocks || typeof state.clocks !== 'object') {
+            state.clocks = { white: INITIAL_CLOCK_SECONDS, black: INITIAL_CLOCK_SECONDS };
+          }
+
+          const active = state.turn === 'black' ? 'black' : 'white';
+          const curVal = Number.isFinite(Number(state.clocks[active])) ? Number(state.clocks[active]) : INITIAL_CLOCK_SECONDS;
+          state.clocks[active] = Math.max(0, curVal - 1);
           refreshClocks();
 
           if (isRankedMode() && net.role === 'host') {
@@ -2632,10 +2655,36 @@
       }
     }
 
+    const CARD_VALUE_PIECE_ICON = {
+      1: '♘',
+      2: '♙',
+      3: '♙',
+      4: '♙',
+      5: '♙',
+      6: '♙',
+      7: '♙',
+      8: '♙',
+      9: '♙',
+      10: '♖',
+      11: '♗',
+      12: '♕',
+      13: '♔'
+    };
+
     function renderCard(val, classes) {
       const card = document.createElement('div');
       card.className = `xeker-card ${classes}`;
-      card.textContent = RANK_TEXT[val];
+
+      const rankEl = document.createElement('span');
+      rankEl.className = 'xeker-card-rank';
+      rankEl.textContent = RANK_TEXT[val] || '';
+
+      const pieceEl = document.createElement('span');
+      pieceEl.className = 'xeker-card-piece';
+      pieceEl.textContent = CARD_VALUE_PIECE_ICON[val] || '♙';
+
+      card.appendChild(rankEl);
+      card.appendChild(pieceEl);
       return card;
     }
 
@@ -2758,8 +2807,8 @@
         defDmg = defPiece.type === 'R' ? 0 : 1;
 
         if (atkPiece.type === 'B') {
-          defDmg = Math.max(defDmg, 2);
-          extras.push('Passiva do Bispo: 2♥ mesmo na defesa');
+          atkDmg = 0;
+          extras.push('Passiva do Bispo: sem dano se defenderem seu ataque');
         }
         if (defPiece.type === 'R') {
           extras.push('Passiva da Torre: 0♥ ao defender');
@@ -2926,7 +2975,14 @@
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'xeker-card w-11 h-14 rounded-lg text-sm';
-        btn.textContent = RANK_TEXT[cVal];
+        const aRank = document.createElement('span');
+        aRank.className = 'xeker-card-rank';
+        aRank.textContent = RANK_TEXT[cVal] || '';
+        const aPiece = document.createElement('span');
+        aPiece.className = 'xeker-card-piece';
+        aPiece.textContent = CARD_VALUE_PIECE_ICON[cVal] || '♙';
+        btn.appendChild(aRank);
+        btn.appendChild(aPiece);
         btn.addEventListener('click', (ev) => {
           ev.stopPropagation();
           if (isGhostClickBlocked() || combatCardLocked) return;
@@ -2986,7 +3042,14 @@
         const dBtn = document.createElement('button');
         dBtn.type = 'button';
         dBtn.className = 'xeker-card w-11 h-14 rounded-lg text-sm';
-        dBtn.textContent = RANK_TEXT[dVal];
+        const dRank = document.createElement('span');
+        dRank.className = 'xeker-card-rank';
+        dRank.textContent = RANK_TEXT[dVal] || '';
+        const dPiece = document.createElement('span');
+        dPiece.className = 'xeker-card-piece';
+        dPiece.textContent = CARD_VALUE_PIECE_ICON[dVal] || '♙';
+        dBtn.appendChild(dRank);
+        dBtn.appendChild(dPiece);
         dBtn.addEventListener('click', (ev) => {
           ev.stopPropagation();
           if (isGhostClickBlocked() || combatCardLocked) return;
