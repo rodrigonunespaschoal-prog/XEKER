@@ -274,14 +274,6 @@
     #online-modal {
       z-index: 70;
     }
-
-    @keyframes pulseRing {
-      0%, 100% { transform: scale(1); opacity: 0.9; }
-      50% { transform: scale(1.08); opacity: 1; }
-    }
-    .mm-pulse {
-      animation: pulseRing 1.5s ease-in-out infinite;
-    }
   </style>
 </head>
 <body>
@@ -300,14 +292,14 @@
           <span>♔</span>
           <span class="sym-diamond">♦<span id="val-gold-white">2</span></span>
           <span class="text-zinc-400">🃏<span id="val-cards-white">3</span></span>
-          <span id="val-clock-white" class="font-mono text-[10px] text-amber-200">30:00</span>
+          <span id="val-clock-white" class="font-mono text-[10px] text-amber-200">15:00</span>
         </div>
 
         <div id="hud-black" class="flex items-center gap-1 px-1.5 py-1 rounded-lg bg-[#161820] border border-white/10 text-[11px] font-bold">
           <span>♚</span>
           <span class="sym-diamond">♦<span id="val-gold-black">2</span></span>
           <span class="text-zinc-400">🃏<span id="val-cards-black">3</span></span>
-          <span id="val-clock-black" class="font-mono text-[10px] text-amber-200">30:00</span>
+          <span id="val-clock-black" class="font-mono text-[10px] text-amber-200">15:00</span>
         </div>
       </div>
 
@@ -357,9 +349,14 @@
           <span class="text-[11px] text-zinc-400">Toque em uma peça aliada</span>
         </div>
 
-        <button type="button" id="btn-end-turn" class="px-3 py-2 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] text-xs font-extrabold shadow active:scale-95">
-          Fim Turno
-        </button>
+        <div class="flex items-center gap-1 shrink-0">
+          <button type="button" id="btn-surrender" class="px-2.5 py-2 rounded-xl bg-red-950/80 border border-red-400/50 text-red-200 text-[11px] font-extrabold shadow active:scale-95" title="Render-se na partida">
+            🏳️ Render
+          </button>
+          <button type="button" id="btn-end-turn" class="px-3 py-2 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] text-xs font-extrabold shadow active:scale-95">
+            Fim Turno
+          </button>
+        </div>
       </div>
 
       <!-- Mão do jogador -->
@@ -395,47 +392,20 @@
         </g>
       </svg>
 
-      <!-- 3 Cartas Metálicas Douradas (10 Torre, J Bispo, A Cavalo) -->
-      <div class="flex items-center justify-center gap-2 my-1 shrink-0">
-        <div class="gold-foil-card w-[74px] h-[104px] rounded-xl -rotate-[8deg] translate-y-1.5 flex flex-col items-center justify-between py-1.5 px-1.5">
-          <span class="self-start text-xs font-black leading-none tracking-tight">10</span>
-          <span class="text-3xl leading-none drop-shadow-[0_1px_1px_rgba(255,255,255,0.65)]">♖</span>
-          <span class="h-2"></span>
-        </div>
-
-        <div class="gold-foil-card w-[80px] h-[112px] rounded-xl -translate-y-1 z-10 flex flex-col items-center justify-between py-1.5 px-1.5">
-          <span class="self-start text-xs font-black leading-none">J</span>
-          <span class="text-4xl leading-none drop-shadow-[0_1px_1px_rgba(255,255,255,0.65)]">♗</span>
-          <span class="h-2"></span>
-        </div>
-
-        <div class="gold-foil-card w-[74px] h-[104px] rounded-xl rotate-[8deg] translate-y-1.5 flex flex-col items-center justify-between py-1.5 px-1.5">
-          <span class="self-start text-xs font-black leading-none">A</span>
-          <span class="text-3xl leading-none drop-shadow-[0_1px_1px_rgba(255,255,255,0.65)]">♘</span>
-          <span class="h-2"></span>
-        </div>
-      </div>
-
-      <!-- Título Metálico Dourado XEKER -->
-      <div class="my-1.5 shrink-0">
-        <h1 class="font-display font-black text-3xl sm:text-4xl tracking-[0.22em] metallic-gold-title">
+      <!-- Título Metálico Dourado XEKER em destaque -->
+      <div class="my-4 py-3 px-4 rounded-2xl bg-[#d4af37]/[0.05] border border-[#d4af37]/30 shadow-[0_0_32px_rgba(212,175,55,0.16)] shrink-0">
+        <h1 class="font-display font-black text-4xl sm:text-5xl tracking-[0.26em] metallic-gold-title">
           XEKER
         </h1>
-        <p class="text-[11px] tracking-wider uppercase text-amber-200/75 font-semibold mt-0.5">
-          Xadrez &amp; Pôquer Tático · 1v1
-        </p>
       </div>
 
       <!-- Seletor de Modo & Botões Principais -->
       <div class="w-full space-y-2 my-1.5 shrink-0">
-        <div class="grid grid-cols-3 gap-1.5">
-          <button type="button" id="btn-select-bot" class="py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95">
-            🤖 Bot
-          </button>
-          <button type="button" id="btn-select-pvp" class="py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95">
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" id="btn-select-pvp" class="py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95">
             👥 Local
           </button>
-          <button type="button" id="btn-select-online" class="py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95">
+          <button type="button" id="btn-select-online" class="py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95">
             🌐 On-line
           </button>
         </div>
@@ -474,14 +444,14 @@
           <span class="text-lg text-[#fff1b8]">♗</span>
           <span class="opacity-85">♘</span>
         </div>
-        <div class="text-[10px] tracking-[0.22em] text-[#d4af37]/80 font-medium mt-1">
-          design by XEKER
+        <div class="text-[10px] tracking-[0.16em] text-[#d4af37]/85 font-medium mt-1">
+          Criado por Rodrigo Nunes Paschoal 
         </div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL LOBBY ON-LINE (MATCHMAKING AUTOMÁTICO + SALA PRIVADA) -->
+  <!-- MODAL LOBBY ON-LINE (CRIAR / ENTRAR EM SALA) -->
   <div id="online-modal" class="xeker-modal">
     <div class="w-full max-w-[380px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl space-y-3 text-xs">
       <div class="flex items-center justify-between pb-2 border-b border-white/10">
@@ -489,39 +459,12 @@
         <button type="button" id="btn-close-online" class="px-2.5 py-1 rounded-lg bg-[#161820] border border-white/15 font-bold text-zinc-200 active:scale-95">✕</button>
       </div>
 
-      <!-- Bloco de Matchmaking Automático -->
-      <div class="p-3 rounded-xl bg-gradient-to-b from-[#d4af37]/15 to-[#161820] border border-[#f3d678]/50 space-y-2.5">
-        <div class="flex items-center justify-between">
-          <span class="font-extrabold text-[#fff1b8] text-xs">⚡ Matchmaking Rápido</span>
-          <span id="mm-badge" class="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 text-[10px] font-bold">Pronto</span>
-        </div>
-        <p class="text-[11px] text-zinc-300 leading-snug">
-          Busca automaticamente outro jogador disponível na fila pública para iniciar uma partida 1v1 sem precisar trocar códigos.
-        </p>
-        <div id="mm-searching-box" class="hidden py-2 px-3 rounded-xl bg-black/55 border border-[#d4af37]/40 flex items-center justify-between gap-2">
-          <div class="flex items-center gap-2">
-            <span class="mm-pulse text-base">⚔️</span>
-            <div>
-              <div id="mm-timer-label" class="font-mono font-bold text-xs text-[#f3d678]">Procurando oponente... 00s</div>
-              <div id="mm-slot-label" class="text-[10px] text-zinc-400">Verificando filas públicas...</div>
-            </div>
-          </div>
-          <button type="button" id="btn-cancel-mm" class="px-2.5 py-1 rounded-lg bg-red-950/80 border border-red-400/50 text-red-200 font-bold text-[11px] active:scale-95">
-            Cancelar
-          </button>
-        </div>
-        <button type="button" id="btn-find-match" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#fff1b8] via-[#d4af37] to-[#9c7218] text-[#140e02] font-extrabold text-xs tracking-wide shadow-lg active:scale-95">
-          Encontrar Oponente
-        </button>
-      </div>
-
-      <!-- Bloco de Sala Privada (Criar / Entrar) -->
       <div class="p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/25 space-y-2">
-        <div class="font-bold text-[#f3d678]">Sala Privada · Criar (Brancas ♔)</div>
-        <button type="button" id="btn-create-room" class="w-full py-1.5 rounded-xl bg-[#d4af37]/20 border border-[#d4af37]/60 text-[#fff1b8] font-bold active:scale-95">
+        <div class="font-bold text-[#f3d678]">Criar Sala (Joga de Brancas ♔)</div>
+        <button type="button" id="btn-create-room" class="w-full py-2 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold active:scale-95">
           Gerar Código de Sala
         </button>
-        <div id="room-code-box" class="hidden flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-black/60 border border-[#d4af37]/40">
+        <div id="room-code-box" class="hidden flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg bg-black/60 border border-[#d4af37]/40">
           <div>
             <div class="text-[10px] text-zinc-400">Código da sala:</div>
             <div id="room-code-value" class="font-mono font-extrabold text-sm tracking-widest text-[#fff1b8]"></div>
@@ -533,17 +476,17 @@
       </div>
 
       <div class="p-2.5 rounded-xl bg-[#161820] border border-white/10 space-y-2">
-        <div class="font-bold text-zinc-200">Sala Privada · Entrar (Pretas ♚)</div>
+        <div class="font-bold text-zinc-200">Entrar em Sala (Joga de Pretas ♚)</div>
         <div class="flex gap-1.5">
-          <input id="input-join-code" type="text" maxlength="24" placeholder="Código da sala" class="flex-1 px-2.5 py-1.5 rounded-xl bg-black/60 border border-white/15 text-white font-mono uppercase text-xs focus:outline-none focus:border-[#d4af37]" />
-          <button type="button" id="btn-join-room" class="px-3 py-1.5 rounded-xl bg-[#d4af37]/25 border border-[#f3d678] text-[#fff1b8] font-bold active:scale-95">
+          <input id="input-join-code" type="text" maxlength="16" placeholder="Código da sala" class="flex-1 px-2.5 py-2 rounded-xl bg-black/60 border border-white/15 text-white font-mono uppercase text-xs focus:outline-none focus:border-[#d4af37]" />
+          <button type="button" id="btn-join-room" class="px-3 py-2 rounded-xl bg-[#d4af37]/25 border border-[#f3d678] text-[#fff1b8] font-bold active:scale-95">
             Entrar
           </button>
         </div>
       </div>
 
       <div id="online-status-text" class="px-2.5 py-2 rounded-xl bg-black/50 border border-white/10 text-[11px] text-amber-200 min-h-[36px] flex items-center">
-        Clique em "Encontrar Oponente" para matchmaking automático ou use uma sala privada.
+        Escolha criar uma sala ou inserir o código de outro jogador.
       </div>
     </div>
   </div>
@@ -625,6 +568,25 @@
     </div>
   </div>
 
+  <!-- MODAL CONFIRMAÇÃO DE SURRENDER -->
+  <div id="surrender-modal" class="xeker-modal">
+    <div class="w-full max-w-[360px] rounded-2xl bg-[#111217] border border-red-400/60 p-5 text-center shadow-2xl space-y-3">
+      <div class="text-3xl">🏳️</div>
+      <h2 class="font-display font-bold text-lg text-[#f3d678]">Confirmar Rendição</h2>
+      <p id="surrender-desc" class="text-xs text-zinc-300 leading-relaxed">
+        Tem certeza de que deseja se render? Esta ação encerrará a partida imediatamente.
+      </p>
+      <div class="grid grid-cols-2 gap-2 pt-1">
+        <button type="button" id="btn-surrender-cancel" class="py-2.5 rounded-xl bg-[#161820] border border-white/15 text-zinc-200 font-bold text-xs active:scale-95">
+          Cancelar
+        </button>
+        <button type="button" id="btn-surrender-confirm" class="py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs shadow active:scale-95">
+          Sim, Render-se
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL FIM DE PARTIDA -->
   <div id="gameover-modal" class="xeker-modal">
     <div class="w-full max-w-[370px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-5 text-center shadow-2xl">
@@ -654,9 +616,7 @@
       });
 
       const MAX_HAND_SIZE = 6;
-      const INITIAL_CLOCK_SECONDS = 30 * 60;
-      const MM_SLOT_COUNT = 6;
-      const MM_PEER_PREFIX = 'XEKER-MM-V1-SLOT-';
+      const INITIAL_CLOCK_SECONDS = 15 * 60;
 
       const RANK_TEXT = {
         1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7',
@@ -745,7 +705,7 @@
         3: 'Trinca: Causa +1♥ de dano extra.',
         4: 'Sequência: Concede +1♣ (ação) e compra +1 carta.',
         5: 'Full House: Causa +1♥ de dano extra e cura a peça usada em +2♥.',
-        6: 'Quadra: Abate imediato da peça adversária e garante +8♦ de ouro.'
+        6: 'Quadra: Abate imediato da peça adversária e concede +8♦ de ouro.'
       };
 
       const RULEBOOK_PAGES = [
@@ -753,7 +713,7 @@
           title: '1. Objetivo, Relógios & Economia',
           html: `
             <p><strong class="text-[#f3d678]">Objetivo:</strong> Abater o <strong>Rei adversário (7♥)</strong> ou vencer quando o tempo do oponente zerar.</p>
-            <p><strong class="text-[#f3d678]">Relógios (30:00):</strong> Cada jogador tem 30:00. O relógio do jogador ativo corre apenas fora de modais/resumos e quando não está aguardando ação do Bot.</p>
+            <p><strong class="text-[#f3d678]">Relógios (15:00):</strong> Cada jogador tem 15:00. O relógio do jogador ativo corre apenas fora de modais/resumos e quando não está aguardando ação do Bot.</p>
             <div class="p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/30 space-y-1">
               <div class="font-bold text-[#f3d678]">Regras de Turno e Recursos:</div>
               <p>• <strong>Ouro Inicial:</strong> Ambos os jogadores começam com <span class="sym-diamond">♦2</span>.</p>
@@ -860,14 +820,14 @@
         }
       ];
 
-      let selectedMode = 'bot';
+      let selectedMode = 'pvp';
       let state = null;
       let duelContext = null;
       let pendingCombatPassAction = null;
       let rulesIdx = 0;
       let timerId = null;
 
-      /* Camada de rede On-line (PeerJS / WebRTC + Matchmaking por slots públicos) */
+      /* Camada de rede On-line (PeerJS / WebRTC) */
       const net = {
         peer: null,
         conn: null,
@@ -875,12 +835,7 @@
         roomCode: null,
         connected: false,
         pendingCombat: null,
-        lastSummary: null,
-        mmActive: false,
-        mmTimer: null,
-        mmPollTimer: null,
-        mmSeconds: 0,
-        mmProbePeers: []
+        lastSummary: null
       };
 
       function isOnlineMode() {
@@ -895,195 +850,6 @@
       function setOnlineStatus(msg) {
         const el = document.getElementById('online-status-text');
         if (el) el.textContent = msg;
-      }
-
-      function setMatchmakingUi(searching) {
-        const box = document.getElementById('mm-searching-box');
-        const btnFind = document.getElementById('btn-find-match');
-        const badge = document.getElementById('mm-badge');
-        if (searching) {
-          box.classList.remove('hidden');
-          btnFind.disabled = true;
-          btnFind.classList.add('opacity-50');
-          badge.textContent = 'Buscando';
-          badge.className = 'px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-200 text-[10px] font-bold';
-        } else {
-          box.classList.add('hidden');
-          btnFind.disabled = false;
-          btnFind.classList.remove('opacity-50');
-          badge.textContent = 'Pronto';
-          badge.className = 'px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 text-[10px] font-bold';
-        }
-      }
-
-      function cleanupMatchmakingProbes() {
-        if (net.mmTimer) {
-          clearInterval(net.mmTimer);
-          net.mmTimer = null;
-        }
-        if (net.mmPollTimer) {
-          clearInterval(net.mmPollTimer);
-          net.mmPollTimer = null;
-        }
-        while (net.mmProbePeers.length > 0) {
-          const p = net.mmProbePeers.pop();
-          try { p.destroy(); } catch (_) {}
-        }
-      }
-
-      function cancelMatchmaking(updateMsg = true) {
-        net.mmActive = false;
-        cleanupMatchmakingProbes();
-        if (!net.connected) {
-          if (net.peer) {
-            try { net.peer.destroy(); } catch (_) {}
-            net.peer = null;
-          }
-          net.role = null;
-        }
-        setMatchmakingUi(false);
-        if (updateMsg) {
-          setOnlineStatus('Busca de oponente cancelada.');
-        }
-      }
-
-      function tryHostMatchmakingSlot(slotIndex) {
-        if (!net.mmActive) return;
-        const slotId = `${MM_PEER_PREFIX}${slotIndex}`;
-        document.getElementById('mm-slot-label').textContent = `Aguardando oponente na fila #${slotIndex + 1}...`;
-
-        if (net.peer) {
-          try { net.peer.destroy(); } catch (_) {}
-          net.peer = null;
-        }
-
-        const hostPeer = new Peer(slotId);
-        net.peer = hostPeer;
-        net.role = 'host';
-        net.roomCode = slotId;
-
-        hostPeer.on('open', () => {
-          if (!net.mmActive) {
-            try { hostPeer.destroy(); } catch (_) {}
-            return;
-          }
-          setOnlineStatus(`Na fila pública (#${slotIndex + 1}). Aguardando outro jogador...`);
-        });
-
-        hostPeer.on('connection', (conn) => {
-          if (!net.mmActive) return;
-          net.mmActive = false;
-          cleanupMatchmakingProbes();
-          setMatchmakingUi(false);
-          setupConnectionListeners(conn, 'host');
-        });
-
-        hostPeer.on('error', (err) => {
-          if (!net.mmActive) return;
-          if (err && err.type === 'unavailable-id') {
-            if (slotIndex + 1 < MM_SLOT_COUNT) {
-              tryHostMatchmakingSlot(slotIndex + 1);
-            } else {
-              document.getElementById('mm-slot-label').textContent = 'Filas ocupadas, tentando novamente...';
-              setTimeout(() => {
-                if (net.mmActive) tryHostMatchmakingSlot(0);
-              }, 1100);
-            }
-          } else {
-            setOnlineStatus('Aviso na fila: ' + (err && err.type ? err.type : err.message));
-          }
-        });
-      }
-
-      function scanPublicMatchmakingSlots() {
-        if (!net.mmActive || typeof Peer === 'undefined') return;
-        if (net.connected) return;
-
-        for (let i = 0; i < MM_SLOT_COUNT; i++) {
-          const targetSlotId = `${MM_PEER_PREFIX}${i}`;
-          if (net.peer && net.peer.id === targetSlotId) continue;
-
-          const probePeer = new Peer();
-          net.mmProbePeers.push(probePeer);
-
-          probePeer.on('open', () => {
-            if (!net.mmActive || net.connected) {
-              try { probePeer.destroy(); } catch (_) {}
-              return;
-            }
-            const conn = probePeer.connect(targetSlotId, { reliable: true });
-            let settled = false;
-
-            const timeoutHandle = setTimeout(() => {
-              if (!settled) {
-                settled = true;
-                try { conn.close(); } catch (_) {}
-                try { probePeer.destroy(); } catch (_) {}
-              }
-            }, 1400);
-
-            conn.on('open', () => {
-              if (settled || !net.mmActive || net.connected) return;
-              settled = true;
-              clearTimeout(timeoutHandle);
-              net.mmActive = false;
-              cleanupMatchmakingProbes();
-              setMatchmakingUi(false);
-
-              if (net.peer && net.peer !== probePeer) {
-                try { net.peer.destroy(); } catch (_) {}
-              }
-              net.peer = probePeer;
-              setupConnectionListeners(conn, 'guest');
-            });
-
-            conn.on('error', () => {
-              if (!settled) {
-                settled = true;
-                clearTimeout(timeoutHandle);
-                try { probePeer.destroy(); } catch (_) {}
-              }
-            });
-          });
-
-          probePeer.on('error', () => {
-            try { probePeer.destroy(); } catch (_) {}
-          });
-        }
-      }
-
-      function startMatchmaking() {
-        try {
-          if (typeof Peer === 'undefined') {
-            setOnlineStatus('Biblioteca WebRTC indisponível no momento.');
-            return;
-          }
-          cancelMatchmaking(false);
-          net.mmActive = true;
-          net.mmSeconds = 0;
-          selectedMode = 'online';
-          syncModeButtons();
-          setMatchmakingUi(true);
-          document.getElementById('mm-timer-label').textContent = 'Procurando oponente... 00s';
-          setOnlineStatus('Iniciando matchmaking automático...');
-
-          tryHostMatchmakingSlot(0);
-          scanPublicMatchmakingSlots();
-
-          net.mmTimer = setInterval(() => {
-            if (!net.mmActive) return;
-            net.mmSeconds += 1;
-            const secStr = String(net.mmSeconds).padStart(2, '0');
-            document.getElementById('mm-timer-label').textContent = `Procurando oponente... ${secStr}s`;
-          }, 1000);
-
-          net.mmPollTimer = setInterval(() => {
-            if (!net.mmActive || net.connected) return;
-            scanPublicMatchmakingSlots();
-          }, 2200);
-        } catch (err) {
-          reportError(err);
-        }
       }
 
       function generateRoomCode() {
@@ -1252,21 +1018,17 @@
 
         conn.on('open', () => {
           net.connected = true;
-          net.mmActive = false;
-          cleanupMatchmakingProbes();
-          setMatchmakingUi(false);
-
           if (role === 'host') {
-            setOnlineStatus('Oponente encontrado! Iniciando partida...');
+            setOnlineStatus('Oponente conectado! Iniciando partida...');
             closeModal('online-modal');
             startMatch();
           } else {
             selectedMode = 'online';
             syncModeButtons();
-            setOnlineStatus('Oponente encontrado! Aguardando Brancas...');
+            setOnlineStatus('Conectado à sala! Aguardando Brancas...');
             closeModal('online-modal');
             closeModal('menu-modal');
-            setStatus('Conectado ao oponente! Aguardando início das Brancas (♔)...');
+            setStatus('Conectado à sala! Aguardando início da partida das Brancas (♔)...');
           }
         });
 
@@ -1316,7 +1078,6 @@
             setOnlineStatus('Biblioteca WebRTC indisponível no momento.');
             return;
           }
-          cancelMatchmaking(false);
           if (net.peer) {
             try { net.peer.destroy(); } catch (_) {}
           }
@@ -1324,7 +1085,7 @@
           net.roomCode = code;
           net.role = 'host';
           net.connected = false;
-          setOnlineStatus('Criando sala privada...');
+          setOnlineStatus('Criando sala on-line...');
 
           const peer = new Peer(code);
           net.peer = peer;
@@ -1353,7 +1114,6 @@
             setOnlineStatus('Biblioteca WebRTC indisponível no momento.');
             return;
           }
-          cancelMatchmaking(false);
           const raw = (document.getElementById('input-join-code').value || '').trim().toUpperCase();
           if (!raw) {
             setOnlineStatus('Digite o código da sala.');
@@ -1475,8 +1235,8 @@
         const wEl = document.getElementById('val-clock-white');
         const bEl = document.getElementById('val-clock-black');
         if (!state) {
-          if (wEl) wEl.textContent = '30:00';
-          if (bEl) bEl.textContent = '30:00';
+          if (wEl) wEl.textContent = '15:00';
+          if (bEl) bEl.textContent = '15:00';
           return;
         }
         if (wEl) wEl.textContent = formatTime(state.clocks.white);
@@ -1516,7 +1276,6 @@
             if (!state || state.gameOver) return;
             if (isOnlineMode() && net.role === 'guest') return;
             if (hasOpenModal()) return;
-            if (state.mode === 'bot' && state.turn === 'black') return;
             if (isOnlineMode() && !net.connected) return;
 
             const active = state.turn;
@@ -1529,7 +1288,7 @@
 
             if (state.clocks[active] <= 0) {
               const winner = active === 'white' ? 'black' : 'white';
-              endMatch(winner, 'O tempo de 30:00 se esgotou.');
+              endMatch(winner, 'O tempo de 15:00 se esgotou.');
             }
           } catch (err) {
             reportError(err);
@@ -1768,7 +1527,6 @@
             return;
           }
 
-          cancelMatchmaking(false);
           closeAllModals();
           duelContext = null;
           pendingCombatPassAction = null;
@@ -1813,8 +1571,6 @@
 
           if (state.mode === 'online') {
             setStatus('Partida on-line iniciada · Você é Brancas (♔).');
-          } else if (state.mode === 'bot') {
-            setStatus('Partida iniciada (Contra Bot) · Brancas (♣2, ♦2, 3 cartas).');
           } else {
             setStatus('Partida iniciada (Passa e Joga) · Brancas (♣2, ♦2, 3 cartas).');
           }
@@ -2057,7 +1813,10 @@
           </button>
         `;
 
-        document.getElementById('btn-combat-done').addEventListener('click', () => {
+        const rawDoneBtn = document.getElementById('btn-combat-done');
+        const doneBtn = rawDoneBtn.cloneNode(true);
+        rawDoneBtn.parentNode.replaceChild(doneBtn, rawDoneBtn);
+        doneBtn.addEventListener('click', () => {
           if (typeof onDoneOverride === 'function') {
             onDoneOverride();
             return;
@@ -2688,7 +2447,6 @@
 
       function onTileTap(r, c) {
         if (!state || state.gameOver) return;
-        if (state.mode === 'bot' && state.turn === 'black') return;
         if (isOnlineMode() && state.turn !== myOnlineSide()) return;
 
         if (state.selected && state.skillPhase) {
@@ -2762,10 +2520,14 @@
             return;
           }
           state.selected = { r, c };
-          state.actionMode = null;
+          state.actionMode = state.actions > 0 ? 'move' : null;
           state.skillPhase = null;
           state.copiedSkill = null;
-          setStatus(`${PIECE_DATA[tappedPiece.type].name} selecionado: escolha Mover, Atacar ou Ativa.`);
+          setStatus(
+            state.actions > 0
+              ? `${PIECE_DATA[tappedPiece.type].name} selecionado: toque em uma casa livre para mover ou escolha Atacar / Ativa.`
+              : `${PIECE_DATA[tappedPiece.type].name} selecionado (sem ações ♣): escolha Ativa ou Fim Turno.`
+          );
           renderAll();
           return;
         }
@@ -2781,10 +2543,11 @@
         if (!state || state.gameOver || !state.selected) return;
         state.skillPhase = null;
         state.copiedSkill = null;
-        state.actionMode = state.actionMode === mode ? null : mode;
-        if (!state.actionMode) {
-          setStatus('Ação desmarcada.');
+        if (state.actionMode === mode) {
+          state.actionMode = state.actions > 0 ? 'move' : null;
+          setStatus(state.actionMode === 'move' ? 'Modo padrão: toque em uma casa livre para mover.' : 'Ação desmarcada.');
         } else {
+          state.actionMode = mode;
           setStatus(mode === 'move' ? 'Escolha uma casa livre destacada.' : 'Escolha um inimigo em vermelho para atacar.');
         }
         renderAll();
@@ -2792,7 +2555,6 @@
 
       function onBuyCard() {
         if (!state || state.gameOver) return;
-        if (state.mode === 'bot' && state.turn === 'black') return;
         if (isOnlineMode() && state.turn !== myOnlineSide()) return;
 
         if (isOnlineMode() && net.role === 'guest') {
@@ -2852,11 +2614,7 @@
           const bCard = maybeDrawEveryTwoOwnTurns('black');
           const bDrawMsg = bCard !== null ? ` · Pretas receberam +1 carta [${RANK_TEXT[bCard]}]` : '';
 
-          if (state.mode === 'bot') {
-            setStatus(`Turno das Pretas (Bot) · ♣2${bDrawMsg}`);
-            renderAll();
-            setTimeout(executeBotTurn, 420);
-          } else if (state.mode === 'online') {
+          if (state.mode === 'online') {
             setStatus(`Turno das Pretas · ♣2${bDrawMsg}`);
             renderAll();
             if (net.role === 'host') syncOnlineState();
@@ -2883,166 +2641,6 @@
             renderAll();
             if (isOnlineMode() && net.role === 'host') syncOnlineState();
           }
-        }
-      }
-
-      let botBoughtThisTurn = false;
-
-      function scoreBotAttack(atkPiece, atkCardVal, defPiece) {
-        const atkHand = evaluateCombatHand([...state.flop, atkCardVal], atkPiece);
-        let score = (defPiece.type === 'K' ? 95 : 40) + atkHand.cat * 14 + (PIECE_DATA[defPiece.type].reward || 0) * 3;
-        if (defPiece.hp <= 2) score += 16;
-        if (atkHand.cat === 0 && defPiece.hp > 2 && atkPiece.type !== 'B') score -= 12;
-        return score;
-      }
-
-      function finalizeBotTurnIfReady() {
-        if (!state || state.gameOver || state.turn !== 'black') return;
-        botBoughtThisTurn = false;
-        onEndTurn();
-      }
-
-      function executeBotTurn() {
-        if (!state || state.gameOver || state.turn !== 'black') return;
-        const bot = state.players.black;
-
-        if (!botBoughtThisTurn && bot.gold >= 3 && bot.hand.length < 2) {
-          const c = drawCard();
-          if (c !== null) {
-            bot.gold -= 3;
-            bot.hand.push(c);
-            botBoughtThisTurn = true;
-            setStatus(`🤖 Bot comprou carta [${RANK_TEXT[c]}] por ♦3.`);
-          }
-        }
-
-        let choice = null;
-        let bestScore = -999;
-
-        for (let r = 0; r < 8; r++) {
-          for (let c = 0; c < 8; c++) {
-            const p = state.board[r][c];
-            if (!p || p.color !== 'black' || p.acted) continue;
-            const reach = getReachInfo(r, c);
-
-            if (bot.gold >= 1) {
-              if (p.type === 'K' && reach.enemies.length > 0) {
-                const target = reach.enemies.slice().sort((a, b) => a.piece.hp - b.piece.hp)[0];
-                const sc = target.piece.hp <= 2 ? 140 : 55;
-                if (sc > bestScore) {
-                  bestScore = sc;
-                  choice = { kind: 'skill', r, c, tr: target.r, tc: target.c };
-                }
-              } else if ((p.type === 'N' || p.type === 'Q') && reach.enemies.length > 0) {
-                const killable = reach.enemies.find((e) => e.piece.hp <= 1);
-                if (killable && 100 > bestScore) {
-                  bestScore = 100;
-                  choice = { kind: 'skill', r, c, tr: killable.r, tc: killable.c };
-                }
-              } else if (p.type === 'B' && reach.allies.some((a) => a.piece.hp < a.piece.maxHp)) {
-                if (50 > bestScore) {
-                  bestScore = 50;
-                  choice = { kind: 'skill', r, c, tr: r, tc: c };
-                }
-              }
-            }
-
-            if (state.actions > 0 && reach.attacks.length > 0 && bot.hand.length > 0) {
-              const cIdx = pickBotCard(bot.hand, p);
-              for (const atkT of reach.attacks) {
-                const defP = state.board[atkT.r][atkT.c];
-                const sc = scoreBotAttack(p, bot.hand[cIdx], defP);
-                if (sc > bestScore) {
-                  bestScore = sc;
-                  choice = { kind: 'attack', r, c, tr: atkT.r, tc: atkT.c, cIdx };
-                }
-              }
-            }
-
-            if (state.actions > 0) {
-              for (const m of reach.moves) {
-                const sc = (m.r - r) * 5 + (3.5 - Math.abs(3.5 - m.c));
-                if (sc > bestScore) {
-                  bestScore = sc;
-                  choice = { kind: 'move', r, c, tr: m.r, tc: m.c };
-                }
-              }
-            }
-          }
-        }
-
-        if (!choice) {
-          finalizeBotTurnIfReady();
-          return;
-        }
-
-        if (choice.kind === 'skill') {
-          const p = state.board[choice.r][choice.c];
-          executeActiveSkill(choice.r, choice.c, p.type, choice.tr, choice.tc, false);
-          if (!state.gameOver) {
-            setTimeout(executeBotTurn, 380);
-          }
-          return;
-        }
-
-        if (choice.kind === 'attack') {
-          const atkPiece = state.board[choice.r][choice.c];
-          const defPiece = state.board[choice.tr][choice.tc];
-          const defPlayer = state.players.white;
-          const chosenAtk = bot.hand.splice(choice.cIdx, 1)[0];
-
-          duelContext = { atkR: choice.r, atkC: choice.c, defR: choice.tr, defC: choice.tc, atkCard: chosenAtk };
-
-          document.getElementById('combat-heading').textContent = '⚔️ Combate de Pôquer (Bot Atacando)';
-          const flopEl = document.getElementById('combat-flop');
-          flopEl.innerHTML = '';
-          state.flop.forEach((v) => flopEl.appendChild(renderCard(v, 'w-9 h-12 rounded-md text-sm')));
-
-          document.getElementById('combat-atk-glyph').textContent = PIECE_DATA[atkPiece.type].black;
-          document.getElementById('combat-atk-info').textContent = `${PIECE_DATA[atkPiece.type].name} (${atkPiece.hp}♥)`;
-          document.getElementById('combat-atk-sub').innerHTML = `
-            <div>Carta jogada: <strong>oculta</strong></div>
-            <div class="text-[10px] text-amber-200">Peça: ${formatPieceRep(atkPiece)}</div>
-          `;
-
-          document.getElementById('combat-def-glyph').textContent = PIECE_DATA[defPiece.type].white;
-          document.getElementById('combat-def-info').textContent = `${PIECE_DATA[defPiece.type].name} (${defPiece.hp}♥)`;
-          document.getElementById('combat-def-sub').innerHTML = `
-            <div>Peça: ${formatPieceRep(defPiece)}</div>
-            <div class="text-[10px] text-red-300">Sua defesa</div>
-          `;
-
-          renderAll();
-
-          if (defPlayer.hand.length === 0) {
-            settleCombat(chosenAtk, null);
-            document.getElementById('btn-combat-done').addEventListener('click', () => {
-              if (!state.gameOver) setTimeout(executeBotTurn, 250);
-            }, { once: true });
-            return;
-          }
-
-          renderDefenderCardSelection(chosenAtk, defPiece, defPlayer, (dIdx) => {
-            const chosenDef = defPlayer.hand.splice(dIdx, 1)[0];
-            settleCombat(chosenAtk, chosenDef);
-            const doneBtn = document.getElementById('btn-combat-done');
-            doneBtn.addEventListener('click', () => {
-              closeModal('combat-modal');
-              duelContext = null;
-              if (state.gameOver && state.gameOverData) {
-                endMatch(state.gameOverData.winnerSide, state.gameOverData.reason);
-                return;
-              }
-              renderAll();
-              setTimeout(executeBotTurn, 250);
-            }, { once: true });
-          });
-          return;
-        }
-
-        doMove(choice.r, choice.c, choice.tr, choice.tc);
-        if (!state.gameOver) {
-          setTimeout(executeBotTurn, 360);
         }
       }
 
@@ -3166,17 +2764,13 @@
             const info = PIECE_DATA[piece.type];
             const reach = getReachInfo(state.selected.r, state.selected.c);
             const canDo = canActOnMyTurn && state.actions > 0 && piece.color === state.turn && !piece.acted;
-            const canMove = canDo && reach.moves.length > 0;
             const canAttack = canDo && reach.attacks.length > 0 && activePlayer.hand.length > 0;
             const hasSkill = getValidSkillTargets(state.selected.r, state.selected.c, piece.type, null).length > 0;
             const canSkill = Boolean(state.skillPhase) || (canActOnMyTurn && piece.color === state.turn && !piece.acted && activePlayer.gold >= 1 && hasSkill);
 
             menuBox.innerHTML = `
-              <span class="text-xs font-bold text-[#f3d678] truncate pr-1">${info.name}</span>
+              <span class="text-xs font-bold text-[#f3d678] truncate pr-1">${info.name} <span class="text-[10px] font-normal text-emerald-300/90">(Mover padrão)</span></span>
               <div class="flex items-center gap-1">
-                <button type="button" id="act-move" class="px-2 py-1 rounded-lg text-[11px] font-bold border ${state.actionMode === 'move' ? 'bg-emerald-500/25 border-emerald-400 text-emerald-200' : 'bg-[#111217] border-white/15 text-zinc-200'} disabled:opacity-35" ${canMove ? '' : 'disabled'}>
-                  Mover
-                </button>
                 <button type="button" id="act-attack" class="px-2 py-1 rounded-lg text-[11px] font-bold border ${state.actionMode === 'attack' ? 'bg-red-500/25 border-red-400 text-red-200' : 'bg-[#111217] border-white/15 text-zinc-200'} disabled:opacity-35" ${canAttack ? '' : 'disabled'}>
                   Atacar
                 </button>
@@ -3186,7 +2780,6 @@
               </div>
             `;
 
-            document.getElementById('act-move').addEventListener('click', () => onSelectActionMode('move'));
             document.getElementById('act-attack').addEventListener('click', () => onSelectActionMode('attack'));
             document.getElementById('act-skill').addEventListener('click', onActiveSkillClick);
           }
@@ -3221,9 +2814,7 @@
             });
           }
         } else {
-          const handToShow = (state.mode === 'bot' && state.turn === 'black')
-            ? state.players.white.hand
-            : activePlayer.hand;
+          const handToShow = activePlayer.hand;
 
           if (handToShow.length === 0) {
             handBox.innerHTML = '<span class="text-xs text-zinc-500">Sem cartas na mão.</span>';
@@ -3257,26 +2848,36 @@
       }
 
       function syncModeButtons() {
-        const botBtn = document.getElementById('btn-select-bot');
         const pvpBtn = document.getElementById('btn-select-pvp');
         const onlineBtn = document.getElementById('btn-select-online');
 
-        const activeCls = 'py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95';
-        const idleCls = 'py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95';
+        const activeCls = 'py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95';
+        const idleCls = 'py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95';
 
-        botBtn.className = selectedMode === 'bot' ? activeCls : idleCls;
         pvpBtn.className = selectedMode === 'pvp' ? activeCls : idleCls;
         onlineBtn.className = selectedMode === 'online' ? activeCls : idleCls;
       }
 
+      function openSurrenderModal() {
+        if (!state || state.gameOver) return;
+        const sideToSurrender = isOnlineMode() ? myOnlineSide() : state.turn;
+        const label = sideToSurrender === 'white' ? 'Brancas (♔)' : 'Pretas (♚)';
+        document.getElementById('surrender-desc').textContent =
+          `Tem certeza de que ${label} deseja se render? O oponente vencerá a partida imediatamente.`;
+        openModal('surrender-modal');
+      }
+
+      function confirmSurrender() {
+        closeModal('surrender-modal');
+        if (!state || state.gameOver) return;
+        const surrenderingSide = isOnlineMode() ? myOnlineSide() : state.turn;
+        const winnerSide = surrenderingSide === 'white' ? 'black' : 'white';
+        const surrenderingLabel = surrenderingSide === 'white' ? 'Brancas (♔)' : 'Pretas (♚)';
+        endMatch(winnerSide, `${surrenderingLabel} se rendeu.`);
+      }
+
       function bindEvents() {
-        document.getElementById('btn-select-bot').addEventListener('click', () => {
-          cancelMatchmaking(false);
-          selectedMode = 'bot';
-          syncModeButtons();
-        });
         document.getElementById('btn-select-pvp').addEventListener('click', () => {
-          cancelMatchmaking(false);
           selectedMode = 'pvp';
           syncModeButtons();
         });
@@ -3286,12 +2887,7 @@
           openModal('online-modal');
         });
 
-        document.getElementById('btn-close-online').addEventListener('click', () => {
-          cancelMatchmaking(false);
-          closeModal('online-modal');
-        });
-        document.getElementById('btn-find-match').addEventListener('click', startMatchmaking);
-        document.getElementById('btn-cancel-mm').addEventListener('click', () => cancelMatchmaking(true));
+        document.getElementById('btn-close-online').addEventListener('click', () => closeModal('online-modal'));
         document.getElementById('btn-create-room').addEventListener('click', createOnlineRoom);
         document.getElementById('btn-join-room').addEventListener('click', joinOnlineRoom);
         document.getElementById('btn-copy-room').addEventListener('click', () => {
@@ -3330,6 +2926,9 @@
         });
 
         document.getElementById('btn-draw-card').addEventListener('click', onBuyCard);
+        document.getElementById('btn-surrender').addEventListener('click', openSurrenderModal);
+        document.getElementById('btn-surrender-cancel').addEventListener('click', () => closeModal('surrender-modal'));
+        document.getElementById('btn-surrender-confirm').addEventListener('click', confirmSurrender);
         document.getElementById('btn-end-turn').addEventListener('click', onEndTurn);
         document.getElementById('btn-pass-ok').addEventListener('click', () => {
           closeModal('pass-modal');
