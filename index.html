@@ -6,54 +6,6 @@
   <title>XEKER — Xadrez &amp; Pôquer Tático</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-    import {
-      getAuth,
-      GoogleAuthProvider,
-      signInWithPopup,
-      signOut,
-      onAuthStateChanged
-    } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-    import {
-      getFirestore,
-      doc,
-      getDoc,
-      setDoc,
-      updateDoc,
-      deleteDoc,
-      collection,
-      query,
-      where,
-      limit,
-      getDocs,
-      onSnapshot,
-      serverTimestamp
-    } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
-
-    window.__XEKER_FIREBASE__ = {
-      initializeApp,
-      getAuth,
-      GoogleAuthProvider,
-      signInWithPopup,
-      signOut,
-      onAuthStateChanged,
-      getFirestore,
-      doc,
-      getDoc,
-      setDoc,
-      updateDoc,
-      deleteDoc,
-      collection,
-      query,
-      where,
-      limit,
-      getDocs,
-      onSnapshot,
-      serverTimestamp
-    };
-    window.dispatchEvent(new Event('xeker-firebase-ready'));
-  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -92,11 +44,13 @@
       font-family: 'Cinzel', serif;
     }
 
+    /* Símbolos temáticos do XEKER */
     .sym-club { color: #34d399; font-weight: 800; }
     .sym-spade { color: #60a5fa; font-weight: 800; }
     .sym-diamond { color: #fbbf24; font-weight: 800; }
     .sym-heart { color: #f87171; font-weight: 800; }
 
+    /* Carta sem naipe: valor exibido apenas 1 vez, centralizado */
     .xeker-card {
       background: linear-gradient(155deg, var(--parchment-top) 0%, var(--parchment-bot) 100%);
       border: 1.5px solid #9e7923;
@@ -121,6 +75,7 @@
       transform: translateY(-2px) scale(0.97);
     }
 
+    /* Verso de carta oculta (mão oculta em Passa e Joga / On-line) */
     .xeker-card-back {
       background: linear-gradient(145deg, #1d2233 0%, #0f111a 100%);
       border: 1.5px solid rgba(212, 175, 55, 0.55);
@@ -132,6 +87,7 @@
       box-shadow: 0 3px 8px rgba(0, 0, 0, 0.55);
     }
 
+    /* Visual Dark Luxury dourado do menu inicial */
     .luxury-menu-canvas {
       position: relative;
       background:
@@ -183,6 +139,7 @@
       animation: starTwinkle 3.2s ease-in-out infinite;
     }
 
+    /* Tabuleiro 8x8 responsivo */
     .xeker-board {
       width: min(100%, 47dvh);
       max-width: 100%;
@@ -229,6 +186,7 @@
       box-shadow: inset 0 0 0 2px #60a5fa;
     }
 
+    /* Peças */
     .piece-token {
       width: 86%;
       height: 86%;
@@ -295,6 +253,7 @@
       justify-content: center;
     }
 
+    /* Modais */
     .xeker-modal {
       position: fixed;
       inset: 0;
@@ -315,13 +274,24 @@
     #online-modal {
       z-index: 70;
     }
+
+    @keyframes pulseRing {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.08); opacity: 1; }
+    }
+    .mm-pulse {
+      animation: pulseRing 1.5s ease-in-out infinite;
+    }
   </style>
 </head>
 <body>
+  <!-- Banner de erro caso ocorra exceção inesperada -->
   <div id="error-toast" class="hidden fixed top-2 left-2 right-2 z-[100] rounded-xl bg-red-950 border border-red-400 text-red-100 px-3 py-2 text-xs font-semibold shadow-xl"></div>
 
+  <!-- Tela Principal do Jogo -->
   <div id="game-shell" class="w-full max-w-[460px] mx-auto h-[100dvh] flex flex-col justify-between bg-[#09090b] border-x border-[#d4af37]/25 overflow-hidden">
 
+    <!-- Topo: Título, Ouro (♦), Cartas, Relógios 30:00, Regras e Menu -->
     <header class="shrink-0 flex items-center justify-between gap-1 px-2 py-1 bg-[#111217] border-b border-[#d4af37]/25">
       <span class="font-display font-extrabold text-sm tracking-widest text-[#f3d678]">XEKER</span>
 
@@ -351,6 +321,7 @@
       </div>
     </header>
 
+    <!-- Faixa Superior: Flop de 3 Cartas + Ações (♣) + Comprar Carta (3♦ / 0♣) -->
     <section class="shrink-0 flex items-center justify-between gap-1.5 px-2 py-1 bg-[#111217]/90 border-b border-white/10">
       <div class="flex items-center gap-1">
         <span class="text-[10px] font-bold uppercase tracking-wider text-[#d4af37] mr-0.5">Flop</span>
@@ -369,11 +340,14 @@
       </div>
     </section>
 
+    <!-- Centro: Tabuleiro 8x8 -->
     <main class="flex-1 min-h-0 px-1.5 py-0.5 flex items-center justify-center">
       <div id="board-grid" class="xeker-board"></div>
     </main>
 
+    <!-- Inferior: Habilidades da Peça Selecionada, Menu de 3 Opções, Fim de Turno, Mão e Mensagens -->
     <section class="shrink-0 flex flex-col gap-1 px-2 pt-1 pb-1.5 bg-[#111217] border-t border-[#d4af37]/25">
+      <!-- Info de habilidades da peça selecionada -->
       <div id="piece-info-card" class="px-2 py-1 rounded-xl bg-[#161820]/95 border border-[#d4af37]/30 text-[10px] leading-tight text-zinc-300 min-h-[38px] flex flex-col justify-center">
         <span class="text-zinc-400">Toque em uma peça para ver suas habilidades.</span>
       </div>
@@ -388,18 +362,21 @@
         </button>
       </div>
 
+      <!-- Mão do jogador -->
       <div id="hand-container" class="flex items-center gap-1.5 overflow-x-auto py-0.5 min-h-[48px]"></div>
 
+      <!-- Barra de status/eventos -->
       <div id="status-bar" class="px-2.5 py-1 rounded-lg bg-black/50 border border-white/10 text-[11px] text-zinc-200 truncate">
         Bem-vindo ao XEKER.
       </div>
     </section>
   </div>
 
-  <!-- MODAL MENU PRINCIPAL -->
+  <!-- MODAL MENU PRINCIPAL (ESTILO DARK LUXURY DOURADO) -->
   <div id="menu-modal" class="xeker-modal open">
     <div class="luxury-menu-canvas w-full max-w-[392px] max-h-[95dvh] rounded-3xl px-5 py-4 flex flex-col items-center justify-between text-center">
 
+      <!-- Arco superior de estrelas e constelações douradas -->
       <svg viewBox="0 0 340 56" class="w-full max-w-[330px] h-11 shrink-0 overflow-visible" aria-hidden="true">
         <g fill="#f3d678" class="star-twinkle">
           <path d="M170 4 L172 10 L178 12 L172 14 L170 20 L168 14 L162 12 L168 10 Z" />
@@ -418,6 +395,7 @@
         </g>
       </svg>
 
+      <!-- 3 Cartas Metálicas Douradas (10 Torre, J Bispo, A Cavalo) -->
       <div class="flex items-center justify-center gap-2 my-1 shrink-0">
         <div class="gold-foil-card w-[74px] h-[104px] rounded-xl -rotate-[8deg] translate-y-1.5 flex flex-col items-center justify-between py-1.5 px-1.5">
           <span class="self-start text-xs font-black leading-none tracking-tight">10</span>
@@ -438,6 +416,7 @@
         </div>
       </div>
 
+      <!-- Título Metálico Dourado XEKER -->
       <div class="my-1.5 shrink-0">
         <h1 class="font-display font-black text-3xl sm:text-4xl tracking-[0.22em] metallic-gold-title">
           XEKER
@@ -445,12 +424,9 @@
         <p class="text-[11px] tracking-wider uppercase text-amber-200/75 font-semibold mt-0.5">
           Xadrez &amp; Pôquer Tático · 1v1
         </p>
-        <div id="menu-auth-pill" class="mt-1 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/55 border border-[#d4af37]/30 text-[10px] text-amber-200/90">
-          <span id="menu-auth-dot" class="w-1.5 h-1.5 rounded-full bg-zinc-500"></span>
-          <span id="menu-auth-label">Verificando sessão...</span>
-        </div>
       </div>
 
+      <!-- Seletor de Modo & Botões Principais -->
       <div class="w-full space-y-2 my-1.5 shrink-0">
         <div class="grid grid-cols-3 gap-1.5">
           <button type="button" id="btn-select-bot" class="py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95">
@@ -473,6 +449,7 @@
         </button>
       </div>
 
+      <!-- Guirlanda de Estrelas Douradas + Silhuetas + 'design by XEKER' -->
       <div class="w-full pt-1 shrink-0">
         <svg viewBox="0 0 340 52" class="w-full max-w-[330px] h-11 mx-auto overflow-visible" aria-hidden="true">
           <path d="M18 32 Q 88 8, 170 36 Q 252 8, 322 32" fill="none" stroke="rgba(243,214,120,0.35)" stroke-width="1" stroke-dasharray="2 3" />
@@ -504,51 +481,47 @@
     </div>
   </div>
 
-  <!-- MODAL LOBBY ON-LINE (GOOGLE AUTH + MATCHMAKING ELO + SALAS POR CÓDIGO) -->
+  <!-- MODAL LOBBY ON-LINE (MATCHMAKING AUTOMÁTICO + SALA PRIVADA) -->
   <div id="online-modal" class="xeker-modal">
-    <div class="w-full max-w-[388px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl space-y-3 text-xs max-h-[94dvh] overflow-y-auto">
+    <div class="w-full max-w-[380px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl space-y-3 text-xs">
       <div class="flex items-center justify-between pb-2 border-b border-white/10">
         <h2 class="font-display font-bold text-sm text-[#f3d678]">🌐 Partida On-line (1v1)</h2>
         <button type="button" id="btn-close-online" class="px-2.5 py-1 rounded-lg bg-[#161820] border border-white/15 font-bold text-zinc-200 active:scale-95">✕</button>
       </div>
 
-      <!-- Perfil & Conta Google -->
-      <div class="p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/30 flex items-center justify-between gap-2">
-        <div class="min-w-0">
-          <div id="online-user-name" class="font-bold text-white truncate">Convidado</div>
-          <div id="online-user-elo" class="text-[10px] text-amber-200/80">ELO: 1200 · Firebase: pendente</div>
-        </div>
-        <div class="flex items-center gap-1 shrink-0">
-          <button type="button" id="btn-google-login" class="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold active:scale-95">
-            Entrar Google
-          </button>
-          <button type="button" id="btn-google-logout" class="hidden px-2 py-1.5 rounded-lg bg-black/50 border border-white/15 text-zinc-300 font-bold active:scale-95">
-            Sair
-          </button>
-        </div>
-      </div>
-
-      <!-- Matchmaking Ranqueado (Firestore) -->
-      <div class="p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/35 space-y-2">
+      <!-- Bloco de Matchmaking Automático -->
+      <div class="p-3 rounded-xl bg-gradient-to-b from-[#d4af37]/15 to-[#161820] border border-[#f3d678]/50 space-y-2.5">
         <div class="flex items-center justify-between">
-          <span class="font-bold text-[#f3d678]">⚔️ Matchmaking Ranqueado</span>
-          <span id="mm-range-badge" class="text-[10px] text-zinc-400">±200 ELO</span>
+          <span class="font-extrabold text-[#fff1b8] text-xs">⚡ Matchmaking Rápido</span>
+          <span id="mm-badge" class="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 text-[10px] font-bold">Pronto</span>
         </div>
-        <button type="button" id="btn-find-match" class="w-full py-2 rounded-xl bg-gradient-to-r from-[#fff1b8] via-[#d4af37] to-[#9c7218] text-[#140e02] font-extrabold active:scale-95">
-          Buscar Oponente
-        </button>
-        <button type="button" id="btn-cancel-match" class="hidden w-full py-1.5 rounded-xl bg-red-950/70 border border-red-400/50 text-red-200 font-bold active:scale-95">
-          Cancelar Busca
+        <p class="text-[11px] text-zinc-300 leading-snug">
+          Busca automaticamente outro jogador disponível na fila pública para iniciar uma partida 1v1 sem precisar trocar códigos.
+        </p>
+        <div id="mm-searching-box" class="hidden py-2 px-3 rounded-xl bg-black/55 border border-[#d4af37]/40 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="mm-pulse text-base">⚔️</span>
+            <div>
+              <div id="mm-timer-label" class="font-mono font-bold text-xs text-[#f3d678]">Procurando oponente... 00s</div>
+              <div id="mm-slot-label" class="text-[10px] text-zinc-400">Verificando filas públicas...</div>
+            </div>
+          </div>
+          <button type="button" id="btn-cancel-mm" class="px-2.5 py-1 rounded-lg bg-red-950/80 border border-red-400/50 text-red-200 font-bold text-[11px] active:scale-95">
+            Cancelar
+          </button>
+        </div>
+        <button type="button" id="btn-find-match" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#fff1b8] via-[#d4af37] to-[#9c7218] text-[#140e02] font-extrabold text-xs tracking-wide shadow-lg active:scale-95">
+          Encontrar Oponente
         </button>
       </div>
 
-      <!-- Salas Casuais por Código (PeerJS / WebRTC) -->
+      <!-- Bloco de Sala Privada (Criar / Entrar) -->
       <div class="p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/25 space-y-2">
-        <div class="font-bold text-[#f3d678]">Criar Sala Casual (Joga de Brancas ♔)</div>
-        <button type="button" id="btn-create-room" class="w-full py-2 rounded-xl bg-[#d4af37]/20 border border-[#f3d678]/60 text-[#fff1b8] font-extrabold active:scale-95">
+        <div class="font-bold text-[#f3d678]">Sala Privada · Criar (Brancas ♔)</div>
+        <button type="button" id="btn-create-room" class="w-full py-1.5 rounded-xl bg-[#d4af37]/20 border border-[#d4af37]/60 text-[#fff1b8] font-bold active:scale-95">
           Gerar Código de Sala
         </button>
-        <div id="room-code-box" class="hidden flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg bg-black/60 border border-[#d4af37]/40">
+        <div id="room-code-box" class="hidden flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-black/60 border border-[#d4af37]/40">
           <div>
             <div class="text-[10px] text-zinc-400">Código da sala:</div>
             <div id="room-code-value" class="font-mono font-extrabold text-sm tracking-widest text-[#fff1b8]"></div>
@@ -560,17 +533,17 @@
       </div>
 
       <div class="p-2.5 rounded-xl bg-[#161820] border border-white/10 space-y-2">
-        <div class="font-bold text-zinc-200">Entrar em Sala Casual (Joga de Pretas ♚)</div>
+        <div class="font-bold text-zinc-200">Sala Privada · Entrar (Pretas ♚)</div>
         <div class="flex gap-1.5">
-          <input id="input-join-code" type="text" maxlength="16" placeholder="Código da sala" class="flex-1 px-2.5 py-2 rounded-xl bg-black/60 border border-white/15 text-white font-mono uppercase text-xs focus:outline-none focus:border-[#d4af37]" />
-          <button type="button" id="btn-join-room" class="px-3 py-2 rounded-xl bg-[#d4af37]/25 border border-[#f3d678] text-[#fff1b8] font-bold active:scale-95">
+          <input id="input-join-code" type="text" maxlength="24" placeholder="Código da sala" class="flex-1 px-2.5 py-1.5 rounded-xl bg-black/60 border border-white/15 text-white font-mono uppercase text-xs focus:outline-none focus:border-[#d4af37]" />
+          <button type="button" id="btn-join-room" class="px-3 py-1.5 rounded-xl bg-[#d4af37]/25 border border-[#f3d678] text-[#fff1b8] font-bold active:scale-95">
             Entrar
           </button>
         </div>
       </div>
 
       <div id="online-status-text" class="px-2.5 py-2 rounded-xl bg-black/50 border border-white/10 text-[11px] text-amber-200 min-h-[36px] flex items-center">
-        Escolha matchmaking ranqueado, criar uma sala ou inserir o código de outro jogador.
+        Clique em "Encontrar Oponente" para matchmaking automático ou use uma sala privada.
       </div>
     </div>
   </div>
@@ -601,7 +574,7 @@
     </div>
   </div>
 
-  <!-- MODAL DE PRIVACIDADE DO COMBATE -->
+  <!-- MODAL DE PRIVACIDADE DO COMBATE ("PASSE PARA O JOGADOR X") -->
   <div id="combat-pass-modal" class="xeker-modal">
     <div class="w-full max-w-[360px] rounded-2xl bg-[#111217] border border-[#d4af37]/70 p-5 text-center shadow-2xl">
       <div class="text-3xl mb-2">🛡️</div>
@@ -615,7 +588,7 @@
     </div>
   </div>
 
-  <!-- MODAL PASSA E JOGA -->
+  <!-- MODAL PASSA E JOGA (TROCA DE TURNO LOCAL) -->
   <div id="pass-modal" class="xeker-modal">
     <div class="w-full max-w-[360px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-5 text-center shadow-2xl">
       <div class="text-3xl mb-2">🔄</div>
@@ -668,16 +641,6 @@
     (function () {
       'use strict';
 
-      // Preencha com a configuração do seu projeto Firebase (evite hardcode de segredos em repositórios públicos)
-      const FIREBASE_CONFIG = {
-        apiKey: '',
-        authDomain: 'xeker-e5bc8.firebaseapp.com',
-        projectId: 'xeker-e5bc8',
-        storageBucket: '',
-        messagingSenderId: '',
-        appId: ''
-      };
-
       function reportError(err) {
         const el = document.getElementById('error-toast');
         if (!el) return;
@@ -692,6 +655,8 @@
 
       const MAX_HAND_SIZE = 6;
       const INITIAL_CLOCK_SECONDS = 30 * 60;
+      const MM_SLOT_COUNT = 6;
+      const MM_PEER_PREFIX = 'XEKER-MM-V1-SLOT-';
 
       const RANK_TEXT = {
         1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7',
@@ -780,7 +745,7 @@
         3: 'Trinca: Causa +1♥ de dano extra.',
         4: 'Sequência: Concede +1♣ (ação) e compra +1 carta.',
         5: 'Full House: Causa +1♥ de dano extra e cura a peça usada em +2♥.',
-        6: 'Quadra: Abate imediato da peça adversária e concede +8♦ de ouro.'
+        6: 'Quadra: Abate imediato da peça adversária e garante +8♦ de ouro.'
       };
 
       const RULEBOOK_PAGES = [
@@ -902,26 +867,20 @@
       let rulesIdx = 0;
       let timerId = null;
 
-      /* Camada On-line: Firebase (Google Auth + Matchmaking/Firestore) + PeerJS (Salas Casuais) */
+      /* Camada de rede On-line (PeerJS / WebRTC + Matchmaking por slots públicos) */
       const net = {
-        fb: null,
-        auth: null,
-        db: null,
-        user: null,
-        profile: { uid: null, displayName: 'Convidado', elo: 1200 },
-        queueDocId: null,
-        queueUnsub: null,
-        matchId: null,
-        matchUnsub: null,
-        searchingMatch: false,
         peer: null,
         conn: null,
         role: null,
-        transport: null,
         roomCode: null,
         connected: false,
         pendingCombat: null,
-        lastSummary: null
+        lastSummary: null,
+        mmActive: false,
+        mmTimer: null,
+        mmPollTimer: null,
+        mmSeconds: 0,
+        mmProbePeers: []
       };
 
       function isOnlineMode() {
@@ -938,255 +897,193 @@
         if (el) el.textContent = msg;
       }
 
-      function updateAuthUI() {
-        const dot = document.getElementById('menu-auth-dot');
-        const menuLabel = document.getElementById('menu-auth-label');
-        const userNameEl = document.getElementById('online-user-name');
-        const userEloEl = document.getElementById('online-user-elo');
-        const loginBtn = document.getElementById('btn-google-login');
-        const logoutBtn = document.getElementById('btn-google-logout');
-
-        const fbReady = Boolean(net.auth && net.db);
-        if (net.user) {
-          const name = net.user.displayName || net.profile.displayName || 'Jogador Google';
-          if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400';
-          if (menuLabel) menuLabel.textContent = `${name} · ELO ${net.profile.elo}`;
-          if (userNameEl) userNameEl.textContent = name;
-          if (userEloEl) userEloEl.textContent = `ELO: ${net.profile.elo} · Conectado via Google`;
-          if (loginBtn) loginBtn.classList.add('hidden');
-          if (logoutBtn) logoutBtn.classList.remove('hidden');
+      function setMatchmakingUi(searching) {
+        const box = document.getElementById('mm-searching-box');
+        const btnFind = document.getElementById('btn-find-match');
+        const badge = document.getElementById('mm-badge');
+        if (searching) {
+          box.classList.remove('hidden');
+          btnFind.disabled = true;
+          btnFind.classList.add('opacity-50');
+          badge.textContent = 'Buscando';
+          badge.className = 'px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-200 text-[10px] font-bold';
         } else {
-          if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400';
-          if (menuLabel) menuLabel.textContent = fbReady ? 'Google: não conectado' : 'Firebase: configure as credenciais';
-          if (userNameEl) userNameEl.textContent = 'Convidado';
-          if (userEloEl) {
-            userEloEl.textContent = fbReady
-              ? `ELO: ${net.profile.elo} · Entre com Google p/ ranqueada`
-              : `ELO: ${net.profile.elo} · Configure FIREBASE_CONFIG`;
+          box.classList.add('hidden');
+          btnFind.disabled = false;
+          btnFind.classList.remove('opacity-50');
+          badge.textContent = 'Pronto';
+          badge.className = 'px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 text-[10px] font-bold';
+        }
+      }
+
+      function cleanupMatchmakingProbes() {
+        if (net.mmTimer) {
+          clearInterval(net.mmTimer);
+          net.mmTimer = null;
+        }
+        if (net.mmPollTimer) {
+          clearInterval(net.mmPollTimer);
+          net.mmPollTimer = null;
+        }
+        while (net.mmProbePeers.length > 0) {
+          const p = net.mmProbePeers.pop();
+          try { p.destroy(); } catch (_) {}
+        }
+      }
+
+      function cancelMatchmaking(updateMsg = true) {
+        net.mmActive = false;
+        cleanupMatchmakingProbes();
+        if (!net.connected) {
+          if (net.peer) {
+            try { net.peer.destroy(); } catch (_) {}
+            net.peer = null;
           }
-          if (loginBtn) loginBtn.classList.remove('hidden');
-          if (logoutBtn) logoutBtn.classList.add('hidden');
+          net.role = null;
+        }
+        setMatchmakingUi(false);
+        if (updateMsg) {
+          setOnlineStatus('Busca de oponente cancelada.');
         }
       }
 
-      async function initFirebase() {
-        const sdk = window.__XEKER_FIREBASE__;
-        if (!sdk) return;
-        if (!FIREBASE_CONFIG.apiKey || !FIREBASE_CONFIG.projectId) {
-          updateAuthUI();
-          return;
-        }
-        try {
-          const app = sdk.initializeApp(FIREBASE_CONFIG);
-          net.fb = sdk;
-          net.auth = sdk.getAuth(app);
-          net.db = sdk.getFirestore(app);
-          updateAuthUI();
+      function tryHostMatchmakingSlot(slotIndex) {
+        if (!net.mmActive) return;
+        const slotId = `${MM_PEER_PREFIX}${slotIndex}`;
+        document.getElementById('mm-slot-label').textContent = `Aguardando oponente na fila #${slotIndex + 1}...`;
 
-          sdk.onAuthStateChanged(net.auth, async (user) => {
-            net.user = user || null;
-            if (user) {
-              const userRef = sdk.doc(net.db, 'players', user.uid);
-              const snap = await sdk.getDoc(userRef);
-              if (snap.exists()) {
-                const data = snap.data();
-                net.profile = {
-                  uid: user.uid,
-                  displayName: user.displayName || data.displayName || 'Jogador',
-                  elo: typeof data.elo === 'number' ? data.elo : 1200
-                };
-              } else {
-                net.profile = {
-                  uid: user.uid,
-                  displayName: user.displayName || 'Jogador',
-                  elo: 1200
-                };
-                await sdk.setDoc(userRef, {
-                  displayName: net.profile.displayName,
-                  elo: 1200,
-                  updatedAt: sdk.serverTimestamp()
-                });
-              }
+        if (net.peer) {
+          try { net.peer.destroy(); } catch (_) {}
+          net.peer = null;
+        }
+
+        const hostPeer = new Peer(slotId);
+        net.peer = hostPeer;
+        net.role = 'host';
+        net.roomCode = slotId;
+
+        hostPeer.on('open', () => {
+          if (!net.mmActive) {
+            try { hostPeer.destroy(); } catch (_) {}
+            return;
+          }
+          setOnlineStatus(`Na fila pública (#${slotIndex + 1}). Aguardando outro jogador...`);
+        });
+
+        hostPeer.on('connection', (conn) => {
+          if (!net.mmActive) return;
+          net.mmActive = false;
+          cleanupMatchmakingProbes();
+          setMatchmakingUi(false);
+          setupConnectionListeners(conn, 'host');
+        });
+
+        hostPeer.on('error', (err) => {
+          if (!net.mmActive) return;
+          if (err && err.type === 'unavailable-id') {
+            if (slotIndex + 1 < MM_SLOT_COUNT) {
+              tryHostMatchmakingSlot(slotIndex + 1);
             } else {
-              net.profile = { uid: null, displayName: 'Convidado', elo: 1200 };
+              document.getElementById('mm-slot-label').textContent = 'Filas ocupadas, tentando novamente...';
+              setTimeout(() => {
+                if (net.mmActive) tryHostMatchmakingSlot(0);
+              }, 1100);
             }
-            updateAuthUI();
-          });
-        } catch (err) {
-          reportError(err);
-        }
-      }
-
-      async function signInWithGoogle() {
-        if (!net.auth || !net.fb) {
-          setOnlineStatus('Configure FIREBASE_CONFIG no código para usar login Google e matchmaking.');
-          return;
-        }
-        try {
-          const provider = new net.fb.GoogleAuthProvider();
-          await net.fb.signInWithPopup(net.auth, provider);
-          setOnlineStatus('Login Google realizado com sucesso!');
-        } catch (err) {
-          setOnlineStatus('Falha no login Google: ' + (err && err.message ? err.message : err));
-        }
-      }
-
-      async function signOutGoogle() {
-        if (!net.auth) return;
-        await cancelMatchmakingQueue();
-        await net.fb.signOut(net.auth);
-        setOnlineStatus('Sessão Google encerrada.');
-      }
-
-      async function cancelMatchmakingQueue() {
-        net.searchingMatch = false;
-        document.getElementById('btn-find-match').classList.remove('hidden');
-        document.getElementById('btn-cancel-match').classList.add('hidden');
-
-        if (net.queueUnsub) {
-          try { net.queueUnsub(); } catch (_) {}
-          net.queueUnsub = null;
-        }
-        if (net.db && net.fb && net.queueDocId) {
-          try {
-            await net.fb.deleteDoc(net.fb.doc(net.db, 'matchmaking_queue', net.queueDocId));
-          } catch (_) {}
-          net.queueDocId = null;
-        }
-      }
-
-      function subscribeToFirestoreMatch(matchId, role) {
-        if (!net.db || !net.fb) return;
-        if (net.matchUnsub) {
-          try { net.matchUnsub(); } catch (_) {}
-        }
-        net.matchId = matchId;
-        net.role = role;
-        net.transport = 'firestore';
-        net.connected = true;
-
-        const matchRef = net.fb.doc(net.db, 'matches', matchId);
-        net.matchUnsub = net.fb.onSnapshot(matchRef, (snap) => {
-          if (!snap.exists()) return;
-          const docData = snap.data();
-
-          if (role === 'host') {
-            if (docData.guestAction && docData.guestAction.seq) {
-              const act = docData.guestAction;
-              if (act.type === 'online_action') handleGuestActionRequest(act.action);
-              else if (act.type === 'online_atk_card') handleGuestAttackerCard(act.cardIdx);
-              else if (act.type === 'online_def_card') handleGuestDefenderCard(act.cardIdx);
-              else if (act.type === 'online_summary_ack') {
-                net.lastSummary = null;
-                if (state && state.gameOver && state.gameOverData) {
-                  endMatch(state.gameOverData.winnerSide, state.gameOverData.reason);
-                }
-                syncOnlineState();
-              }
-            }
-          } else if (role === 'guest') {
-            if (docData.view) {
-              applyGuestView(docData.view);
-            } else if (docData.clocks && state) {
-              state.clocks = docData.clocks;
-              refreshClocks();
-            }
+          } else {
+            setOnlineStatus('Aviso na fila: ' + (err && err.type ? err.type : err.message));
           }
         });
       }
 
-      async function startMatchmakingSearch() {
-        if (!net.db || !net.fb || !net.user) {
-          setOnlineStatus('Faça login com sua conta Google para entrar no matchmaking ranqueado.');
-          return;
-        }
-        if (net.searchingMatch) return;
+      function scanPublicMatchmakingSlots() {
+        if (!net.mmActive || typeof Peer === 'undefined') return;
+        if (net.connected) return;
 
-        try {
-          await cancelMatchmakingQueue();
-          net.searchingMatch = true;
-          document.getElementById('btn-find-match').classList.add('hidden');
-          document.getElementById('btn-cancel-match').classList.remove('hidden');
-          setOnlineStatus(`Buscando oponente próximo ao seu ELO (${net.profile.elo})...`);
+        for (let i = 0; i < MM_SLOT_COUNT; i++) {
+          const targetSlotId = `${MM_PEER_PREFIX}${i}`;
+          if (net.peer && net.peer.id === targetSlotId) continue;
 
-          const q = net.fb.query(
-            net.fb.collection(net.db, 'matchmaking_queue'),
-            net.fb.where('status', '==', 'waiting'),
-            net.fb.limit(10)
-          );
-          const snaps = await net.fb.getDocs(q);
-          let candidate = null;
-          snaps.forEach((d) => {
-            const val = d.data();
-            if (val.uid !== net.user.uid && Math.abs((val.elo || 1200) - net.profile.elo) <= 250 && !candidate) {
-              candidate = { id: d.id, ...val };
+          const probePeer = new Peer();
+          net.mmProbePeers.push(probePeer);
+
+          probePeer.on('open', () => {
+            if (!net.mmActive || net.connected) {
+              try { probePeer.destroy(); } catch (_) {}
+              return;
             }
-          });
+            const conn = probePeer.connect(targetSlotId, { reliable: true });
+            let settled = false;
 
-          if (candidate) {
-            const matchId = `m_${candidate.uid}_${net.user.uid}_${Date.now()}`;
-            await net.fb.updateDoc(net.fb.doc(net.db, 'matchmaking_queue', candidate.id), {
-              status: 'matched',
-              matchId,
-              guestUid: net.user.uid,
-              guestElo: net.profile.elo
+            const timeoutHandle = setTimeout(() => {
+              if (!settled) {
+                settled = true;
+                try { conn.close(); } catch (_) {}
+                try { probePeer.destroy(); } catch (_) {}
+              }
+            }, 1400);
+
+            conn.on('open', () => {
+              if (settled || !net.mmActive || net.connected) return;
+              settled = true;
+              clearTimeout(timeoutHandle);
+              net.mmActive = false;
+              cleanupMatchmakingProbes();
+              setMatchmakingUi(false);
+
+              if (net.peer && net.peer !== probePeer) {
+                try { net.peer.destroy(); } catch (_) {}
+              }
+              net.peer = probePeer;
+              setupConnectionListeners(conn, 'guest');
             });
-            net.searchingMatch = false;
-            document.getElementById('btn-find-match').classList.remove('hidden');
-            document.getElementById('btn-cancel-match').classList.add('hidden');
-            selectedMode = 'online';
-            syncModeButtons();
-            closeModal('online-modal');
-            subscribeToFirestoreMatch(matchId, 'host');
-            startMatch();
-            return;
-          }
 
-          const queueRef = net.fb.doc(net.fb.collection(net.db, 'matchmaking_queue'));
-          net.queueDocId = queueRef.id;
-          await net.fb.setDoc(queueRef, {
-            uid: net.user.uid,
-            displayName: net.profile.displayName,
-            elo: net.profile.elo,
-            status: 'waiting',
-            createdAt: net.fb.serverTimestamp()
+            conn.on('error', () => {
+              if (!settled) {
+                settled = true;
+                clearTimeout(timeoutHandle);
+                try { probePeer.destroy(); } catch (_) {}
+              }
+            });
           });
 
-          net.queueUnsub = net.fb.onSnapshot(queueRef, (snap) => {
-            if (!snap.exists()) return;
-            const d = snap.data();
-            if (d.status === 'matched' && d.matchId) {
-              net.searchingMatch = false;
-              document.getElementById('btn-find-match').classList.remove('hidden');
-              document.getElementById('btn-cancel-match').classList.add('hidden');
-              selectedMode = 'online';
-              syncModeButtons();
-              closeModal('online-modal');
-              closeModal('menu-modal');
-              setStatus('Oponente encontrado! Sincronizando partida...');
-              subscribeToFirestoreMatch(d.matchId, 'guest');
-            }
+          probePeer.on('error', () => {
+            try { probePeer.destroy(); } catch (_) {}
           });
-        } catch (err) {
-          await cancelMatchmakingQueue();
-          setOnlineStatus('Erro no matchmaking: ' + (err && err.message ? err.message : err));
         }
       }
 
-      async function updateEloAfterMatch(winnerSide) {
-        if (!net.db || !net.fb || !net.user) return;
-        const mySide = myOnlineSide();
-        const won = winnerSide === mySide;
-        const delta = won ? 16 : -16;
-        const nextElo = Math.max(100, (net.profile.elo || 1200) + delta);
-        net.profile.elo = nextElo;
-        updateAuthUI();
+      function startMatchmaking() {
         try {
-          await net.fb.updateDoc(net.fb.doc(net.db, 'players', net.user.uid), {
-            elo: nextElo,
-            updatedAt: net.fb.serverTimestamp()
-          });
-        } catch (_) {}
+          if (typeof Peer === 'undefined') {
+            setOnlineStatus('Biblioteca WebRTC indisponível no momento.');
+            return;
+          }
+          cancelMatchmaking(false);
+          net.mmActive = true;
+          net.mmSeconds = 0;
+          selectedMode = 'online';
+          syncModeButtons();
+          setMatchmakingUi(true);
+          document.getElementById('mm-timer-label').textContent = 'Procurando oponente... 00s';
+          setOnlineStatus('Iniciando matchmaking automático...');
+
+          tryHostMatchmakingSlot(0);
+          scanPublicMatchmakingSlots();
+
+          net.mmTimer = setInterval(() => {
+            if (!net.mmActive) return;
+            net.mmSeconds += 1;
+            const secStr = String(net.mmSeconds).padStart(2, '0');
+            document.getElementById('mm-timer-label').textContent = `Procurando oponente... ${secStr}s`;
+          }, 1000);
+
+          net.mmPollTimer = setInterval(() => {
+            if (!net.mmActive || net.connected) return;
+            scanPublicMatchmakingSlots();
+          }, 2200);
+        } catch (err) {
+          reportError(err);
+        }
       }
 
       function generateRoomCode() {
@@ -1199,24 +1096,6 @@
       }
 
       function sendNet(payload) {
-        if (net.transport === 'firestore' && net.db && net.fb && net.matchId) {
-          const matchRef = net.fb.doc(net.db, 'matches', net.matchId);
-          if (net.role === 'host') {
-            if (payload.type === 'state_sync') {
-              net.fb.setDoc(matchRef, { view: payload.view, updatedAt: net.fb.serverTimestamp() }, { merge: true }).catch(() => {});
-            } else if (payload.type === 'clock_sync') {
-              net.fb.setDoc(matchRef, { clocks: payload.clocks }, { merge: true }).catch(() => {});
-            }
-          } else if (net.role === 'guest') {
-            net.fb.setDoc(
-              matchRef,
-              { guestAction: { ...payload, seq: Date.now() + Math.random() } },
-              { merge: true }
-            ).catch(() => {});
-          }
-          return;
-        }
-
         if (net.conn && net.conn.open) {
           try {
             net.conn.send(payload);
@@ -1359,7 +1238,6 @@
         }
 
         if (state.gameOver && state.gameOverData) {
-          updateEloAfterMatch(state.gameOverData.winnerSide);
           document.getElementById('gameover-title').textContent = state.gameOverData.title;
           document.getElementById('gameover-desc').textContent = state.gameOverData.desc;
           openModal('gameover-modal');
@@ -1371,21 +1249,24 @@
       function setupConnectionListeners(conn, role) {
         net.conn = conn;
         net.role = role;
-        net.transport = 'peer';
 
         conn.on('open', () => {
           net.connected = true;
+          net.mmActive = false;
+          cleanupMatchmakingProbes();
+          setMatchmakingUi(false);
+
           if (role === 'host') {
-            setOnlineStatus('Oponente conectado! Iniciando partida...');
+            setOnlineStatus('Oponente encontrado! Iniciando partida...');
             closeModal('online-modal');
             startMatch();
           } else {
             selectedMode = 'online';
             syncModeButtons();
-            setOnlineStatus('Conectado à sala! Aguardando Brancas...');
+            setOnlineStatus('Oponente encontrado! Aguardando Brancas...');
             closeModal('online-modal');
             closeModal('menu-modal');
-            setStatus('Conectado à sala! Aguardando início da partida das Brancas (♔)...');
+            setStatus('Conectado ao oponente! Aguardando início das Brancas (♔)...');
           }
         });
 
@@ -1435,15 +1316,15 @@
             setOnlineStatus('Biblioteca WebRTC indisponível no momento.');
             return;
           }
+          cancelMatchmaking(false);
           if (net.peer) {
             try { net.peer.destroy(); } catch (_) {}
           }
           const code = generateRoomCode();
           net.roomCode = code;
           net.role = 'host';
-          net.transport = 'peer';
           net.connected = false;
-          setOnlineStatus('Criando sala on-line...');
+          setOnlineStatus('Criando sala privada...');
 
           const peer = new Peer(code);
           net.peer = peer;
@@ -1472,6 +1353,7 @@
             setOnlineStatus('Biblioteca WebRTC indisponível no momento.');
             return;
           }
+          cancelMatchmaking(false);
           const raw = (document.getElementById('input-join-code').value || '').trim().toUpperCase();
           if (!raw) {
             setOnlineStatus('Digite o código da sala.');
@@ -1482,7 +1364,6 @@
           }
           net.roomCode = raw;
           net.role = 'guest';
-          net.transport = 'peer';
           net.connected = false;
           setOnlineStatus('Conectando à sala ' + raw + '...');
 
@@ -1586,7 +1467,7 @@
       function formatTime(sec) {
         const clamped = Math.max(0, Math.floor(sec));
         const mm = String(Math.floor(clamped / 60)).padStart(2, '0');
-        const ss = String(clamped % 60)).padStart(2, '0');
+        const ss = String(clamped % 60).padStart(2, '0');
         return `${mm}:${ss}`;
       }
 
@@ -1882,11 +1763,12 @@
 
       function startMatch() {
         try {
-          if (selectedMode === 'online' && !net.connected) {
+          if (selectedMode === 'online' && (!net.connected || net.role !== 'host')) {
             openModal('online-modal');
             return;
           }
 
+          cancelMatchmaking(false);
           closeAllModals();
           duelContext = null;
           pendingCombatPassAction = null;
@@ -2039,9 +1921,6 @@
         state.gameOverData = { title, desc: reason, winnerSide: winnerColor, reason };
         document.getElementById('gameover-title').textContent = title;
         document.getElementById('gameover-desc').textContent = reason;
-        if (isOnlineMode() && net.transport === 'firestore') {
-          updateEloAfterMatch(winnerColor);
-        }
         renderAll();
         if (isOnlineMode() && net.role === 'host') {
           syncOnlineState();
@@ -3392,10 +3271,12 @@
 
       function bindEvents() {
         document.getElementById('btn-select-bot').addEventListener('click', () => {
+          cancelMatchmaking(false);
           selectedMode = 'bot';
           syncModeButtons();
         });
         document.getElementById('btn-select-pvp').addEventListener('click', () => {
+          cancelMatchmaking(false);
           selectedMode = 'pvp';
           syncModeButtons();
         });
@@ -3405,11 +3286,12 @@
           openModal('online-modal');
         });
 
-        document.getElementById('btn-close-online').addEventListener('click', () => closeModal('online-modal'));
-        document.getElementById('btn-google-login').addEventListener('click', signInWithGoogle);
-        document.getElementById('btn-google-logout').addEventListener('click', signOutGoogle);
-        document.getElementById('btn-find-match').addEventListener('click', startMatchmakingSearch);
-        document.getElementById('btn-cancel-match').addEventListener('click', cancelMatchmakingQueue);
+        document.getElementById('btn-close-online').addEventListener('click', () => {
+          cancelMatchmaking(false);
+          closeModal('online-modal');
+        });
+        document.getElementById('btn-find-match').addEventListener('click', startMatchmaking);
+        document.getElementById('btn-cancel-mm').addEventListener('click', () => cancelMatchmaking(true));
         document.getElementById('btn-create-room').addEventListener('click', createOnlineRoom);
         document.getElementById('btn-join-room').addEventListener('click', joinOnlineRoom);
         document.getElementById('btn-copy-room').addEventListener('click', () => {
@@ -3467,16 +3349,10 @@
         try {
           bindEvents();
           syncModeButtons();
-          updateAuthUI();
-          initFirebase();
           startClock();
         } catch (err) {
           reportError(err);
         }
-      });
-
-      window.addEventListener('xeker-firebase-ready', () => {
-        initFirebase();
       });
     })();
   </script>
