@@ -947,15 +947,18 @@
       }
 
       let pendingCombat = null;
+      let combatAfterContinueCb = null;
 
-      function finalizeCombatWithCard(chosenHandIndex) {
+      function finalizeCombatWithCard(chosenHandIndex, onAfterContinue) {
         if (!pendingCombat || !state) return;
         const { atkR, atkC, defR, defC } = pendingCombat;
         const atk = state.board[atkR] && state.board[atkR][atkC];
         const def = state.board[defR] && state.board[defR][defC];
         pendingCombat = null;
-        closeModal('combat-modal');
-        if (!atk || !def) return;
+        if (!atk || !def) {
+          closeModal('combat-modal');
+          return;
+        }
 
         const aPlayer = state.players[atk.color];
         const dPlayer = state.players[def.color];
@@ -974,23 +977,32 @@
           if (dCard !== null && dCard !== undefined) state.discard.push(dCard);
         }
 
-        const flopBonus = state.flop.reduce((acc, v) => acc + (v || 0), 0);
+        const flopSnapshot = state.flop.slice();
+        const flopBonus = flopSnapshot.reduce((acc, v) => acc + (v || 0), 0);
         const aBase = atk.type === 'Q' ? 5 : (atk.type === 'R' || atk.type === 'B' || atk.type === 'N' ? 3 : 1);
         const dBase = def.type === 'Q' ? 5 : (def.type === 'R' || def.type === 'B' || def.type === 'N' ? 3 : 1);
         const aScore = (aCard || 0) + aBase + flopBonus;
         const dScore = (dCard || 0) + dBase + flopBonus;
 
+        let outcomeSummary = '';
+        let winnerMatchSide = null;
+        let winnerMatchReason = '';
+
         if (aScore >= dScore) {
           def.hp -= 2;
+          outcomeSummary = `Ataque venceu (${aScore} vs ${dScore}) · ${PIECE_DATA[def.type].name} sofre 2♥.`;
           if (def.hp <= 0) {
             state.board[defR][defC] = atk;
             state.board[atkR][atkC] = null;
             if (atk.type === 'Q') atk.hp = Math.min(atk.maxHp, atk.hp + 1);
             if (def.type === 'K') {
-              endMatch(atk.color, 'O Rei adversário foi abatido!');
-              return;
+              winnerMatchSide = atk.color;
+              winnerMatchReason = 'O Rei adversário foi abatido!';
+            } else {
+              const rew = PIECE_DATA[def.type].reward || 0;
+              state.players[atk.color].gold += rew;
+              outcomeSummary += ` Abate! +${rew}♦.`;
             }
-            state.players[atk.color].gold += PIECE_DATA[def.type].reward || 0;
           }
           setStatus(`⚔️ ${PIECE_DATA[atk.type].name} (${aScore}) venceu ${PIECE_DATA[def.type].name} (${dScore})!`);
         } else {
@@ -998,20 +1010,21 @@
           const defDmg = def.type === 'B' ? 2 : (def.type === 'R' ? 0 : 1);
           atk.hp -= atkDmg;
           def.hp -= defDmg;
+          outcomeSummary = `Defesa venceu (${dScore} vs ${aScore}) · Atacante -${atkDmg}♥, Defensor -${defDmg}♥.`;
           if (atk.hp <= 0) {
             state.board[atkR][atkC] = null;
             if (def.type === 'Q') def.hp = Math.min(def.maxHp, def.hp + 1);
             if (atk.type === 'K') {
-              endMatch(def.color, 'O Rei adversário foi abatido!');
-              return;
+              winnerMatchSide = def.color;
+              winnerMatchReason = 'O Rei adversário foi abatido!';
             }
           }
           if (def.hp <= 0) {
             state.board[defR][defC] = null;
             if (atk.type === 'Q') atk.hp = Math.min(atk.maxHp, atk.hp + 1);
-            if (def.type === 'K') {
-              endMatch(atk.color, 'O Rei adversário foi abatido!');
-              return;
+            if (!winnerMatchSide && def.type === 'K') {
+              winnerMatchSide = atk.color;
+              winnerMatchReason = 'O Rei adversário foi abatido!';
             }
           }
           setStatus(`🛡️ Defesa de ${PIECE_DATA[def.type].name} (${dScore}) superou ${PIECE_DATA[atk.type].name} (${aScore})!`);
@@ -1024,6 +1037,54 @@
         state.actionMode = 'move';
         renderAll();
         pushRankedBoardSync();
+
+        combatAfterContinueCb = () => {
+          closeModal('combat-modal');
+          if (winnerMatchSide) {
+            endMatch(winnerMatchSide, winnerMatchReason);
+            return;
+          }
+          if (typeof onAfterContinue === 'function') onAfterContinue();
+        };
+
+        // Exibe tela de resolução de combate no modal
+        document.getElementById('combat-heading').textContent = '📜 Resolução do Combate';
+        const aInfo = PIECE_DATA[atk.type];
+        const dInfo = PIECE_DATA[def.type];
+        document.getElementById('combat-atk-glyph').textContent = atk.color === 'white' ? aInfo.white : aInfo.black;
+        document.getElementById('combat-atk-info').textContent = `${aInfo.name} · Força ${aScore}`;
+        document.getElementById('combat-atk-sub').textContent = `Carta: ${aCard ? RANK_TEXT[aCard] : 'Nenhuma'} (+${aBase} tático +${flopBonus} flop)`;
+
+        document.getElementById('combat-def-glyph').textContent = def.color === 'white' ? dInfo.white : dInfo.black;
+        document.getElementById('combat-def-info').textContent = `${dInfo.name} · Força ${dScore}`;
+        document.getElementById('combat-def-sub').textContent = `Carta: ${dCard ? RANK_TEXT[dCard] : 'Nenhuma'} (+${dBase} tático +${flopBonus} flop)`;
+
+        const flopBox = document.getElementById('combat-flop');
+        flopBox.innerHTML = '';
+        flopSnapshot.forEach((v) => {
+          const fc = document.createElement('div');
+          fc.className = 'xeker-card w-9 h-12 rounded-md text-xs';
+          fc.textContent = RANK_TEXT[v];
+          flopBox.appendChild(fc);
+        });
+
+        const bodyBox = document.getElementById('combat-body');
+        bodyBox.innerHTML = `
+          <div class="p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/40 text-xs text-center text-amber-100 leading-snug">
+            ${outcomeSummary}
+          </div>
+        `;
+        const contBtn = document.createElement('button');
+        contBtn.type = 'button';
+        contBtn.className = 'w-full py-2.5 rounded-xl bg-gradient-to-r from-[#fff1b8] via-[#d4af37] to-[#9c7218] text-[#140e02] font-extrabold text-xs shadow active:scale-95';
+        contBtn.textContent = 'Continuar';
+        contBtn.addEventListener('click', () => {
+          const cb = combatAfterContinueCb;
+          combatAfterContinueCb = null;
+          if (cb) cb();
+        });
+        bodyBox.appendChild(contBtn);
+        openModal('combat-modal');
       }
 
       function resolveDirectCombat(atkR, atkC, defR, defC) {
@@ -1225,31 +1286,8 @@
         renderAll();
       }
 
-      function executeBotTurn() {
-        if (!state || state.gameOver || state.mode !== 'bot' || state.turn !== 'black') return;
-        for (let r = 0; r < 8; r++) {
-          for (let c = 0; c < 8; c++) {
-            const p = state.board[r][c];
-            if (!p || p.color !== 'black' || p.acted) continue;
-            const reach = getReachInfo(r, c);
-            if (reach.attacks.length > 0 && state.actions > 0) {
-              resolveDirectCombat(r, c, reach.attacks[0].r, reach.attacks[0].c);
-              if (!state.gameOver) setTimeout(executeBotTurn, 350);
-              return;
-            }
-            if (reach.moves.length > 0 && state.actions > 0) {
-              const best = reach.moves.slice().sort((a, b) => b.r - a.r)[0];
-              doMove(r, c, best.r, best.c);
-              if (!state.gameOver) setTimeout(executeBotTurn, 350);
-              return;
-            }
-          }
-        }
-        onEndTurn();
-      }
-
-      function onEndTurn() {
-        if (!canControlCurrentTurn()) return;
+      function advanceTurnInternal() {
+        if (!state || state.gameOver) return;
         state.selected = null;
         state.actionMode = null;
         for (let r = 0; r < 8; r++) {
@@ -1263,7 +1301,7 @@
           setStatus('Turno das Pretas (♚) · ♣2');
           renderAll();
           pushRankedBoardSync();
-          if (state.mode === 'bot') setTimeout(executeBotTurn, 400);
+          if (state.mode === 'bot') setTimeout(executeBotTurn, 450);
         } else {
           state.turn = 'white';
           state.round += 1;
@@ -1272,6 +1310,58 @@
           renderAll();
           pushRankedBoardSync();
         }
+      }
+
+      function executeBotTurn() {
+        if (!state || state.gameOver || state.mode !== 'bot' || state.turn !== 'black') return;
+        if (state.actions <= 0) {
+          advanceTurnInternal();
+          return;
+        }
+
+        for (let r = 0; r < 8; r++) {
+          for (let c = 0; c < 8; c++) {
+            const p = state.board[r][c];
+            if (!p || p.color !== 'black' || p.acted) continue;
+            const reach = getReachInfo(r, c);
+            if (reach.attacks.length > 0 && state.actions > 0) {
+              resolveDirectCombat(r, c, reach.attacks[0].r, reach.attacks[0].c);
+              const bHand = state.players.black.hand;
+              const chosenIdx = bHand.length > 0 ? 0 : -1;
+              finalizeCombatWithCard(chosenIdx, () => {
+                if (!state.gameOver) {
+                  if (state.actions > 0) setTimeout(executeBotTurn, 350);
+                  else advanceTurnInternal();
+                }
+              });
+              return;
+            }
+          }
+        }
+
+        for (let r = 0; r < 8; r++) {
+          for (let c = 0; c < 8; c++) {
+            const p = state.board[r][c];
+            if (!p || p.color !== 'black' || p.acted) continue;
+            const reach = getReachInfo(r, c);
+            if (reach.moves.length > 0 && state.actions > 0) {
+              const best = reach.moves.slice().sort((a, b) => b.r - a.r)[0];
+              doMove(r, c, best.r, best.c);
+              if (!state.gameOver) {
+                if (state.actions > 0) setTimeout(executeBotTurn, 350);
+                else advanceTurnInternal();
+              }
+              return;
+            }
+          }
+        }
+
+        advanceTurnInternal();
+      }
+
+      function onEndTurn() {
+        if (!canControlCurrentTurn()) return;
+        advanceTurnInternal();
       }
 
       function onBuyCard() {
