@@ -285,14 +285,14 @@
           <span>♔</span>
           <span class="sym-diamond">♦<span id="val-gold-white">2</span></span>
           <span class="text-zinc-400">🃏<span id="val-cards-white">3</span></span>
-          <span id="val-clock-white" class="font-mono text-[10px] text-amber-200">30:00</span>
+          <span id="val-clock-white" class="font-mono text-[10px] text-amber-200">15:00</span>
         </div>
 
         <div id="hud-black" class="flex items-center gap-1 px-1.5 py-1 rounded-lg bg-[#161820] border border-white/10 text-[11px] font-bold">
           <span>♚</span>
           <span class="sym-diamond">♦<span id="val-gold-black">2</span></span>
           <span class="text-zinc-400">🃏<span id="val-cards-black">3</span></span>
-          <span id="val-clock-black" class="font-mono text-[10px] text-amber-200">30:00</span>
+          <span id="val-clock-black" class="font-mono text-[10px] text-amber-200">15:00</span>
         </div>
       </div>
 
@@ -507,8 +507,9 @@
         </div>
       </div>
 
-      <div id="online-status-text" class="px-2.5 py-2 rounded-xl bg-black/50 border border-white/10 text-[11px] text-amber-200 min-h-[36px] flex items-center">
-        Verificando sessão Google...
+      <div id="online-status-box" class="px-2.5 py-2 rounded-xl bg-black/50 border border-white/10 text-[11px] text-amber-200 min-h-[36px] flex items-center gap-2">
+        <img id="auth-loading-gif" src="https://i.gifer.com/ZZ5H.gif" alt="Carregando" class="w-4 h-4 shrink-0 rounded-full" />
+        <span id="online-status-text">Verificando sessão Google...</span>
       </div>
     </div>
   </div>
@@ -602,7 +603,7 @@
       };
 
       const MAX_HAND_SIZE = 6;
-      const INITIAL_CLOCK_SECONDS = 30 * 60;
+      const INITIAL_CLOCK_SECONDS = 15 * 60;
       const RANK_TEXT = {
         1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7',
         8: '8', 9: '9', 10: '10', 11: 'J', 12: 'Q', 13: 'K'
@@ -638,6 +639,7 @@
         searching: false,
         queueStartMs: 0,
         queueTimerId: null,
+        queueClockId: null,
         userUnsub: null,
         matchUnsub: null,
         activeMatchId: null,
@@ -660,7 +662,15 @@
 
       function setOnlineStatus(msg) {
         const el = document.getElementById('online-status-text');
+        const gif = document.getElementById('auth-loading-gif');
         if (el) el.textContent = msg;
+        if (gif) {
+          if (msg && msg.toLowerCase().includes('verificando sessão google')) {
+            gif.classList.remove('hidden');
+          } else {
+            gif.classList.add('hidden');
+          }
+        }
       }
 
       function openModal(id) {
@@ -686,8 +696,8 @@
         const w = document.getElementById('val-clock-white');
         const b = document.getElementById('val-clock-black');
         if (!state) {
-          if (w) w.textContent = '30:00';
-          if (b) b.textContent = '30:00';
+          if (w) w.textContent = '15:00';
+          if (b) b.textContent = '15:00';
           return;
         }
         if (w) w.textContent = formatTime(state.clocks.white);
@@ -1248,7 +1258,6 @@
         try {
           await ranked.auth.signInWithRedirect(provider);
         } catch (err) {
-          // Fallback para popup caso redirect seja bloqueado
           try {
             await ranked.auth.signInWithPopup(provider);
           } catch (popErr) {
@@ -1378,9 +1387,7 @@
         updateQueueClockDisplay();
         setOnlineStatus('Entrou na fila ranqueada...');
 
-        // Atualiza o cronômetro a cada 1 segundo
         ranked.queueClockId = setInterval(updateQueueClockDisplay, 1000);
-        // Consulta de pareamento a cada 2.5 segundos
         ranked.queueTimerId = setInterval(() => { tryMatchmakingTick().catch(() => {}); }, 2500);
 
         tryMatchmakingTick().catch(() => {});
