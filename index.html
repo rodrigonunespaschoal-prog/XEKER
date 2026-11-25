@@ -257,6 +257,18 @@
     #ranked-modal {
       z-index: 70;
     }
+    .bulb-off {
+      filter: grayscale(1) brightness(0.45);
+      opacity: 0.45;
+    }
+    .bulb-red-on {
+      filter: hue-rotate(-55deg) saturate(5) brightness(1.1) drop-shadow(0 0 6px #ef4444);
+      opacity: 1;
+    }
+    .bulb-green-on {
+      filter: hue-rotate(75deg) saturate(4.5) brightness(1.15) drop-shadow(0 0 6px #22c55e);
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
@@ -461,19 +473,30 @@
             <div id="ranked-player-name" class="font-bold text-sm text-white truncate">Jogador</div>
             <div id="ranked-player-stats" class="text-[11px] font-bold text-[#f3d678]">Elo: 1200 · 0V - 0D</div>
           </div>
-          <button type="button" id="btn-google-logout" class="px-2.5 py-1.5 rounded-lg bg-black/60 border border-white/15 text-zinc-300 font-bold active:scale-95 shrink-0">
-            Sair
-          </button>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button type="button" id="btn-set-offline" class="px-2 py-1.5 rounded-lg bg-black/60 border border-white/15 text-zinc-300 text-[11px] font-bold active:scale-95 flex items-center gap-1">
+              <span id="bulb-offline" class="inline-flex items-center justify-center w-3.5 h-3.5 transition-all bulb-off">💡</span>
+              <span>Ficar Off-line</span>
+            </button>
+            <button type="button" id="btn-set-online" class="px-2 py-1.5 rounded-lg bg-black/60 border border-white/15 text-zinc-300 text-[11px] font-bold active:scale-95 flex items-center gap-1">
+              <span id="bulb-online" class="inline-flex items-center justify-center w-3.5 h-3.5 transition-all bulb-off">💡</span>
+              <span>Ficar Online</span>
+            </button>
+          </div>
         </div>
 
-        <button type="button" id="btn-find-ranked" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold text-sm shadow active:scale-95">
-          Buscar Partida Rankeada
-        </button>
+        <div class="grid grid-cols-2 gap-1.5">
+          <button type="button" id="btn-find-ranked" class="w-full py-2.5 px-2 rounded-xl bg-[#161820] border border-[#d4af37]/50 text-[#f3d678] font-extrabold text-xs shadow active:scale-95 flex items-center justify-center gap-1.5">
+            <span id="bulb-searching" class="inline-flex items-center justify-center w-3.5 h-3.5 transition-all bulb-off">💡</span>
+            <span>Buscando</span>
+            <span id="ranked-search-clock" class="hidden font-mono text-[11px] text-amber-200">00:00</span>
+          </button>
 
-        <button type="button" id="btn-cancel-ranked" class="hidden w-full py-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/50 text-[#f3d678] font-bold text-sm active:scale-95 flex items-center justify-center gap-2">
-          <span>Cancelar Busca</span>
-          <span id="ranked-search-clock" class="font-mono text-xs text-amber-200">00:00</span>
-        </button>
+          <button type="button" id="btn-cancel-ranked" class="w-full py-2.5 px-2 rounded-xl bg-[#161820] border border-white/15 text-zinc-300 font-bold text-xs active:scale-95 flex items-center justify-center gap-1.5">
+            <span id="bulb-cancel-search" class="inline-flex items-center justify-center w-3.5 h-3.5 transition-all bulb-off">💡</span>
+            <span>Cancelar Busca</span>
+          </button>
+        </div>
 
         <div class="pt-1 border-t border-white/10 space-y-1.5">
           <div class="flex items-center justify-between">
@@ -909,7 +932,9 @@
       unratedMatch: false,
       usersUnsub: null,
       invitesUnsub: null,
-      presenceTimer: null
+      presenceTimer: null,
+      isManualOffline: false,
+      isSearching: false
     };
 
     function getPlayerDisplayName(side) {
@@ -982,7 +1007,7 @@
       }
       ranked.searchSeconds = 0;
       const clockEl = document.getElementById('ranked-search-clock');
-      if (clockEl) el.textContent = '00:00';
+      if (clockEl) clockEl.textContent = '00:00';
     }
 
     async function refreshRankedOnlineCount() {
@@ -1165,8 +1190,42 @@
       return false;
     }
 
+    function updateStatusBulbs() {
+      const bulbOffline = document.getElementById('bulb-offline');
+      const bulbOnline = document.getElementById('bulb-online');
+      const isOff = Boolean(ranked.isManualOffline);
+      if (bulbOffline) {
+        bulbOffline.className = `inline-flex items-center justify-center w-3.5 h-3.5 transition-all ${isOff ? 'bulb-red-on' : 'bulb-off'}`;
+      }
+      if (bulbOnline) {
+        bulbOnline.className = `inline-flex items-center justify-center w-3.5 h-3.5 transition-all ${isOff ? 'bulb-green-on' : 'bulb-off'}`;
+      }
+    }
+
+    function updateSearchBulbs() {
+      const bulbSearching = document.getElementById('bulb-searching');
+      const bulbCancel = document.getElementById('bulb-cancel-search');
+      const clockEl = document.getElementById('ranked-search-clock');
+      const searching = Boolean(ranked.isSearching);
+      if (bulbSearching) {
+        bulbSearching.className = `inline-flex items-center justify-center w-3.5 h-3.5 transition-all ${searching ? 'bulb-green-on' : 'bulb-off'}`;
+      }
+      if (bulbCancel) {
+        bulbCancel.className = `inline-flex items-center justify-center w-3.5 h-3.5 transition-all ${searching ? 'bulb-red-on' : 'bulb-off'}`;
+      }
+      if (clockEl) {
+        if (searching) {
+          clockEl.classList.remove('hidden');
+        } else {
+          clockEl.classList.add('hidden');
+        }
+      }
+    }
+
     async function setUserOnlineStatus(isOnline) {
       if (!ranked.user || !ranked.user.uid) return;
+      ranked.isManualOffline = !Boolean(isOnline);
+      updateStatusBulbs();
       const userRef = doc(db, 'users', ranked.user.uid);
       await setDoc(userRef, {
         uid: ranked.user.uid,
@@ -1181,7 +1240,7 @@
       stopPresenceHeartbeat();
       setUserOnlineStatus(true);
       ranked.presenceTimer = setInterval(() => {
-        if (ranked.user) setUserOnlineStatus(true);
+        if (ranked.user && !ranked.isManualOffline) setUserOnlineStatus(true);
       }, 30000);
     }
 
@@ -1380,6 +1439,8 @@
         document.getElementById('ranked-player-name').textContent = ranked.profile.name || 'Jogador';
         document.getElementById('ranked-player-stats').textContent =
           `Elo: ${ranked.profile.elo || 1200} · ${ranked.profile.wins || 0}V - ${ranked.profile.losses || 0}D`;
+        updateStatusBulbs();
+        updateSearchBulbs();
       } else {
         inBox.classList.add('hidden');
         outBox.classList.remove('hidden');
@@ -1412,10 +1473,8 @@
         clearInterval(ranked.searchInterval);
         ranked.searchInterval = null;
       }
-      const findBtn = document.getElementById('btn-find-ranked');
-      const cancelBtn = document.getElementById('btn-cancel-ranked');
-      if (findBtn) findBtn.classList.remove('hidden');
-      if (cancelBtn) cancelBtn.classList.add('hidden');
+      ranked.isSearching = false;
+      updateSearchBulbs();
     }
 
     async function leaveRankedQueue() {
@@ -1431,9 +1490,13 @@
         showRankedFeedback('Faça login com o Google primeiro.', true);
         return;
       }
+      if (ranked.isSearching) return;
+      if (ranked.isManualOffline) {
+        await setUserOnlineStatus(true);
+      }
       hideRankedFeedback();
-      document.getElementById('btn-find-ranked').classList.add('hidden');
-      document.getElementById('btn-cancel-ranked').classList.remove('hidden');
+      ranked.isSearching = true;
+      updateSearchBulbs();
       startSearchClock();
       showRankedFeedback('Buscando oponente com Elo próximo...');
 
@@ -3799,13 +3862,16 @@
           }
         }
       });
-      document.getElementById('btn-google-logout').addEventListener('click', async () => {
+      document.getElementById('btn-set-offline').addEventListener('click', async () => {
         await leaveRankedQueue();
         await setUserOnlineStatus(false);
         stopPresenceHeartbeat();
-        stopLobbyListeners();
-        await signOut(auth);
-        hideRankedFeedback();
+        refreshRankedOnlineCount();
+      });
+      document.getElementById('btn-set-online').addEventListener('click', async () => {
+        await setUserOnlineStatus(true);
+        startPresenceHeartbeat();
+        refreshRankedOnlineCount();
       });
       document.getElementById('btn-find-ranked').addEventListener('click', enterRankedQueue);
       document.getElementById('btn-cancel-ranked').addEventListener('click', leaveRankedQueue);
