@@ -1317,78 +1317,96 @@
         const sec = Math.max(0, Math.floor((Date.now() - ranked.queueStartMs) / 1000));
         const range = getQueueRange(sec);
 
-        const queueRef = ranked.db.collection('match_queue');
-        await queueRef.doc(myUid).set({
-          uid: myUid,
-          displayName: ranked.profile.displayName,
-          rating: myRating,
-          range,
-          updatedAt: Date.now()
-        }, { merge: true });
+        try {
+          const queueRef = ranked.db.collection('match_queue');
+          await queueRef.doc(myUid).set({
+            uid: myUid,
+            displayName: ranked.profile.displayName || 'Jogador XEKER',
+            rating: myRating,
+            range,
+            updatedAt: Date.now()
+          }, { merge: true });
 
-        const snap = await queueRef.get();
-        let best = null, bestDiff = Infinity;
-        snap.forEach((doc) => {
-          if (doc.id === myUid) return;
-          const c = doc.data();
-          if (!c || typeof c.rating !== 'number') return;
-          const diff = Math.abs(c.rating - myRating);
-          const cRange = typeof c.range === 'number' ? c.range : 120;
-          if (diff <= range && diff <= cRange && diff < bestDiff) {
-            bestDiff = diff;
-            best = c;
-          }
-        });
-
-        if (!best || myUid > best.uid) return;
-
-        const matchRef = ranked.db.collection('matches').doc();
-        const whiteIsMe = Math.random() < 0.5;
-        const whiteUid = whiteIsMe ? myUid : best.uid;
-        const blackUid = whiteIsMe ? best.uid : myUid;
-        const whiteRating = whiteIsMe ? myRating : best.rating;
-        const blackRating = whiteIsMe ? best.rating : myRating;
-
-        const initBoard = buildInitialBoard();
-        const initDeck = createDeck();
-        const initFlop = [initDeck.pop(), initDeck.pop(), initDeck.pop()];
-        const wHand = [initDeck.pop(), initDeck.pop(), initDeck.pop()];
-        const bHand = [initDeck.pop(), initDeck.pop(), initDeck.pop()];
-
-        await ranked.db.runTransaction(async (tx) => {
-          const mq = await tx.get(queueRef.doc(myUid));
-          const oq = await tx.get(queueRef.doc(best.uid));
-          if (!mq.exists || !oq.exists) return;
-
-          tx.delete(queueRef.doc(myUid));
-          tx.delete(queueRef.doc(best.uid));
-          tx.set(matchRef, {
-            matchId: matchRef.id,
-            whiteUid,
-            blackUid,
-            whiteRating,
-            blackRating,
-            turn: 'white',
-            round: 1,
-            actions: 2,
-            clocks: { white: INITIAL_CLOCK_SECONDS, black: INITIAL_CLOCK_SECONDS },
-            boardJson: JSON.stringify(initBoard),
-            flop: initFlop,
-            whiteGold: 2,
-            blackGold: 2,
-            whiteHand,
-            blackHand: bHand,
-            statusText: `Partida Ranqueada iniciada (${whiteRating} vs ${blackRating} ELO).`,
-            status: 'active',
-            winner: null,
-            createdAt: Date.now()
+          const snap = await queueRef.get();
+          let best = null, bestDiff = Infinity;
+          const nowMs = Date.now();
+          snap.forEach((doc) => {
+            if (doc.id === myUid) return;
+            const c = doc.data();
+            if (!c || typeof c.rating !== 'number') return;
+            if (typeof c.updatedAt === 'number' && nowMs - c.updatedAt > 60000) return;
+            const diff = Math.abs(c.rating - myRating);
+            const cRange = typeof c.range === 'number' ? c.range : 120;
+            if (diff <= range && diff <= cRange && diff < bestDiff) {
+              bestDiff = diff;
+              best = c;
+            }
           });
-          tx.update(ranked.db.collection('users').doc(myUid), { status: 'in_match', currentMatchId: matchRef.id });
-          tx.update(ranked.db.collection('users').doc(best.uid), { status: 'in_match', currentMatchId: matchRef.id });
-        });
 
-        stopRankedQueue(false);
-        attachToRankedMatch(matchRef.id);
+          if (!best) {
+            setOnlineStatus(`Buscando oponente na fila... (${snap.size} jogador(es) na fila)`);
+            return;
+          }
+
+          if (myUid > best.uid) {
+            setOnlineStatus(`Oponente encontrado (${best.displayName || 'Jogador'}), aguardando pareamento...`);
+            return;
+          }
+
+          const matchRef = ranked.db.collection('matches').doc();
+          const whiteIsMe = Math.random() < 0.5;
+          const whiteUid = whiteIsMe ? myUid : best.uid;
+          const blackUid = whiteIsMe ? best.uid : myUid;
+          const whiteRating = whiteIsMe ? myRating : best.rating;
+          const blackRating = whiteIsMe ? best.rating : myRating;
+
+          const initBoard = buildInitialBoard();
+          const initDeck = createDeck();
+          const initFlop = [initDeck.pop(), initDeck.pop(), initDeck.pop()];
+          const wHand = [initDeck.pop(), initDeck.pop(), initDeck.pop()];
+          const bHand = [initDeck.pop(), initDeck.pop(), initDeck.pop()];
+
+          let created = false;
+          await ranked.db.runTransaction(async (tx) => {
+            const mq = await tx.get(queueRef.doc(myUid));
+            const oq = await tx.get(queueRef.doc(best.uid));
+            if (!mq.exists || !oq.exists) return;
+
+            tx.delete(queueRef.doc(myUid));
+            tx.delete(queueRef.doc(best.uid));
+            tx.set(matchRef, {
+              matchId: matchRef.id,
+              whiteUid,
+              blackUid,
+              whiteRating,
+              blackRating,
+              turn: 'white',
+              round: 1,
+              actions: 2,
+              clocks: { white: INITIAL_CLOCK_SECONDS, black: INITIAL_CLOCK_SECONDS },
+              boardJson: JSON.stringify(initBoard),
+              flop: initFlop,
+              whiteGold: 2,
+              blackGold: 2,
+              whiteHand,
+              blackHand: bHand,
+              statusText: `Partida Ranqueada iniciada (${whiteRating} vs ${blackRating} ELO).`,
+              status: 'active',
+              winner: null,
+              createdAt: Date.now()
+            });
+            tx.set(ranked.db.collection('users').doc(myUid), { status: 'in_match', currentMatchId: matchRef.id }, { merge: true });
+            tx.set(ranked.db.collection('users').doc(best.uid), { status: 'in_match', currentMatchId: matchRef.id }, { merge: true });
+            created = true;
+          });
+
+          if (created) {
+            stopRankedQueue(false);
+            attachToRankedMatch(matchRef.id);
+          }
+        } catch (err) {
+          setOnlineStatus('Erro no matchmaking: ' + (err && err.code ? err.code : (err && err.message ? err.message : String(err))));
+        }
       }
 
       async function startRankedQueue() {
@@ -1423,7 +1441,7 @@
         if (elapsedEl) elapsedEl.textContent = '00:00';
         if (removeDoc && ranked.user && ranked.db) {
           ranked.db.collection('match_queue').doc(ranked.user.uid).delete().catch(() => {});
-          ranked.db.collection('users').doc(ranked.user.uid).update({ status: 'idle', currentMatchId: null }).catch(() => {});
+          ranked.db.collection('users').doc(ranked.user.uid).set({ status: 'idle', currentMatchId: null }, { merge: true }).catch(() => {});
         }
         renderRankedUI();
       }
