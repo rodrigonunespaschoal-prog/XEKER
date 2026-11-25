@@ -17,7 +17,7 @@
       --gold-light: #f3d678;
       --parchment-top: #f7f0da;
       --parchment-bot: #dfc78d;
-      --tile-light: #232634;
+      --tile-light: #c99e28;
       --tile-dark: #12141c;
     }
 
@@ -179,10 +179,10 @@
       transition: transform 0.12s ease, opacity 0.15s ease;
     }
     .piece-token.white {
-      background: radial-gradient(circle at 30% 25%, #ffffff 0%, #e4dcc6 75%, #b8ae92 100%);
+      background: radial-gradient(circle at 30% 25%, #fff1b8 0%, #e5be46 65%, #a87c18 100%);
       color: #111216;
-      border: 1.5px solid var(--gold-light);
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.55);
+      border: 1.5px solid #fff3c4;
+      box-shadow: 0 2px 6px rgba(212, 175, 55, 0.45);
     }
     .piece-token.black {
       background: radial-gradient(circle at 30% 25%, #343849 0%, #14161f 80%, #090a0e 100%);
@@ -257,6 +257,24 @@
     #ranked-modal {
       z-index: 70;
     }
+    .menu-btn-lit {
+      background-color: rgba(212, 175, 55, 0.25);
+      border-color: #f3d678;
+      color: #fff1b8;
+      box-shadow: 0 0 14px rgba(243, 214, 120, 0.25);
+    }
+    .ranked-btn-lit {
+      background-color: rgba(212, 175, 55, 0.25);
+      border-color: #f3d678;
+      color: #fff1b8;
+      box-shadow: 0 0 14px rgba(243, 214, 120, 0.35);
+    }
+    .ranked-btn-dim {
+      background-color: #161820;
+      border-color: rgba(255, 255, 255, 0.15);
+      color: #d4d4d8;
+      box-shadow: none;
+    }
   </style>
 </head>
 <body>
@@ -273,14 +291,14 @@
       <div class="flex items-center gap-1">
         <div id="hud-white" class="flex items-center gap-1 px-1.5 py-1 rounded-lg bg-[#161820] border border-white/10 text-[11px] font-bold">
           <span>♔</span>
-          <span class="sym-diamond">♦<span id="val-gold-white">2</span></span>
+          <span class="sym-diamond">♦<span id="val-gold-white">0</span></span>
           <span class="text-zinc-400">🃏<span id="val-cards-white">3</span></span>
           <span id="val-clock-white" class="font-mono text-[10px] text-amber-200">15:00</span>
         </div>
 
         <div id="hud-black" class="flex items-center gap-1 px-1.5 py-1 rounded-lg bg-[#161820] border border-white/10 text-[11px] font-bold">
           <span>♚</span>
-          <span class="sym-diamond">♦<span id="val-gold-black">2</span></span>
+          <span class="sym-diamond">♦<span id="val-gold-black">0</span></span>
           <span class="text-zinc-400">🃏<span id="val-cards-black">3</span></span>
           <span id="val-clock-black" class="font-mono text-[10px] text-amber-200">15:00</span>
         </div>
@@ -388,20 +406,16 @@
       <!-- Seletor de Modo & Botões Principais -->
       <div class="w-full space-y-2 my-1.5 shrink-0">
         <div class="grid grid-cols-2 gap-1.5">
-          <button type="button" id="btn-select-offline" class="py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95">
-            📱 Off-line (Mesmo Aparelho)
+          <button type="button" id="btn-select-offline" class="py-2.5 px-2 rounded-xl text-xs font-bold border menu-btn-lit active:scale-95">
+            Jogar Off-line
           </button>
-          <button type="button" id="btn-select-ranked" class="py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95">
-            🏆 Ranked Elo
+          <button type="button" id="btn-select-ranked" class="py-2.5 px-2 rounded-xl text-xs font-bold border menu-btn-lit active:scale-95">
+            Jogar Ranked
           </button>
         </div>
 
-        <button type="button" id="btn-start-match" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#fff1b8] via-[#d4af37] to-[#9c7218] text-[#140e02] font-extrabold text-sm tracking-wide shadow-lg active:scale-95">
-          Iniciar Partida
-        </button>
-
-        <button type="button" id="btn-open-rules" class="w-full py-2 rounded-xl bg-[#12141c]/95 border border-[#d4af37]/45 text-[#f3d678] font-bold text-xs tracking-wide active:scale-95">
-          📖 Regras
+        <button type="button" id="btn-open-rules" class="w-full py-2 rounded-xl border font-bold text-xs tracking-wide menu-btn-lit active:scale-95">
+          Aprender a Jogar
         </button>
       </div>
 
@@ -437,47 +451,60 @@
     </div>
   </div>
 
-  <!-- MODAL MODO RANKEADO (FIREBASE AUTH + MATCHMAKING POR ELO) -->
+  <!-- MODAL MODO RANKEADO (FIREBASE AUTH + LOBBY + MATCHMAKING POR ELO) -->
   <div id="ranked-modal" class="xeker-modal">
     <div class="w-full max-w-[380px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl space-y-3 text-xs">
       <div class="flex items-center justify-between gap-2 pb-2 border-b border-white/10">
         <div class="flex items-center gap-2 min-w-0">
-          <h2 class="font-display font-bold text-sm text-[#f3d678] truncate">🏆 Modo Rankeado (Elo)</h2>
-          <span id="ranked-online-counter" class="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-[10px] font-bold text-emerald-300 shrink-0">● Online: —</span>
+          <h2 class="font-display font-bold text-sm text-[#f3d678] truncate">🏆 Modo Rankeado</h2>
         </div>
         <button type="button" id="btn-close-ranked" class="px-2.5 py-1 rounded-lg bg-[#161820] border border-white/15 font-bold text-zinc-200 active:scale-95 shrink-0">✕</button>
       </div>
 
-      <!-- Desconectado -->
+      <!-- Desconectado (Tela de Login) -->
       <div id="ranked-logged-out" class="space-y-3">
         <p class="text-zinc-300 leading-relaxed">
-          Entre com sua conta Google para salvar sua pontuação <strong>Elo</strong>, histórico de vitórias e buscar oponentes ranqueados em tempo real.
+          Entre com sua conta Google para acessar o lobby, salvar sua pontuação, histórico de vitórias e buscar oponentes ranqueados em tempo real.
         </p>
         <button type="button" id="btn-google-login" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold text-sm shadow active:scale-95">
           Entrar com Google
         </button>
       </div>
 
-      <!-- Conectado -->
-      <div id="ranked-logged-in" class="hidden space-y-3">
-        <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/30">
-          <div class="min-w-0">
-            <div id="ranked-player-name" class="font-bold text-sm text-white truncate">Jogador</div>
-            <div id="ranked-player-stats" class="text-[11px] font-bold text-[#f3d678]">Elo: 1200 · 0V - 0D</div>
-          </div>
-          <button type="button" id="btn-google-logout" class="px-2.5 py-1.5 rounded-lg bg-black/60 border border-white/15 text-zinc-300 font-bold active:scale-95 shrink-0">
-            Sair
+      <!-- Conectado / Lobby -->
+      <div id="ranked-logged-in" class="hidden space-y-2.5">
+        <div class="grid grid-cols-2 gap-1.5">
+          <button type="button" id="btn-find-ranked" class="w-full py-2.5 px-2 rounded-xl border font-extrabold text-xs active:scale-95 flex items-center justify-center gap-1.5 transition-all ranked-btn-lit">
+            <span id="btn-find-ranked-label">Buscar</span>
+            <span id="ranked-search-clock" class="hidden font-mono text-[11px] text-amber-200">⏱ 00:00</span>
+          </button>
+
+          <button type="button" id="btn-cancel-ranked" class="w-full py-2.5 px-2 rounded-xl border font-bold text-xs active:scale-95 flex items-center justify-center gap-1.5 transition-all ranked-btn-dim">
+            <span>Cancelar Busca</span>
           </button>
         </div>
 
-        <button type="button" id="btn-find-ranked" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold text-sm shadow active:scale-95">
-          Buscar Partida Rankeada
-        </button>
+        <div class="grid grid-cols-2 gap-1.5 pt-1 border-t border-white/10">
+          <button type="button" id="btn-set-offline" class="w-full py-2 px-2 rounded-xl border text-xs font-bold active:scale-95 flex items-center justify-center gap-1.5 transition-all ranked-btn-lit">
+            <span>Ficar Off-line</span>
+          </button>
+          <button type="button" id="btn-set-online" class="w-full py-2 px-2 rounded-xl border text-xs font-bold active:scale-95 flex items-center justify-center gap-1.5 transition-all ranked-btn-dim">
+            <span>Ficar Online</span>
+          </button>
+        </div>
 
-        <button type="button" id="btn-cancel-ranked" class="hidden w-full py-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/50 text-[#f3d678] font-bold text-sm active:scale-95 flex items-center justify-center gap-2">
-          <span>Cancelar Busca</span>
-          <span id="ranked-search-clock" class="font-mono text-xs text-amber-200">00:00</span>
-        </button>
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-bold text-[#f3d678]">Lobby de Jogadores</span>
+              <span id="ranked-online-counter" class="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-[10px] font-bold text-emerald-300">● Online: —</span>
+            </div>
+            <span class="text-[10px] text-zinc-400">Convite sem valer Elo</span>
+          </div>
+          <div id="lobby-players-list" class="max-h-[210px] overflow-y-auto space-y-1.5 pr-0.5">
+            <div class="text-[11px] text-zinc-400 py-2 text-center">Carregando jogadores...</div>
+          </div>
+        </div>
       </div>
 
       <div id="ranked-feedback" class="hidden px-2.5 py-2 rounded-xl bg-black/50 border border-white/10 text-[11px] text-amber-200"></div>
@@ -760,7 +787,7 @@
           <p><strong class="text-[#f3d678]">Relógios (15:00):</strong> Cada jogador tem 15:00. O relógio do jogador ativo corre apenas fora de modais/resumos.</p>
           <div class="p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/30 space-y-1">
             <div class="font-bold text-[#f3d678]">Regras de Turno e Recursos:</div>
-            <p>• <strong>Ouro Inicial:</strong> Ambos os jogadores começam com <span class="sym-diamond">♦2</span>.</p>
+            <p>• <strong>Ouro Inicial:</strong> Ambos os jogadores começam com <span class="sym-diamond">♦0</span>.</p>
             <p>• <strong>Mão Inicial e Compra no Turno:</strong> Ambos os jogadores começam com <strong>3 cartas</strong> na mão; cada jogador recebe <strong>+1 carta a cada 2 turnos</strong> próprios (no 2º, 4º, 6º... turno de cada lado, máx. ${MAX_HAND_SIZE} cartas).</p>
             <p>• <strong>Ações (<span class="sym-club">♣</span>):</strong> 2 ações por turno para mover/atacar. <strong>Cada peça faz no máximo 1 ação por turno.</strong></p>
             <p>• <strong>Flop:</strong> 3 cartas comunitárias renovadas <strong>após cada embate</strong>.</p>
@@ -792,11 +819,11 @@
             </div>
             <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
               <strong class="text-[#f3d678]">♚ Rei (7♥)</strong> · Alcance: até 2 (8 direções)<br/>
-              <span class="sym-spade">♠</span> Causa 2♥ de dano direto a 1 inimigo no alcance.
+              <span class="sym-spade">♠</span> Causa 2♥ de dano direto a uma peça inimiga no alcance.
             </div>
             <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
               <strong class="text-[#f3d678]">♞ Cavalo (3♥)</strong> · Alcance: salto 2+1 em L<br/>
-              <span class="sym-spade">♠</span> Causa 1♥ de dano direto a 1 inimigo no alcance.
+              <span class="sym-spade">♠</span> Causa 1♥ de dano direto a uma peça inimiga no alcance.
             </div>
           </div>
         `
@@ -869,6 +896,7 @@
     let duelContext = null;
     let pendingCombatPassAction = null;
     let combatCardLocked = false;
+    let ghostClickGuardUntil = 0;
     let rulesIdx = 0;
     let timerId = null;
     let actionSeqCounter = 0;
@@ -898,7 +926,13 @@
       lastAtkCardSeq: 0,
       lastDefCardSeq: 0,
       lastSummaryAckSeq: 0,
-      lastAnnouncedTurnKey: null
+      lastAnnouncedTurnKey: null,
+      unratedMatch: false,
+      usersUnsub: null,
+      invitesUnsub: null,
+      presenceTimer: null,
+      isManualOffline: false,
+      isSearching: false
     };
 
     function getPlayerDisplayName(side) {
@@ -916,6 +950,21 @@
       return side === 'white' ? 'Brancas' : 'Pretas';
     }
 
+    function getSideColorLabel(side) {
+      return side === 'white' ? 'Brancas (♔)' : 'Pretas (♚)';
+    }
+
+    function formatTurnPlayerWithColor(side) {
+      const pName = getPlayerDisplayName(side);
+      const colorLabel = getSideColorLabel(side);
+      if (isRankedMode() && ranked.matchNames && ranked.matchNames[side]) {
+        return `${pName} · ${colorLabel}`;
+      }
+      return pName === colorLabel || pName.includes('Brancas') || pName.includes('Pretas')
+        ? colorLabel
+        : `${pName} (${colorLabel})`;
+    }
+
     function updateTurnBanner() {
       const banner = document.getElementById('turn-banner');
       if (!banner) return;
@@ -923,9 +972,9 @@
         banner.textContent = 'Vez do jogador —';
         return;
       }
-      const pName = getPlayerDisplayName(state.turn);
+      const turnLabel = formatTurnPlayerWithColor(state.turn);
       const isMyTurn = !isRankedMode() || state.turn === myOnlineSide();
-      banner.textContent = `Vez do jogador ${pName}`;
+      banner.textContent = `Vez do jogador ${turnLabel}`;
       banner.className = isMyTurn
         ? 'w-full max-w-[380px] px-3 py-1 rounded-xl bg-gradient-to-r from-[#f3d678]/35 via-[#d4af37]/30 to-[#f3d678]/35 border-2 border-[#fff1b8] text-center text-xs sm:text-sm font-black tracking-wide text-[#fff1b8] shadow-[0_0_20px_rgba(243,214,120,0.45)]'
         : 'w-full max-w-[380px] px-3 py-1 rounded-xl bg-[#161820] border border-[#d4af37]/40 text-center text-xs font-bold tracking-wide text-zinc-300';
@@ -934,14 +983,14 @@
     function formatSearchClock(sec) {
       const mm = String(Math.floor(sec / 60)).padStart(2, '0');
       const ss = String(sec % 60).padStart(2, '0');
-      return `${mm}:${ss}`;
+      return `⏱ ${mm}:${ss}`;
     }
 
     function startSearchClock() {
       stopSearchClock();
       ranked.searchSeconds = 0;
       const clockEl = document.getElementById('ranked-search-clock');
-      if (clockEl) clockEl.textContent = '00:00';
+      if (clockEl) clockEl.textContent = '⏱ 00:00';
       ranked.searchClockInterval = setInterval(() => {
         ranked.searchSeconds += 1;
         const el = document.getElementById('ranked-search-clock');
@@ -956,19 +1005,19 @@
       }
       ranked.searchSeconds = 0;
       const clockEl = document.getElementById('ranked-search-clock');
-      if (clockEl) clockEl.textContent = '00:00';
+      if (clockEl) clockEl.textContent = '⏱ 00:00';
     }
 
     async function refreshRankedOnlineCount() {
       const badge = document.getElementById('ranked-online-counter');
       if (!badge) return;
       try {
-        const usersSnap = await getCountFromServer(collection(db, 'users'));
-        const activeMatchesSnap = await getCountFromServer(
-          query(collection(db, 'matches'), where('status', '==', 'active'))
-        );
-        const total = (usersSnap.data().count || 0) + (activeMatchesSnap.data().count || 0) * 2;
-        badge.textContent = `● Online: ${total}`;
+        const usersSnap = await getDocs(collection(db, 'users'));
+        let onlineCount = 0;
+        usersSnap.forEach((docSnap) => {
+          if (isUserOnline(docSnap.data())) onlineCount += 1;
+        });
+        badge.textContent = `● Online: ${onlineCount}`;
       } catch (_) {
         badge.textContent = '● Online: —';
       }
@@ -1017,17 +1066,17 @@
       if (ranked.lastAnnouncedTurnKey === key) return;
       ranked.lastAnnouncedTurnKey = key;
 
-      const turnPlayerName = getPlayerDisplayName(turnSide);
+      const turnPlayerLabel = formatTurnPlayerWithColor(turnSide);
       const mySide = myOnlineSide();
       const isMyTurn = turnSide === mySide;
-      const myColorLabel = mySide === 'white' ? 'Brancas (♔)' : 'Pretas (♚)';
+      const myColorLabel = getSideColorLabel(mySide);
 
       document.getElementById('ranked-turn-icon').textContent = turnSide === 'white' ? '♔' : '♚';
-      document.getElementById('ranked-turn-side-badge').textContent = `Você é das ${myColorLabel}`;
-      document.getElementById('ranked-turn-heading').textContent = `Vez do jogador ${turnPlayerName}`;
+      document.getElementById('ranked-turn-side-badge').textContent = `Você joga de ${myColorLabel}`;
+      document.getElementById('ranked-turn-heading').textContent = `Vez do jogador ${turnPlayerLabel}`;
       document.getElementById('ranked-turn-desc').textContent = isMyTurn
         ? `É a sua vez de jogar (Rodada ${roundNum || 1}). Você está com as ${myColorLabel}.`
-        : `Aguardando a vez do jogador ${turnPlayerName} (Rodada ${roundNum || 1}). Você é das ${myColorLabel}.`;
+        : `Aguardando a vez do jogador ${turnPlayerLabel} (Rodada ${roundNum || 1}). Você é das ${myColorLabel}.`;
 
       openModal('ranked-turn-modal');
     }
@@ -1127,6 +1176,243 @@
       }
     }
 
+    function isUserOnline(uData) {
+      if (!uData) return false;
+      if (uData.online === true) {
+        const ts = uData.lastSeen && typeof uData.lastSeen.toMillis === 'function'
+          ? uData.lastSeen.toMillis()
+          : (typeof uData.lastSeen === 'number' ? uData.lastSeen : 0);
+        if (!ts) return true;
+        return (Date.now() - ts) < 120000;
+      }
+      return false;
+    }
+
+    function setRankedBtnLit(btn, lit) {
+      if (!btn) return;
+      btn.classList.remove('ranked-btn-lit', 'ranked-btn-dim');
+      btn.classList.add(lit ? 'ranked-btn-lit' : 'ranked-btn-dim');
+    }
+
+    function updateStatusBulbs() {
+      const offBtn = document.getElementById('btn-set-offline');
+      const onBtn = document.getElementById('btn-set-online');
+      const isOff = Boolean(ranked.isManualOffline);
+      setRankedBtnLit(offBtn, !isOff);
+      setRankedBtnLit(onBtn, isOff);
+    }
+
+    function updateSearchBulbs() {
+      const findBtn = document.getElementById('btn-find-ranked');
+      const findLabel = document.getElementById('btn-find-ranked-label');
+      const cancelBtn = document.getElementById('btn-cancel-ranked');
+      const clockEl = document.getElementById('ranked-search-clock');
+      const searching = Boolean(ranked.isSearching);
+      if (findBtn) {
+        findBtn.classList.remove('ranked-btn-lit', 'ranked-btn-dim');
+        findBtn.classList.add(searching ? 'ranked-btn-dim' : 'ranked-btn-lit');
+      }
+      if (findLabel) {
+        findLabel.textContent = searching ? 'Buscando' : 'Buscar';
+      }
+      setRankedBtnLit(cancelBtn, searching);
+      if (clockEl) {
+        if (searching) {
+          clockEl.classList.remove('hidden');
+        } else {
+          clockEl.classList.add('hidden');
+        }
+      }
+    }
+
+    async function setUserOnlineStatus(isOnline) {
+      if (!ranked.user || !ranked.user.uid) return;
+      ranked.isManualOffline = !Boolean(isOnline);
+      updateStatusBulbs();
+      const userRef = doc(db, 'users', ranked.user.uid);
+      await setDoc(userRef, {
+        uid: ranked.user.uid,
+        name: (ranked.profile && ranked.profile.name) || ranked.user.displayName || 'Jogador Xeker',
+        online: Boolean(isOnline),
+        lastSeen: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      }, { merge: true }).catch(() => {});
+    }
+
+    function startPresenceHeartbeat() {
+      stopPresenceHeartbeat();
+      setUserOnlineStatus(true);
+      ranked.presenceTimer = setInterval(() => {
+        if (ranked.user && !ranked.isManualOffline) setUserOnlineStatus(true);
+      }, 30000);
+    }
+
+    function stopPresenceHeartbeat() {
+      if (ranked.presenceTimer) {
+        clearInterval(ranked.presenceTimer);
+        ranked.presenceTimer = null;
+      }
+    }
+
+    function renderLobbyList(usersList) {
+      const container = document.getElementById('lobby-players-list');
+      if (!container) return;
+      const myUid = ranked.user ? ranked.user.uid : null;
+
+      let onlineCount = 0;
+      usersList.forEach((u) => {
+        if (isUserOnline(u)) onlineCount += 1;
+      });
+      const counterBadge = document.getElementById('ranked-online-counter');
+      if (counterBadge) counterBadge.textContent = `● Online: ${onlineCount}`;
+
+      const sorted = [...usersList].sort((a, b) => {
+        const aOn = isUserOnline(a) ? 1 : 0;
+        const bOn = isUserOnline(b) ? 1 : 0;
+        if (aOn !== bOn) return bOn - aOn;
+        const aElo = Number(a.elo) || 1200;
+        const bElo = Number(b.elo) || 1200;
+        return bElo - aElo;
+      });
+
+      if (sorted.length === 0) {
+        container.innerHTML = '<div class="text-[11px] text-zinc-400 py-2 text-center">Nenhum jogador cadastrado.</div>';
+        return;
+      }
+
+      container.innerHTML = '';
+      sorted.forEach((u) => {
+        const online = isUserOnline(u);
+        const elo = Number(u.elo) || 1200;
+        const wins = Number(u.wins) || 0;
+        const losses = Number(u.losses) || 0;
+        const totalGames = wins + losses;
+        const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0;
+        const isSelf = myUid && u.uid === myUid;
+
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between gap-2 p-2 rounded-xl bg-[#161820] border border-white/10';
+
+        const left = document.createElement('div');
+        left.className = 'min-w-0';
+        const statusDot = online
+          ? '<span class="text-emerald-400 font-bold">● On-line</span>'
+          : '<span class="text-zinc-500 font-bold">○ Off-line</span>';
+        left.innerHTML = `
+          <div class="flex items-center gap-1.5">
+            <span class="font-bold text-white truncate">${u.name || 'Jogador'}${isSelf ? ' (Você)' : ''}</span>
+            <span class="text-[10px] shrink-0">${statusDot}</span>
+          </div>
+          <div class="text-[10px] text-zinc-300">Elo: <strong class="text-[#f3d678]">${elo}</strong> · Vitória: <strong>${winRate}%</strong> (${wins}V/${losses}D)</div>
+        `;
+
+        row.appendChild(left);
+
+        if (!isSelf && online) {
+          const inviteBtn = document.createElement('button');
+          inviteBtn.type = 'button';
+          inviteBtn.className = 'px-2.5 py-1.5 rounded-lg bg-[#d4af37]/20 border border-[#f3d678]/60 text-[#fff1b8] text-[10px] font-extrabold active:scale-95 shrink-0';
+          inviteBtn.textContent = 'Convidar';
+          inviteBtn.addEventListener('click', () => sendFriendlyInvite(u));
+          row.appendChild(inviteBtn);
+        }
+
+        container.appendChild(row);
+      });
+    }
+
+    function startLobbyListeners() {
+      if (!ranked.user) return;
+      if (!ranked.usersUnsub) {
+        ranked.usersUnsub = onSnapshot(collection(db, 'users'), (snap) => {
+          const list = [];
+          snap.forEach((docSnap) => {
+            list.push({ uid: docSnap.id, ...docSnap.data() });
+          });
+          renderLobbyList(list);
+        }, () => {});
+      }
+      if (!ranked.invitesUnsub) {
+        const invRef = doc(db, 'lobby_invites', ranked.user.uid);
+        ranked.invitesUnsub = onSnapshot(invRef, async (snap) => {
+          if (!snap.exists()) return;
+          const inv = snap.data();
+          if (inv.status === 'pending' && inv.fromUid && inv.matchId) {
+            const accept = window.confirm(
+              `${inv.fromName || 'Jogador'} convidou você para uma partida amistosa (sem valer Elo). Aceitar?`
+            );
+            if (accept) {
+              await updateDoc(invRef, { status: 'accepted' }).catch(() => {});
+              await deleteDoc(invRef).catch(() => {});
+              await startRankedSession(inv.matchId, { unrated: true });
+            } else {
+              await updateDoc(invRef, { status: 'declined' }).catch(() => {});
+              await deleteDoc(invRef).catch(() => {});
+            }
+          } else if (inv.status === 'accepted' && inv.matchId && inv.fromUid === ranked.user.uid) {
+            await deleteDoc(invRef).catch(() => {});
+            await startRankedSession(inv.matchId, { unrated: true });
+          } else if (inv.status === 'declined' && inv.fromUid === ranked.user.uid) {
+            await deleteDoc(invRef).catch(() => {});
+            showRankedFeedback(`${inv.toName || 'Jogador'} recusou o convite.`);
+          }
+        }, () => {});
+      }
+    }
+
+    function stopLobbyListeners() {
+      if (ranked.usersUnsub) {
+        ranked.usersUnsub();
+        ranked.usersUnsub = null;
+      }
+      if (ranked.invitesUnsub) {
+        ranked.invitesUnsub();
+        ranked.invitesUnsub = null;
+      }
+    }
+
+    async function sendFriendlyInvite(targetUser) {
+      if (!ranked.user || !ranked.profile || !targetUser || !targetUser.uid) return;
+      try {
+        const newMatchId = `am_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        const matchRef = doc(db, 'matches', newMatchId);
+        await setDoc(matchRef, {
+          matchId: newMatchId,
+          unrated: true,
+          whiteUid: ranked.user.uid,
+          whiteName: ranked.profile.name || 'Jogador',
+          whiteEloBefore: ranked.profile.elo || 1200,
+          blackUid: targetUser.uid,
+          blackName: targetUser.name || 'Jogador',
+          blackEloBefore: targetUser.elo || 1200,
+          status: 'active',
+          winnerSide: null,
+          endReason: null,
+          viewJson: null,
+          clocksJson: null,
+          guestActionJson: null,
+          guestAtkCardJson: null,
+          guestDefCardJson: null,
+          guestSummaryAckSeq: 0,
+          createdAt: serverTimestamp()
+        });
+
+        await setDoc(doc(db, 'lobby_invites', targetUser.uid), {
+          fromUid: ranked.user.uid,
+          fromName: ranked.profile.name || 'Jogador',
+          toUid: targetUser.uid,
+          toName: targetUser.name || 'Jogador',
+          matchId: newMatchId,
+          status: 'pending',
+          createdAt: serverTimestamp()
+        });
+
+        showRankedFeedback(`Convite (sem valer Elo) enviado para ${targetUser.name || 'Jogador'}. Aguardando resposta...`);
+      } catch (err) {
+        showRankedFeedback('Erro ao enviar convite: ' + err.message, true);
+      }
+    }
+
     async function ensureRankedProfile(user) {
       const userRef = doc(db, 'users', user.uid);
       const snap = await getDoc(userRef);
@@ -1137,14 +1423,19 @@
           elo: 1200,
           wins: 0,
           losses: 0,
+          online: true,
+          lastSeen: serverTimestamp(),
           updatedAt: serverTimestamp()
         };
         await setDoc(userRef, fresh);
         ranked.profile = fresh;
       } else {
         ranked.profile = snap.data();
+        await setUserOnlineStatus(true);
       }
       refreshRankedUI();
+      startPresenceHeartbeat();
+      startLobbyListeners();
     }
 
     function refreshRankedUI() {
@@ -1155,9 +1446,8 @@
       if (ranked.user && ranked.profile) {
         outBox.classList.add('hidden');
         inBox.classList.remove('hidden');
-        document.getElementById('ranked-player-name').textContent = ranked.profile.name || 'Jogador';
-        document.getElementById('ranked-player-stats').textContent =
-          `Elo: ${ranked.profile.elo || 1200} · ${ranked.profile.wins || 0}V - ${ranked.profile.losses || 0}D`;
+        updateStatusBulbs();
+        updateSearchBulbs();
       } else {
         inBox.classList.add('hidden');
         outBox.classList.remove('hidden');
@@ -1173,6 +1463,8 @@
           showRankedFeedback('Erro ao carregar perfil: ' + err.message, true);
         }
       } else {
+        stopPresenceHeartbeat();
+        stopLobbyListeners();
         ranked.profile = null;
         refreshRankedUI();
       }
@@ -1188,10 +1480,8 @@
         clearInterval(ranked.searchInterval);
         ranked.searchInterval = null;
       }
-      const findBtn = document.getElementById('btn-find-ranked');
-      const cancelBtn = document.getElementById('btn-cancel-ranked');
-      if (findBtn) findBtn.classList.remove('hidden');
-      if (cancelBtn) cancelBtn.classList.add('hidden');
+      ranked.isSearching = false;
+      updateSearchBulbs();
     }
 
     async function leaveRankedQueue() {
@@ -1207,9 +1497,13 @@
         showRankedFeedback('Faça login com o Google primeiro.', true);
         return;
       }
+      if (ranked.isSearching) return;
+      if (ranked.isManualOffline) {
+        await setUserOnlineStatus(true);
+      }
       hideRankedFeedback();
-      document.getElementById('btn-find-ranked').classList.add('hidden');
-      document.getElementById('btn-cancel-ranked').classList.remove('hidden');
+      ranked.isSearching = true;
+      updateSearchBulbs();
       startSearchClock();
       showRankedFeedback('Buscando oponente com Elo próximo...');
 
@@ -1311,14 +1605,15 @@
       }
     }
 
-    async function startRankedSession(matchId) {
+    async function startRankedSession(matchId, opts = {}) {
       if (ranked.matchUnsub) {
         ranked.matchUnsub();
         ranked.matchUnsub = null;
       }
 
       ranked.matchId = matchId;
-      ranked.eloApplied = false;
+      ranked.unratedMatch = Boolean(opts.unrated);
+      ranked.eloApplied = Boolean(opts.unrated);
       ranked.lastActionSeq = 0;
       ranked.lastAtkCardSeq = 0;
       ranked.lastDefCardSeq = 0;
@@ -1330,6 +1625,7 @@
       if (!initialSnap.exists()) return;
       const mData = initialSnap.data();
 
+      if (mData.unrated) ranked.unratedMatch = true;
       const amWhite = mData.whiteUid === ranked.user.uid;
       ranked.mySide = amWhite ? 'white' : 'black';
       ranked.matchNames = {
@@ -1350,7 +1646,8 @@
 
       if (amWhite) {
         startMatch();
-        setStatus(`🏆 Ranked Elo: Você é Brancas (♔ ${mData.whiteName} · ${mData.whiteEloBefore}) vs ♚ ${mData.blackName} (${mData.blackEloBefore})`);
+        const modeTag = ranked.unratedMatch ? 'Amistosa (sem Elo)' : 'Ranked Elo';
+        setStatus(`🏆 ${modeTag}: Você é Brancas (♔ ${mData.whiteName} · ${mData.whiteEloBefore}) vs ♚ ${mData.blackName} (${mData.blackEloBefore})`);
         syncOnlineState();
         showRankedTurnIndicator('white', 1);
       } else {
@@ -1367,8 +1664,8 @@
             discard: [],
             flop: [],
             players: {
-              white: { gold: 2, handCount: 3 },
-              black: { gold: 2, hand: [] }
+              white: { gold: 0, handCount: 3 },
+              black: { gold: 0, hand: [] }
             },
             selected: null,
             actionMode: null,
@@ -1378,7 +1675,8 @@
             gameOverData: null
           };
         }
-        setStatus(`🏆 Ranked Elo: Você é Pretas (♚ ${mData.blackName} · ${mData.blackEloBefore}) vs ♔ ${mData.whiteName} (${mData.whiteEloBefore}) · Aguardando Brancas...`);
+        const modeTag = ranked.unratedMatch ? 'Amistosa (sem Elo)' : 'Ranked Elo';
+        setStatus(`🏆 ${modeTag}: Você é Pretas (♚ ${mData.blackName} · ${mData.blackEloBefore}) vs ♔ ${mData.whiteName} (${mData.whiteEloBefore}) · Aguardando Brancas...`);
         renderAll();
       }
 
@@ -1450,7 +1748,7 @@
     }
 
     async function applyRankedEloUpdate(matchData) {
-      if (ranked.eloApplied || !ranked.user) return;
+      if (ranked.eloApplied || !ranked.user || ranked.unratedMatch || (matchData && matchData.unrated)) return;
       ranked.eloApplied = true;
 
       const amWhite = ranked.mySide === 'white';
@@ -1549,11 +1847,11 @@
         flop: Array.isArray(view.flop) ? view.flop.filter((v) => typeof v === 'number' && RANK_TEXT[v]) : [],
         players: {
           white: {
-            gold: Number.isFinite(Number(safeWhite.gold)) ? Number(safeWhite.gold) : 2,
+            gold: Number.isFinite(Number(safeWhite.gold)) ? Number(safeWhite.gold) : 0,
             handCount: Number.isFinite(Number(safeWhite.handCount)) ? Number(safeWhite.handCount) : 0
           },
           black: {
-            gold: Number.isFinite(Number(safeBlack.gold)) ? Number(safeBlack.gold) : 2,
+            gold: Number.isFinite(Number(safeBlack.gold)) ? Number(safeBlack.gold) : 0,
             hand: Array.isArray(safeBlack.hand) ? safeBlack.hand : []
           }
         },
@@ -1725,8 +2023,8 @@
         state.actions = 2;
         const wCard = maybeDrawEveryTwoOwnTurns('white');
         const wDrawMsg = wCard !== null ? ` · Brancas receberam +1 carta [${RANK_TEXT[wCard]}]` : '';
-        const whitePlayerName = getPlayerDisplayName('white');
-        setStatus(`Rodada ${state.round} · Vez do jogador ${whitePlayerName} · ♣2${wDrawMsg}`);
+        const whiteTurnLabel = formatTurnPlayerWithColor('white');
+        setStatus(`Rodada ${state.round} · Vez do jogador ${whiteTurnLabel} · ♣2${wDrawMsg}`);
         renderAll();
         syncOnlineState();
         showRankedTurnIndicator('white', state.round);
@@ -1764,9 +2062,9 @@
         <div class="text-[10px] text-amber-200">Peça: ${formatPieceRep(atkP)}</div>
       `;
       document.getElementById('combat-def-glyph').textContent = PIECE_DATA[defPiece.type].white;
-      document.getElementById('combat-def-info').textContent = `${PIECE_DATA[defPiece.type].name} (${defPiece.hp}♥)`;
+      document.getElementById('combat-def-info').textContent = `${PIECE_DATA[defPiece.type].name} (${defP.hp}♥)`;
       document.getElementById('combat-def-sub').innerHTML = `
-        <div>Peça: ${formatPieceRep(defPiece)}</div>
+        <div>Peça: ${formatPieceRep(defP)}</div>
         <div class="text-[10px] text-red-300">Escolha sua carta</div>
       `;
       renderDefenderCardSelection(chosenAtk, defPiece, defPlayer);
@@ -1802,11 +2100,19 @@
         return;
       }
       if (wEl) wEl.textContent = formatTime(state.clocks.white);
-      if (bEl) bEl.textContent = formatTime(state.clocks.black);
+      if (bEl) wEl.textContent = formatTime(state.clocks.black);
     }
 
     function hasOpenModal() {
       return Boolean(document.querySelector('.xeker-modal.open'));
+    }
+
+    function armGhostClickGuard(ms = 240) {
+      ghostClickGuardUntil = Date.now() + ms;
+    }
+
+    function isGhostClickBlocked() {
+      return Date.now() < ghostClickGuardUntil;
     }
 
     function openModal(id) {
@@ -1817,10 +2123,12 @@
     function closeModal(id) {
       const el = document.getElementById(id);
       if (el) el.classList.remove('open');
+      armGhostClickGuard(240);
     }
 
     function closeAllModals() {
       document.querySelectorAll('.xeker-modal').forEach((el) => el.classList.remove('open'));
+      armGhostClickGuard(240);
     }
 
     function openCombatPrivacyPass(sideColor, descriptionText, onRevealCallback) {
@@ -2112,8 +2420,8 @@
           discard: [],
           flop: [],
           players: {
-            white: { gold: 2, hand: [] },
-            black: { gold: 2, hand: [] }
+            white: { gold: 0, hand: [] },
+            black: { gold: 0, hand: [] }
           },
           selected: null,
           actionMode: null,
@@ -2141,7 +2449,7 @@
           }
           showRankedTurnIndicator('white', 1);
         } else {
-          setStatus('Partida Off-line iniciada (Mesmo Aparelho) · Brancas (♔) começam.');
+          setStatus('Partida Off-line iniciada · Brancas (♔) começam.');
           renderAll();
         }
       } catch (err) {
@@ -2346,6 +2654,7 @@
 
     function showPostCombatSummary(summary, onDoneOverride = null) {
       combatCardLocked = false;
+      armGhostClickGuard(240);
       document.getElementById('combat-heading').textContent = '📋 Resumo do Combate';
       document.getElementById('combat-atk-sub').innerHTML = `
         <div>Carta usada: <strong>${summary.atkCard !== null && summary.atkCard !== undefined ? RANK_TEXT[summary.atkCard] : 'Oculta'}</strong> · Peça: <strong>${summary.atkRep}</strong></div>
@@ -2382,7 +2691,9 @@
       const rawDoneBtn = document.getElementById('btn-combat-done');
       const doneBtn = rawDoneBtn.cloneNode(true);
       rawDoneBtn.parentNode.replaceChild(doneBtn, rawDoneBtn);
-      doneBtn.addEventListener('click', () => {
+      doneBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        if (isGhostClickBlocked()) return;
         if (typeof onDoneOverride === 'function') {
           onDoneOverride();
           return;
@@ -2404,6 +2715,7 @@
     function settleCombat(atkCard, defCard) {
       if (!duelContext) return;
       combatCardLocked = false;
+      armGhostClickGuard(240);
       const atkPiece = state.board[duelContext.atkR][duelContext.atkC];
       const defPiece = state.board[duelContext.defR][duelContext.defC];
       if (!atkPiece || !defPiece) {
@@ -2603,6 +2915,7 @@
 
     function renderAttackerCardSelection(atkR, atkC, defR, defC, atkPiece, defPiece, atkPlayer, defPlayer, onSelectOverride = null) {
       combatCardLocked = false;
+      armGhostClickGuard(220);
       const body = document.getElementById('combat-body');
       body.innerHTML = `<div class="text-xs font-bold text-[#f3d678] text-center">Atacante (${atkPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'}): escolha 1 carta da mão</div>`;
 
@@ -2614,9 +2927,11 @@
         btn.type = 'button';
         btn.className = 'xeker-card w-11 h-14 rounded-lg text-sm';
         btn.textContent = RANK_TEXT[cVal];
-        btn.addEventListener('click', () => {
-          if (combatCardLocked) return;
+        btn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          if (isGhostClickBlocked() || combatCardLocked) return;
           combatCardLocked = true;
+          armGhostClickGuard(220);
           atkCardsRow.querySelectorAll('button').forEach((b) => { b.disabled = true; });
           if (typeof onSelectOverride === 'function') {
             onSelectOverride(idx);
@@ -2662,6 +2977,7 @@
 
     function renderDefenderCardSelection(chosenAtk, defPiece, defPlayer, onSelectOverride = null) {
       combatCardLocked = false;
+      armGhostClickGuard(220);
       const body = document.getElementById('combat-body');
       body.innerHTML = `<div class="text-xs font-bold text-red-300 text-center">Defensor (${defPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'}): escolha 1 carta para defender</div>`;
       const defCardsRow = document.createElement('div');
@@ -2671,9 +2987,11 @@
         dBtn.type = 'button';
         dBtn.className = 'xeker-card w-11 h-14 rounded-lg text-sm';
         dBtn.textContent = RANK_TEXT[dVal];
-        dBtn.addEventListener('click', () => {
-          if (combatCardLocked) return;
+        dBtn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          if (isGhostClickBlocked() || combatCardLocked) return;
           combatCardLocked = true;
+          armGhostClickGuard(220);
           defCardsRow.querySelectorAll('button').forEach((b) => { b.disabled = true; });
           if (typeof onSelectOverride === 'function') {
             onSelectOverride(dIdx);
@@ -2694,6 +3012,7 @@
       if (!atkPiece || !defPiece) return;
 
       combatCardLocked = false;
+      armGhostClickGuard(220);
       const atkPlayer = state.players[atkPiece.color];
       const defPlayer = state.players[defPiece.color];
 
@@ -2809,7 +3128,7 @@
       }
 
       if (state.mode === 'offline') {
-        document.getElementById('combat-body').innerHTML = `<div class="text-xs text-zinc-400 text-center py-2">Passe o aparelho para o atacante antes de revelar as cartas...</div>`;
+        document.getElementById('combat-body').innerHTML = `<div class="text-xs text-zinc-400 text-center py-2">Passe o aparelho para o defensor antes de revelar as cartas...</div>`;
         openCombatPrivacyPass(
           atkPiece.color,
           'Passe o aparelho para o atacante escolher sua carta de combate sem que o outro jogador veja a mão.',
@@ -2950,6 +3269,7 @@
     }
 
     function onActiveSkillClick() {
+      if (isGhostClickBlocked()) return;
       if (!state || state.gameOver || !state.selected) return;
       const { r, c } = state.selected;
       const piece = state.board[r][c];
@@ -3019,6 +3339,7 @@
     }
 
     function onTileTap(r, c) {
+      if (isGhostClickBlocked()) return;
       if (!state || state.gameOver) return;
       if (isRankedMode() && state.turn !== myOnlineSide()) return;
 
@@ -3130,6 +3451,7 @@
     }
 
     function onSelectActionMode(mode) {
+      if (isGhostClickBlocked()) return;
       if (!state || state.gameOver || !state.selected) return;
       state.skillPhase = null;
       state.copiedSkill = null;
@@ -3144,6 +3466,7 @@
     }
 
     function onBuyCard() {
+      if (isGhostClickBlocked()) return;
       if (!state || state.gameOver) return;
       if (isRankedMode() && state.turn !== myOnlineSide()) return;
 
@@ -3178,6 +3501,7 @@
     }
 
     function onEndTurn() {
+      if (isGhostClickBlocked()) return;
       if (!state || state.gameOver) return;
       if (isRankedMode() && state.turn !== myOnlineSide()) {
         setStatus(`⚠️ Aguarde sua vez (${myOnlineSide() === 'black' ? 'Pretas ♚' : 'Brancas ♔'}).`);
@@ -3189,7 +3513,7 @@
         state.actionMode = null;
         state.skillPhase = null;
         state.copiedSkill = null;
-        setStatus(`Passando a vez para o jogador ${getPlayerDisplayName('white')}...`);
+        setStatus(`Passando a vez para o jogador ${formatTurnPlayerWithColor('white')}...`);
         renderAll();
         sendNet({ type: 'online_action', action: { kind: 'end_turn' } });
         return;
@@ -3212,17 +3536,17 @@
         state.actions = 2;
         const bCard = maybeDrawEveryTwoOwnTurns('black');
         const bDrawMsg = bCard !== null ? ` · Pretas receberam +1 carta [${RANK_TEXT[bCard]}]` : '';
-        const blackPlayerName = getPlayerDisplayName('black');
+        const blackTurnLabel = formatTurnPlayerWithColor('black');
 
         if (isRankedMode()) {
-          setStatus(`Vez do jogador ${blackPlayerName} · ♣2${bDrawMsg}`);
+          setStatus(`Vez do jogador ${blackTurnLabel} · ♣2${bDrawMsg}`);
           renderAll();
           if (net.role === 'host') syncOnlineState();
           showRankedTurnIndicator('black', state.round);
         } else {
-          document.getElementById('pass-heading').textContent = `Passe o aparelho para ${blackPlayerName}`;
-          document.getElementById('pass-desc').textContent = `Passe o aparelho para o jogador ${blackPlayerName} antes de revelar a mão.`;
-          setStatus(`Vez do jogador ${blackPlayerName} · ♣2${bDrawMsg}`);
+          document.getElementById('pass-heading').textContent = `Passe o aparelho para ${blackTurnLabel}`;
+          document.getElementById('pass-desc').textContent = `Passe o aparelho para o jogador ${blackTurnLabel} antes de revelar a mão.`;
+          setStatus(`Vez do jogador ${blackTurnLabel} · ♣2${bDrawMsg}`);
           renderAll();
           openModal('pass-modal');
         }
@@ -3232,17 +3556,17 @@
         state.actions = 2;
         const wCard = maybeDrawEveryTwoOwnTurns('white');
         const wDrawMsg = wCard !== null ? ` · Brancas receberam +1 carta [${RANK_TEXT[wCard]}]` : '';
-        const whitePlayerName = getPlayerDisplayName('white');
+        const whiteTurnLabel = formatTurnPlayerWithColor('white');
 
         if (isRankedMode()) {
-          setStatus(`Rodada ${state.round} · Vez do jogador ${whitePlayerName} · ♣2${wDrawMsg}`);
+          setStatus(`Rodada ${state.round} · Vez do jogador ${whiteTurnLabel} · ♣2${wDrawMsg}`);
           renderAll();
           if (net.role === 'host') syncOnlineState();
           showRankedTurnIndicator('white', state.round);
         } else {
-          document.getElementById('pass-heading').textContent = `Passe o aparelho para ${whitePlayerName}`;
-          document.getElementById('pass-desc').textContent = `Passe o aparelho para o jogador ${whitePlayerName} antes de revelar a mão.`;
-          setStatus(`Rodada ${state.round} · Vez do jogador ${whitePlayerName} · ♣2${wDrawMsg}`);
+          document.getElementById('pass-heading').textContent = `Passe o aparelho para ${whiteTurnLabel}`;
+          document.getElementById('pass-desc').textContent = `Passe o aparelho para o jogador ${whiteTurnLabel} antes de revelar a mão.`;
+          setStatus(`Rodada ${state.round} · Vez do jogador ${whiteTurnLabel} · ♣2${wDrawMsg}`);
           renderAll();
           openModal('pass-modal');
         }
@@ -3395,8 +3719,8 @@
           menuBox.innerHTML = `
             <span class="text-xs font-bold text-[#f3d678] truncate pr-1">${info.name} <span class="text-[10px] font-normal text-emerald-300/90">(Mover padrão)</span></span>
             <div class="flex items-center gap-1">
-              <button type="button" id="act-attack" class="px-2 py-1 rounded-lg text-[11px] font-bold border ${state.actionMode === 'attack' ? 'bg-red-500/25 border-red-400 text-red-200' : 'bg-[#111217] border-white/15 text-zinc-200'} disabled:opacity-35" ${canAttack ? '' : 'disabled'}>
-                Atacar
+              <button type="button" id="act-attack" class="px-3 py-1.5 rounded-lg text-xs font-bold border ${state.actionMode === 'attack' ? 'bg-red-500/25 border-red-400 text-red-200' : 'bg-[#111217] border-white/15 text-zinc-200'} disabled:opacity-35" ${canAttack ? '' : 'disabled'}>
+                <span class="sym-heart">♥</span> Atacar
               </button>
               <button type="button" id="act-skill" class="px-2 py-1 rounded-lg text-[11px] font-bold border ${state.skillPhase ? 'bg-blue-500/25 border-blue-400 text-blue-200' : 'bg-blue-500/10 border-blue-400/40 text-blue-200'} disabled:opacity-35" ${canSkill ? '' : 'disabled'}>
                 <span class="sym-spade">♠</span> Ativa
@@ -3476,12 +3800,14 @@
     function syncModeButtons() {
       const offlineBtn = document.getElementById('btn-select-offline');
       const rankedBtn = document.getElementById('btn-select-ranked');
+      const rulesBtn = document.getElementById('btn-open-rules');
 
-      const activeCls = 'py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95';
-      const idleCls = 'py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95';
-
-      offlineBtn.className = selectedMode === 'offline' ? activeCls : idleCls;
-      rankedBtn.className = selectedMode === 'ranked' ? activeCls : idleCls;
+      const litCls = 'py-2.5 px-2 rounded-xl text-xs font-bold border menu-btn-lit active:scale-95';
+      offlineBtn.className = litCls;
+      rankedBtn.className = litCls;
+      if (rulesBtn) {
+        rulesBtn.className = 'w-full py-2 rounded-xl border font-bold text-xs tracking-wide menu-btn-lit active:scale-95';
+      }
     }
 
     function openSurrenderModal() {
@@ -3510,12 +3836,16 @@
       document.getElementById('btn-select-offline').addEventListener('click', () => {
         selectedMode = 'offline';
         syncModeButtons();
+        startMatch();
       });
       document.getElementById('btn-select-ranked').addEventListener('click', () => {
         selectedMode = 'ranked';
         syncModeButtons();
         refreshRankedUI();
         startRankedOnlineCounter();
+        if (ranked.user) {
+          startLobbyListeners();
+        }
         openModal('ranked-modal');
       });
 
@@ -3541,19 +3871,24 @@
           }
         }
       });
-      document.getElementById('btn-google-logout').addEventListener('click', async () => {
+      document.getElementById('btn-set-offline').addEventListener('click', async () => {
         await leaveRankedQueue();
-        await signOut(auth);
-        hideRankedFeedback();
+        await setUserOnlineStatus(false);
+        stopPresenceHeartbeat();
+        refreshRankedOnlineCount();
+      });
+      document.getElementById('btn-set-online').addEventListener('click', async () => {
+        await setUserOnlineStatus(true);
+        startPresenceHeartbeat();
+        refreshRankedOnlineCount();
       });
       document.getElementById('btn-find-ranked').addEventListener('click', enterRankedQueue);
       document.getElementById('btn-cancel-ranked').addEventListener('click', leaveRankedQueue);
 
-      document.getElementById('btn-ranked-turn-ok').addEventListener('click', () => {
+      document.getElementById('btn-ranked-turn-ok').addEventListener('click', (ev) => {
+        ev.stopPropagation();
         closeModal('ranked-turn-modal');
       });
-
-      document.getElementById('btn-start-match').addEventListener('click', startMatch);
 
       document.getElementById('btn-top-menu').addEventListener('click', () => openModal('menu-modal'));
       document.getElementById('btn-back-menu').addEventListener('click', () => {
@@ -3590,11 +3925,13 @@
       document.getElementById('btn-surrender-cancel').addEventListener('click', () => closeModal('surrender-modal'));
       document.getElementById('btn-surrender-confirm').addEventListener('click', confirmSurrender);
       document.getElementById('btn-end-turn').addEventListener('click', onEndTurn);
-      document.getElementById('btn-pass-ok').addEventListener('click', () => {
+      document.getElementById('btn-pass-ok').addEventListener('click', (ev) => {
+        ev.stopPropagation();
         closeModal('pass-modal');
         renderAll();
       });
-      document.getElementById('btn-combat-pass-ok').addEventListener('click', () => {
+      document.getElementById('btn-combat-pass-ok').addEventListener('click', (ev) => {
+        ev.stopPropagation();
         closeModal('combat-pass-modal');
         const fn = pendingCombatPassAction;
         pendingCombatPassAction = null;
