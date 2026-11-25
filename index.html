@@ -129,6 +129,7 @@
       border: 2px solid var(--gold);
       border-radius: 10px;
       overflow: hidden;
+      background-color: var(--tile-dark);
       box-shadow: 0 12px 28px rgba(0, 0, 0, 0.75);
     }
 
@@ -1251,7 +1252,32 @@
         syncOnlineState();
         showRankedTurnIndicator('white', 1);
       } else {
+        if (!state) {
+          state = {
+            mode: 'ranked',
+            turn: 'white',
+            round: 1,
+            ownTurns: { white: 1, black: 0 },
+            actions: 2,
+            clocks: { white: INITIAL_CLOCK_SECONDS, black: INITIAL_CLOCK_SECONDS },
+            board: buildInitialBoard(),
+            deck: [],
+            discard: [],
+            flop: [],
+            players: {
+              white: { gold: 2, handCount: 3 },
+              black: { gold: 2, hand: [] }
+            },
+            selected: null,
+            actionMode: null,
+            skillPhase: null,
+            copiedSkill: null,
+            gameOver: false,
+            gameOverData: null
+          };
+        }
         setStatus(`🏆 Ranked Elo: Você é Pretas (♚ ${mData.blackName} · ${mData.blackEloBefore}) vs ♔ ${mData.whiteName} (${mData.whiteEloBefore}) · Aguardando Brancas...`);
+        renderAll();
       }
 
       ranked.matchUnsub = onSnapshot(matchRef, (snap) => {
@@ -1365,7 +1391,6 @@
       closeModal('ranked-modal');
       const prevSummary = net.lastSummary;
       const prevTurn = state ? state.turn : null;
-      const prevActions = state ? state.actions : null;
       const prevSelected = state ? state.selected : null;
       const prevActionMode = state ? state.actionMode : null;
       const prevSkillPhase = state ? state.skillPhase : null;
@@ -1394,25 +1419,40 @@
         }
       }
 
+      const safeBoard = Array.isArray(view.board) && view.board.length === 8
+        ? view.board.map((row) => Array.isArray(row) && row.length === 8
+            ? row.map((cell) => (cell && cell.type && PIECE_DATA[cell.type] && cell.color ? cell : null))
+            : Array(8).fill(null))
+        : buildInitialBoard();
+
+      const safePlayers = view.players && typeof view.players === 'object' ? view.players : {};
+      const safeWhite = safePlayers.white && typeof safePlayers.white === 'object' ? safePlayers.white : {};
+      const safeBlack = safePlayers.black && typeof safePlayers.black === 'object' ? safePlayers.black : {};
+
       state = {
         mode: view.mode || 'ranked',
-        turn: view.turn,
-        round: view.round,
-        ownTurns: view.ownTurns,
-        actions: view.actions,
-        clocks: view.clocks,
-        board: view.board,
+        turn: view.turn === 'black' ? 'black' : 'white',
+        round: Number.isFinite(Number(view.round)) ? Number(view.round) : 1,
+        ownTurns: view.ownTurns && typeof view.ownTurns === 'object' ? view.ownTurns : { white: 1, black: 0 },
+        actions: Number.isFinite(Number(view.actions)) ? Number(view.actions) : 2,
+        clocks: view.clocks && typeof view.clocks === 'object'
+          ? {
+              white: Number.isFinite(Number(view.clocks.white)) ? Number(view.clocks.white) : INITIAL_CLOCK_SECONDS,
+              black: Number.isFinite(Number(view.clocks.black)) ? Number(view.clocks.black) : INITIAL_CLOCK_SECONDS
+            }
+          : { white: INITIAL_CLOCK_SECONDS, black: INITIAL_CLOCK_SECONDS },
+        board: safeBoard,
         deck: [],
         discard: [],
-        flop: view.flop || [],
+        flop: Array.isArray(view.flop) ? view.flop.filter((v) => typeof v === 'number' && RANK_TEXT[v]) : [],
         players: {
           white: {
-            gold: view.players.white.gold,
-            handCount: view.players.white.handCount || 0
+            gold: Number.isFinite(Number(safeWhite.gold)) ? Number(safeWhite.gold) : 2,
+            handCount: Number.isFinite(Number(safeWhite.handCount)) ? Number(safeWhite.handCount) : 0
           },
           black: {
-            gold: view.players.black.gold,
-            hand: view.players.black.hand || []
+            gold: Number.isFinite(Number(safeBlack.gold)) ? Number(safeBlack.gold) : 2,
+            hand: Array.isArray(safeBlack.hand) ? safeBlack.hand : []
           }
         },
         selected: nextSelected,
@@ -3075,8 +3115,14 @@
 
       document.getElementById('val-gold-white').textContent = String(state.players.white.gold);
       document.getElementById('val-gold-black').textContent = String(state.players.black.gold);
-      document.getElementById('val-cards-white').textContent = String(state.players.white.hand.length);
-      document.getElementById('val-cards-black').textContent = String(state.players.black.hand.length);
+      document.getElementById('val-cards-white').textContent = String(
+        typeof state.players.white.handCount === 'number'
+          ? state.players.white.handCount
+          : (state.players.white.hand ? state.players.white.hand.length : 0)
+      );
+      document.getElementById('val-cards-black').textContent = String(
+        state.players.black.hand ? state.players.black.hand.length : 0
+      );
       document.getElementById('val-actions').textContent = String(state.actions);
       refreshClocks();
 
@@ -3085,20 +3131,30 @@
       wHud.className = `flex items-center gap-1 px-1.5 py-1 rounded-lg text-[11px] font-bold border ${state.turn === 'white' ? 'bg-[#d4af37]/15 border-[#d4af37]' : 'bg-[#161820] border-white/10'}`;
       bHud.className = `flex items-center gap-1 px-1.5 py-1 rounded-lg text-[11px] font-bold border ${state.turn === 'black' ? 'bg-[#d4af37]/15 border-[#d4af37]' : 'bg-[#161820] border-white/10'}`;
 
-      const activePlayer = state.players[state.turn];
+      const activePlayer = (state.players && state.players[state.turn])
+        ? {
+            gold: Number.isFinite(Number(state.players[state.turn].gold)) ? Number(state.players[state.turn].gold) : 0,
+            hand: Array.isArray(state.players[state.turn].hand) ? state.players[state.turn].hand : [],
+            handCount: Number.isFinite(Number(state.players[state.turn].handCount))
+              ? Number(state.players[state.turn].handCount)
+              : (Array.isArray(state.players[state.turn].hand) ? state.players[state.turn].hand.length : 0)
+          }
+        : { gold: 0, hand: [], handCount: 0 };
       const mySide = myOnlineSide();
       const canActOnMyTurn = !state.gameOver && (!isRankedMode() || state.turn === mySide);
 
       document.getElementById('btn-draw-card').disabled =
         !canActOnMyTurn ||
         activePlayer.gold < 3 ||
-        activePlayer.hand.length >= MAX_HAND_SIZE ||
+        activePlayer.handCount >= MAX_HAND_SIZE ||
         (!isRankedMode() && state.deck.length === 0 && state.discard.length === 0);
 
       const flopEl = document.getElementById('flop-container');
       flopEl.innerHTML = '';
-      state.flop.forEach((v) => {
-        flopEl.appendChild(renderCard(v, 'w-8 h-10 rounded-md text-xs'));
+      (Array.isArray(state.flop) ? state.flop : []).forEach((v) => {
+        if (RANK_TEXT[v]) {
+          flopEl.appendChild(renderCard(v, 'w-8 h-10 rounded-md text-xs'));
+        }
       });
 
       let moveList = [];
@@ -3131,23 +3187,26 @@
           if (attackList.some((a) => a.r === r && a.c === c)) tile.classList.add('can-attack');
           if (skillList.some((s) => s.r === r && s.c === c)) tile.classList.add('can-skill');
 
-          const piece = state.board[r][c];
-          if (piece) {
+          const boardRow = Array.isArray(state.board) ? state.board[r] : null;
+          const piece = Array.isArray(boardRow) ? boardRow[c] : null;
+          if (piece && piece.type && PIECE_DATA[piece.type]) {
             const info = PIECE_DATA[piece.type];
+            const pColor = piece.color === 'black' ? 'black' : 'white';
             const token = document.createElement('div');
-            token.className = `piece-token ${piece.color} ${piece.acted ? 'acted' : ''}`;
+            token.className = `piece-token ${pColor} ${piece.acted ? 'acted' : ''}`;
 
             const rankBadge = document.createElement('span');
             rankBadge.className = 'piece-badge-rank';
-            rankBadge.textContent = piece.type === 'P' ? '2-9' : RANK_TEXT[piece.cardVal];
+            rankBadge.textContent = piece.type === 'P' ? '2-9' : (RANK_TEXT[piece.cardVal] || info.cardLabel);
 
             const glyph = document.createElement('span');
             glyph.className = 'piece-glyph';
-            glyph.textContent = piece.color === 'white' ? info.white : info.black;
+            glyph.textContent = pColor === 'white' ? info.white : info.black;
 
+            const hpVal = Number.isFinite(Number(piece.hp)) ? Math.max(0, Number(piece.hp)) : info.hp;
             const hpBadge = document.createElement('span');
             hpBadge.className = 'piece-badge-hp';
-            hpBadge.textContent = String(Math.max(0, piece.hp));
+            hpBadge.textContent = String(hpVal);
 
             token.appendChild(rankBadge);
             token.appendChild(glyph);
@@ -3219,7 +3278,7 @@
       const combatPassOpen = document.getElementById('combat-pass-modal').classList.contains('open');
 
       if (isRankedMode()) {
-        const myHand = state.players[mySide].hand;
+        const myHand = (state.players[mySide] && Array.isArray(state.players[mySide].hand)) ? state.players[mySide].hand : [];
         if (myHand.length === 0) {
           handBox.innerHTML = '<span class="text-xs text-zinc-500">Sem cartas na mão.</span>';
         } else {
@@ -3407,6 +3466,9 @@
         bindEvents();
         syncModeButtons();
         startClock();
+        window.addEventListener('resize', () => {
+          if (state) renderAll();
+        });
       } catch (err) {
         reportError(err);
       }
