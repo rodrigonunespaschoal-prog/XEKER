@@ -869,6 +869,7 @@
     let duelContext = null;
     let pendingCombatPassAction = null;
     let combatCardLocked = false;
+    let ghostClickGuardUntil = 0;
     let rulesIdx = 0;
     let timerId = null;
     let actionSeqCounter = 0;
@@ -916,6 +917,21 @@
       return side === 'white' ? 'Brancas' : 'Pretas';
     }
 
+    function getSideColorLabel(side) {
+      return side === 'white' ? 'Brancas (♔)' : 'Pretas (♚)';
+    }
+
+    function formatTurnPlayerWithColor(side) {
+      const pName = getPlayerDisplayName(side);
+      const colorLabel = getSideColorLabel(side);
+      if (isRankedMode() && ranked.matchNames && ranked.matchNames[side]) {
+        return `${pName} · ${colorLabel}`;
+      }
+      return pName === colorLabel || pName.includes('Brancas') || pName.includes('Pretas')
+        ? colorLabel
+        : `${pName} (${colorLabel})`;
+    }
+
     function updateTurnBanner() {
       const banner = document.getElementById('turn-banner');
       if (!banner) return;
@@ -923,9 +939,9 @@
         banner.textContent = 'Vez do jogador —';
         return;
       }
-      const pName = getPlayerDisplayName(state.turn);
+      const turnLabel = formatTurnPlayerWithColor(state.turn);
       const isMyTurn = !isRankedMode() || state.turn === myOnlineSide();
-      banner.textContent = `Vez do jogador ${pName}`;
+      banner.textContent = `Vez do jogador ${turnLabel}`;
       banner.className = isMyTurn
         ? 'w-full max-w-[380px] px-3 py-1 rounded-xl bg-gradient-to-r from-[#f3d678]/35 via-[#d4af37]/30 to-[#f3d678]/35 border-2 border-[#fff1b8] text-center text-xs sm:text-sm font-black tracking-wide text-[#fff1b8] shadow-[0_0_20px_rgba(243,214,120,0.45)]'
         : 'w-full max-w-[380px] px-3 py-1 rounded-xl bg-[#161820] border border-[#d4af37]/40 text-center text-xs font-bold tracking-wide text-zinc-300';
@@ -956,7 +972,7 @@
       }
       ranked.searchSeconds = 0;
       const clockEl = document.getElementById('ranked-search-clock');
-      if (clockEl) clockEl.textContent = '00:00';
+      if (clockEl) el.textContent = '00:00';
     }
 
     async function refreshRankedOnlineCount() {
@@ -1017,17 +1033,17 @@
       if (ranked.lastAnnouncedTurnKey === key) return;
       ranked.lastAnnouncedTurnKey = key;
 
-      const turnPlayerName = getPlayerDisplayName(turnSide);
+      const turnPlayerLabel = formatTurnPlayerWithColor(turnSide);
       const mySide = myOnlineSide();
       const isMyTurn = turnSide === mySide;
-      const myColorLabel = mySide === 'white' ? 'Brancas (♔)' : 'Pretas (♚)';
+      const myColorLabel = getSideColorLabel(mySide);
 
       document.getElementById('ranked-turn-icon').textContent = turnSide === 'white' ? '♔' : '♚';
-      document.getElementById('ranked-turn-side-badge').textContent = `Você é das ${myColorLabel}`;
-      document.getElementById('ranked-turn-heading').textContent = `Vez do jogador ${turnPlayerName}`;
+      document.getElementById('ranked-turn-side-badge').textContent = `Você joga de ${myColorLabel}`;
+      document.getElementById('ranked-turn-heading').textContent = `Vez do jogador ${turnPlayerLabel}`;
       document.getElementById('ranked-turn-desc').textContent = isMyTurn
         ? `É a sua vez de jogar (Rodada ${roundNum || 1}). Você está com as ${myColorLabel}.`
-        : `Aguardando a vez do jogador ${turnPlayerName} (Rodada ${roundNum || 1}). Você é das ${myColorLabel}.`;
+        : `Aguardando a vez do jogador ${turnPlayerLabel} (Rodada ${roundNum || 1}). Você é das ${myColorLabel}.`;
 
       openModal('ranked-turn-modal');
     }
@@ -1725,8 +1741,8 @@
         state.actions = 2;
         const wCard = maybeDrawEveryTwoOwnTurns('white');
         const wDrawMsg = wCard !== null ? ` · Brancas receberam +1 carta [${RANK_TEXT[wCard]}]` : '';
-        const whitePlayerName = getPlayerDisplayName('white');
-        setStatus(`Rodada ${state.round} · Vez do jogador ${whitePlayerName} · ♣2${wDrawMsg}`);
+        const whiteTurnLabel = formatTurnPlayerWithColor('white');
+        setStatus(`Rodada ${state.round} · Vez do jogador ${whiteTurnLabel} · ♣2${wDrawMsg}`);
         renderAll();
         syncOnlineState();
         showRankedTurnIndicator('white', state.round);
@@ -1809,6 +1825,14 @@
       return Boolean(document.querySelector('.xeker-modal.open'));
     }
 
+    function armGhostClickGuard(ms = 240) {
+      ghostClickGuardUntil = Date.now() + ms;
+    }
+
+    function isGhostClickBlocked() {
+      return Date.now() < ghostClickGuardUntil;
+    }
+
     function openModal(id) {
       const el = document.getElementById(id);
       if (el) el.classList.add('open');
@@ -1817,10 +1841,12 @@
     function closeModal(id) {
       const el = document.getElementById(id);
       if (el) el.classList.remove('open');
+      armGhostClickGuard(240);
     }
 
     function closeAllModals() {
       document.querySelectorAll('.xeker-modal').forEach((el) => el.classList.remove('open'));
+      armGhostClickGuard(240);
     }
 
     function openCombatPrivacyPass(sideColor, descriptionText, onRevealCallback) {
@@ -2346,6 +2372,7 @@
 
     function showPostCombatSummary(summary, onDoneOverride = null) {
       combatCardLocked = false;
+      armGhostClickGuard(240);
       document.getElementById('combat-heading').textContent = '📋 Resumo do Combate';
       document.getElementById('combat-atk-sub').innerHTML = `
         <div>Carta usada: <strong>${summary.atkCard !== null && summary.atkCard !== undefined ? RANK_TEXT[summary.atkCard] : 'Oculta'}</strong> · Peça: <strong>${summary.atkRep}</strong></div>
@@ -2382,7 +2409,9 @@
       const rawDoneBtn = document.getElementById('btn-combat-done');
       const doneBtn = rawDoneBtn.cloneNode(true);
       rawDoneBtn.parentNode.replaceChild(doneBtn, rawDoneBtn);
-      doneBtn.addEventListener('click', () => {
+      doneBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        if (isGhostClickBlocked()) return;
         if (typeof onDoneOverride === 'function') {
           onDoneOverride();
           return;
@@ -2404,6 +2433,7 @@
     function settleCombat(atkCard, defCard) {
       if (!duelContext) return;
       combatCardLocked = false;
+      armGhostClickGuard(240);
       const atkPiece = state.board[duelContext.atkR][duelContext.atkC];
       const defPiece = state.board[duelContext.defR][duelContext.defC];
       if (!atkPiece || !defPiece) {
@@ -2603,6 +2633,7 @@
 
     function renderAttackerCardSelection(atkR, atkC, defR, defC, atkPiece, defPiece, atkPlayer, defPlayer, onSelectOverride = null) {
       combatCardLocked = false;
+      armGhostClickGuard(220);
       const body = document.getElementById('combat-body');
       body.innerHTML = `<div class="text-xs font-bold text-[#f3d678] text-center">Atacante (${atkPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'}): escolha 1 carta da mão</div>`;
 
@@ -2614,9 +2645,11 @@
         btn.type = 'button';
         btn.className = 'xeker-card w-11 h-14 rounded-lg text-sm';
         btn.textContent = RANK_TEXT[cVal];
-        btn.addEventListener('click', () => {
-          if (combatCardLocked) return;
+        btn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          if (isGhostClickBlocked() || combatCardLocked) return;
           combatCardLocked = true;
+          armGhostClickGuard(220);
           atkCardsRow.querySelectorAll('button').forEach((b) => { b.disabled = true; });
           if (typeof onSelectOverride === 'function') {
             onSelectOverride(idx);
@@ -2662,6 +2695,7 @@
 
     function renderDefenderCardSelection(chosenAtk, defPiece, defPlayer, onSelectOverride = null) {
       combatCardLocked = false;
+      armGhostClickGuard(220);
       const body = document.getElementById('combat-body');
       body.innerHTML = `<div class="text-xs font-bold text-red-300 text-center">Defensor (${defPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'}): escolha 1 carta para defender</div>`;
       const defCardsRow = document.createElement('div');
@@ -2671,9 +2705,11 @@
         dBtn.type = 'button';
         dBtn.className = 'xeker-card w-11 h-14 rounded-lg text-sm';
         dBtn.textContent = RANK_TEXT[dVal];
-        dBtn.addEventListener('click', () => {
-          if (combatCardLocked) return;
+        dBtn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          if (isGhostClickBlocked() || combatCardLocked) return;
           combatCardLocked = true;
+          armGhostClickGuard(220);
           defCardsRow.querySelectorAll('button').forEach((b) => { b.disabled = true; });
           if (typeof onSelectOverride === 'function') {
             onSelectOverride(dIdx);
@@ -2694,6 +2730,7 @@
       if (!atkPiece || !defPiece) return;
 
       combatCardLocked = false;
+      armGhostClickGuard(220);
       const atkPlayer = state.players[atkPiece.color];
       const defPlayer = state.players[defPiece.color];
 
@@ -2950,6 +2987,7 @@
     }
 
     function onActiveSkillClick() {
+      if (isGhostClickBlocked()) return;
       if (!state || state.gameOver || !state.selected) return;
       const { r, c } = state.selected;
       const piece = state.board[r][c];
@@ -3019,6 +3057,7 @@
     }
 
     function onTileTap(r, c) {
+      if (isGhostClickBlocked()) return;
       if (!state || state.gameOver) return;
       if (isRankedMode() && state.turn !== myOnlineSide()) return;
 
@@ -3130,6 +3169,7 @@
     }
 
     function onSelectActionMode(mode) {
+      if (isGhostClickBlocked()) return;
       if (!state || state.gameOver || !state.selected) return;
       state.skillPhase = null;
       state.copiedSkill = null;
@@ -3144,6 +3184,7 @@
     }
 
     function onBuyCard() {
+      if (isGhostClickBlocked()) return;
       if (!state || state.gameOver) return;
       if (isRankedMode() && state.turn !== myOnlineSide()) return;
 
@@ -3178,6 +3219,7 @@
     }
 
     function onEndTurn() {
+      if (isGhostClickBlocked()) return;
       if (!state || state.gameOver) return;
       if (isRankedMode() && state.turn !== myOnlineSide()) {
         setStatus(`⚠️ Aguarde sua vez (${myOnlineSide() === 'black' ? 'Pretas ♚' : 'Brancas ♔'}).`);
@@ -3189,7 +3231,7 @@
         state.actionMode = null;
         state.skillPhase = null;
         state.copiedSkill = null;
-        setStatus(`Passando a vez para o jogador ${getPlayerDisplayName('white')}...`);
+        setStatus(`Passando a vez para o jogador ${formatTurnPlayerWithColor('white')}...`);
         renderAll();
         sendNet({ type: 'online_action', action: { kind: 'end_turn' } });
         return;
@@ -3212,17 +3254,17 @@
         state.actions = 2;
         const bCard = maybeDrawEveryTwoOwnTurns('black');
         const bDrawMsg = bCard !== null ? ` · Pretas receberam +1 carta [${RANK_TEXT[bCard]}]` : '';
-        const blackPlayerName = getPlayerDisplayName('black');
+        const blackTurnLabel = formatTurnPlayerWithColor('black');
 
         if (isRankedMode()) {
-          setStatus(`Vez do jogador ${blackPlayerName} · ♣2${bDrawMsg}`);
+          setStatus(`Vez do jogador ${blackTurnLabel} · ♣2${bDrawMsg}`);
           renderAll();
           if (net.role === 'host') syncOnlineState();
           showRankedTurnIndicator('black', state.round);
         } else {
-          document.getElementById('pass-heading').textContent = `Passe o aparelho para ${blackPlayerName}`;
-          document.getElementById('pass-desc').textContent = `Passe o aparelho para o jogador ${blackPlayerName} antes de revelar a mão.`;
-          setStatus(`Vez do jogador ${blackPlayerName} · ♣2${bDrawMsg}`);
+          document.getElementById('pass-heading').textContent = `Passe o aparelho para ${blackTurnLabel}`;
+          document.getElementById('pass-desc').textContent = `Passe o aparelho para o jogador ${blackTurnLabel} antes de revelar a mão.`;
+          setStatus(`Vez do jogador ${blackTurnLabel} · ♣2${bDrawMsg}`);
           renderAll();
           openModal('pass-modal');
         }
@@ -3232,17 +3274,17 @@
         state.actions = 2;
         const wCard = maybeDrawEveryTwoOwnTurns('white');
         const wDrawMsg = wCard !== null ? ` · Brancas receberam +1 carta [${RANK_TEXT[wCard]}]` : '';
-        const whitePlayerName = getPlayerDisplayName('white');
+        const whiteTurnLabel = formatTurnPlayerWithColor('white');
 
         if (isRankedMode()) {
-          setStatus(`Rodada ${state.round} · Vez do jogador ${whitePlayerName} · ♣2${wDrawMsg}`);
+          setStatus(`Rodada ${state.round} · Vez do jogador ${whiteTurnLabel} · ♣2${wDrawMsg}`);
           renderAll();
           if (net.role === 'host') syncOnlineState();
           showRankedTurnIndicator('white', state.round);
         } else {
-          document.getElementById('pass-heading').textContent = `Passe o aparelho para ${whitePlayerName}`;
-          document.getElementById('pass-desc').textContent = `Passe o aparelho para o jogador ${whitePlayerName} antes de revelar a mão.`;
-          setStatus(`Rodada ${state.round} · Vez do jogador ${whitePlayerName} · ♣2${wDrawMsg}`);
+          document.getElementById('pass-heading').textContent = `Passe o aparelho para ${whiteTurnLabel}`;
+          document.getElementById('pass-desc').textContent = `Passe o aparelho para o jogador ${whiteTurnLabel} antes de revelar a mão.`;
+          setStatus(`Rodada ${state.round} · Vez do jogador ${whiteTurnLabel} · ♣2${wDrawMsg}`);
           renderAll();
           openModal('pass-modal');
         }
@@ -3395,8 +3437,8 @@
           menuBox.innerHTML = `
             <span class="text-xs font-bold text-[#f3d678] truncate pr-1">${info.name} <span class="text-[10px] font-normal text-emerald-300/90">(Mover padrão)</span></span>
             <div class="flex items-center gap-1">
-              <button type="button" id="act-attack" class="px-2 py-1 rounded-lg text-[11px] font-bold border ${state.actionMode === 'attack' ? 'bg-red-500/25 border-red-400 text-red-200' : 'bg-[#111217] border-white/15 text-zinc-200'} disabled:opacity-35" ${canAttack ? '' : 'disabled'}>
-                Atacar
+              <button type="button" id="act-attack" class="px-3 py-1.5 rounded-lg text-xs font-bold border ${state.actionMode === 'attack' ? 'bg-red-500/25 border-red-400 text-red-200' : 'bg-[#111217] border-white/15 text-zinc-200'} disabled:opacity-35" ${canAttack ? '' : 'disabled'}>
+                <span class="sym-heart">♥</span> Atacar
               </button>
               <button type="button" id="act-skill" class="px-2 py-1 rounded-lg text-[11px] font-bold border ${state.skillPhase ? 'bg-blue-500/25 border-blue-400 text-blue-200' : 'bg-blue-500/10 border-blue-400/40 text-blue-200'} disabled:opacity-35" ${canSkill ? '' : 'disabled'}>
                 <span class="sym-spade">♠</span> Ativa
@@ -3549,7 +3591,8 @@
       document.getElementById('btn-find-ranked').addEventListener('click', enterRankedQueue);
       document.getElementById('btn-cancel-ranked').addEventListener('click', leaveRankedQueue);
 
-      document.getElementById('btn-ranked-turn-ok').addEventListener('click', () => {
+      document.getElementById('btn-ranked-turn-ok').addEventListener('click', (ev) => {
+        ev.stopPropagation();
         closeModal('ranked-turn-modal');
       });
 
@@ -3590,11 +3633,13 @@
       document.getElementById('btn-surrender-cancel').addEventListener('click', () => closeModal('surrender-modal'));
       document.getElementById('btn-surrender-confirm').addEventListener('click', confirmSurrender);
       document.getElementById('btn-end-turn').addEventListener('click', onEndTurn);
-      document.getElementById('btn-pass-ok').addEventListener('click', () => {
+      document.getElementById('btn-pass-ok').addEventListener('click', (ev) => {
+        ev.stopPropagation();
         closeModal('pass-modal');
         renderAll();
       });
-      document.getElementById('btn-combat-pass-ok').addEventListener('click', () => {
+      document.getElementById('btn-combat-pass-ok').addEventListener('click', (ev) => {
+        ev.stopPropagation();
         closeModal('combat-pass-modal');
         const fn = pendingCombatPassAction;
         pendingCombatPassAction = null;
