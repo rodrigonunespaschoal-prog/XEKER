@@ -6,6 +6,9 @@
   <title>XEKER — Xadrez &amp; Pôquer Tático</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -274,6 +277,9 @@
     #online-modal {
       z-index: 70;
     }
+    #ranked-modal {
+      z-index: 75;
+    }
   </style>
 </head>
 <body>
@@ -401,12 +407,15 @@
 
       <!-- Seletor de Modo & Botões Principais -->
       <div class="w-full space-y-2 my-1.5 shrink-0">
-        <div class="grid grid-cols-2 gap-2">
-          <button type="button" id="btn-select-pvp" class="py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95">
+        <div class="grid grid-cols-3 gap-1.5">
+          <button type="button" id="btn-select-pvp" class="py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95">
             👥 Local
           </button>
-          <button type="button" id="btn-select-online" class="py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95">
+          <button type="button" id="btn-select-online" class="py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95">
             🌐 On-line
+          </button>
+          <button type="button" id="btn-select-ranked" class="py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95">
+            🏆 Ranked
           </button>
         </div>
 
@@ -447,6 +456,57 @@
         <div class="text-[10px] tracking-[0.16em] text-[#d4af37]/85 font-medium mt-1">
           Criado por Rodrigo Nunes Paschoal 
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL RANKEADA (LOGIN GOOGLE + ELO MATCHMAKING) -->
+  <div id="ranked-modal" class="xeker-modal">
+    <div class="w-full max-w-[385px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl space-y-3 text-xs">
+      <div class="flex items-center justify-between pb-2 border-b border-white/10">
+        <h2 class="font-display font-bold text-sm text-[#f3d678]">🏆 Modo Rankeado (Elo)</h2>
+        <button type="button" id="btn-close-ranked" class="px-2.5 py-1 rounded-lg bg-[#161820] border border-white/15 font-bold text-zinc-200 active:scale-95">✕</button>
+      </div>
+
+      <div id="ranked-auth-logged-out" class="p-3 rounded-xl bg-[#161820] border border-[#d4af37]/25 space-y-2 text-center">
+        <div class="font-bold text-zinc-200">Entre com sua conta Google para jogar Ranked e salvar seu Elo.</div>
+        <button type="button" id="btn-google-signin" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold active:scale-95">
+          Entrar com Google
+        </button>
+      </div>
+
+      <div id="ranked-auth-logged-in" class="hidden p-3 rounded-xl bg-[#161820] border border-[#d4af37]/35 space-y-2.5">
+        <div class="flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <div id="ranked-user-name" class="font-extrabold text-[#fff1b8] truncate">Jogador</div>
+            <div class="text-[11px] text-amber-200">
+              Elo: <strong id="ranked-user-elo">1200</strong> · <span id="ranked-user-record">0V - 0D</span>
+            </div>
+          </div>
+          <button type="button" id="btn-google-signout" class="px-2.5 py-1 rounded-lg bg-black/50 border border-white/15 text-[11px] text-zinc-300 font-bold active:scale-95 shrink-0">
+            Sair
+          </button>
+        </div>
+
+        <button type="button" id="btn-ranked-queue" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#fff1b8] via-[#d4af37] to-[#9c7218] text-[#140e02] font-extrabold active:scale-95">
+          Buscar Partida Rankeada
+        </button>
+      </div>
+
+      <div id="ranked-setup-box" class="p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/30 space-y-2">
+        <div class="font-bold text-[#f3d678] text-[11px]">Configuração do Firebase (xeker-e5bc8)</div>
+        <input id="input-fb-apikey" type="text" placeholder="apiKey (ex.: AIzaSy...)" class="w-full px-2 py-1.5 rounded-lg bg-black/60 border border-white/15 text-white text-[11px] focus:outline-none focus:border-[#d4af37]" />
+        <div class="grid grid-cols-2 gap-1.5">
+          <input id="input-fb-senderid" type="text" placeholder="messagingSenderId" class="w-full px-2 py-1.5 rounded-lg bg-black/60 border border-white/15 text-white text-[11px] focus:outline-none focus:border-[#d4af37]" />
+          <input id="input-fb-appid" type="text" placeholder="appId (ex.: 1:...:web:...)" class="w-full px-2 py-1.5 rounded-lg bg-black/60 border border-white/15 text-white text-[11px] focus:outline-none focus:border-[#d4af37]" />
+        </div>
+        <button type="button" id="btn-save-fb-config" class="w-full py-2 rounded-xl bg-[#d4af37]/25 border border-[#f3d678] text-[#fff1b8] font-bold active:scale-95">
+          Salvar Conexão Firebase
+        </button>
+      </div>
+
+      <div id="ranked-status-text" class="px-2.5 py-2 rounded-xl bg-black/50 border border-white/10 text-[11px] text-amber-200 min-h-[38px] flex items-center">
+        Pronto para conectar ao projeto xeker-e5bc8.
       </div>
     </div>
   </div>
@@ -838,11 +898,578 @@
         lastSummary: null
       };
 
+      /* =====================================================================
+         MODO RANKEADO (FIREBASE AUTH GOOGLE + FIRESTORE + SISTEMA ELO)
+         Substitua os valores de FIREBASE_CONFIG pelo seu app Web no Firebase
+         (projeto: xeker-e5bc8).
+         ===================================================================== */
+      const FIREBASE_CONFIG = {
+        apiKey: "AIzaSyCxDrumqQH06FWXCMVICBIMSaJlkgh-OwM",
+        authDomain: "xeker-e5bc8.firebaseapp.com",
+        projectId: "xeker-e5bc8",
+        storageBucket: "xeker-e5bc8.firebasestorage.app",
+        messagingSenderId: "1046784254725",
+        appId: "1:1046784254725:web:0cbbd1a69be38b76c74d6c",
+        measurementId: "G-6WSW0WSY3F"
+      };
+
+      const ranked = {
+        app: null,
+        auth: null,
+        db: null,
+        ready: false,
+        user: null,
+        profile: { elo: 1200, wins: 0, losses: 0, draws: 0, gamesPlayed: 0 },
+        searching: false,
+        searchStartedAt: 0,
+        queueUnsub: null,
+        matchUnsub: null,
+        matchId: null,
+        matchDoc: null,
+        role: null,
+        side: null,
+        eloSettled: false
+      };
+
+      function isRankedMode() {
+        return Boolean(state && state.mode === 'ranked');
+      }
+
+      function setRankedStatus(msg) {
+        const el = document.getElementById('ranked-status-text');
+        if (el) el.textContent = msg;
+      }
+
+      function hasValidFirebaseConfig() {
+        return Boolean(
+          FIREBASE_CONFIG &&
+          FIREBASE_CONFIG.apiKey &&
+          !FIREBASE_CONFIG.apiKey.startsWith('COLE_') &&
+          FIREBASE_CONFIG.projectId
+        );
+      }
+
+      function loadSavedFirebaseConfig() {
+        try {
+          const raw = localStorage.getItem('xeker_fb_config_v1');
+          if (!raw) return;
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.apiKey) FIREBASE_CONFIG.apiKey = parsed.apiKey;
+          if (parsed && parsed.messagingSenderId) FIREBASE_CONFIG.messagingSenderId = parsed.messagingSenderId;
+          if (parsed && parsed.appId) FIREBASE_CONFIG.appId = parsed.appId;
+        } catch (_) {}
+      }
+
+      function saveFirebaseConfigFromModal() {
+        const apiKey = (document.getElementById('input-fb-apikey').value || '').trim();
+        const messagingSenderId = (document.getElementById('input-fb-senderid').value || '').trim();
+        const appId = (document.getElementById('input-fb-appid').value || '').trim();
+        if (!apiKey || !messagingSenderId || !appId) {
+          setRankedStatus('Preencha apiKey, messagingSenderId e appId para conectar.');
+          return;
+        }
+        FIREBASE_CONFIG.apiKey = apiKey;
+        FIREBASE_CONFIG.messagingSenderId = messagingSenderId;
+        FIREBASE_CONFIG.appId = appId;
+        try {
+          localStorage.setItem('xeker_fb_config_v1', JSON.stringify({
+            apiKey,
+            messagingSenderId,
+            appId
+          }));
+        } catch (_) {}
+        initFirebaseRanked();
+      }
+
+      function initFirebaseRanked() {
+        try {
+          loadSavedFirebaseConfig();
+          const setupBox = document.getElementById('ranked-setup-box');
+          if (typeof firebase === 'undefined') {
+            setRankedStatus('SDK do Firebase não carregou.');
+            return;
+          }
+          if (!hasValidFirebaseConfig()) {
+            if (setupBox) setupBox.classList.remove('hidden');
+            setRankedStatus('Cole sua apiKey, messagingSenderId e appId do Firebase acima e toque em Salvar.');
+            return;
+          }
+          if (setupBox) setupBox.classList.add('hidden');
+          if (!firebase.apps.length) {
+            ranked.app = firebase.initializeApp(FIREBASE_CONFIG);
+          } else {
+            ranked.app = firebase.app();
+          }
+          ranked.auth = firebase.auth();
+          ranked.db = firebase.firestore();
+          ranked.ready = true;
+
+          ranked.auth.onAuthStateChanged(async (user) => {
+            try {
+              ranked.user = user || null;
+              if (!user) {
+                stopRankedListeners();
+                document.getElementById('ranked-auth-logged-out').classList.remove('hidden');
+                document.getElementById('ranked-auth-logged-in').classList.add('hidden');
+                setRankedStatus('Faça login com sua conta Google para buscar partida rankeada.');
+                return;
+              }
+              await ensureRankedUserProfile(user);
+              document.getElementById('ranked-auth-logged-out').classList.add('hidden');
+              document.getElementById('ranked-auth-logged-in').classList.remove('hidden');
+              refreshRankedProfileUI();
+              setRankedStatus(`Conectado como ${user.displayName || 'Jogador'} · Elo ${ranked.profile.elo}.`);
+            } catch (err) {
+              reportError(err);
+            }
+          });
+        } catch (err) {
+          reportError(err);
+        }
+      }
+
+      async function ensureRankedUserProfile(user) {
+        if (!ranked.db || !user) return;
+        const ref = ranked.db.collection('users').doc(user.uid);
+        const snap = await ref.get();
+        if (!snap.exists) {
+          const initialProfile = {
+            uid: user.uid,
+            displayName: user.displayName || 'Jogador XEKER',
+            photoURL: user.photoURL || '',
+            elo: 1200,
+            wins: 0,
+            losses: 0,
+            draws: 0,
+            gamesPlayed: 0,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          };
+          await ref.set(initialProfile);
+          ranked.profile = initialProfile;
+        } else {
+          const data = snap.data() || {};
+          ranked.profile = {
+            uid: user.uid,
+            displayName: user.displayName || data.displayName || 'Jogador XEKER',
+            photoURL: user.photoURL || data.photoURL || '',
+            elo: typeof data.elo === 'number' ? data.elo : 1200,
+            wins: typeof data.wins === 'number' ? data.wins : 0,
+            losses: typeof data.losses === 'number' ? data.losses : 0,
+            draws: typeof data.draws === 'number' ? data.draws : 0,
+            gamesPlayed: typeof data.gamesPlayed === 'number' ? data.gamesPlayed : 0
+          };
+          await ref.set({
+            displayName: ranked.profile.displayName,
+            photoURL: ranked.profile.photoURL,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+        }
+      }
+
+      function refreshRankedProfileUI() {
+        const nameEl = document.getElementById('ranked-user-name');
+        const eloEl = document.getElementById('ranked-user-elo');
+        const recEl = document.getElementById('ranked-user-record');
+        if (nameEl) nameEl.textContent = ranked.profile.displayName || 'Jogador';
+        if (eloEl) eloEl.textContent = String(ranked.profile.elo);
+        if (recEl) recEl.textContent = `${ranked.profile.wins}V - ${ranked.profile.losses}D`;
+      }
+
+      async function signInWithGoogleRanked() {
+        try {
+          if (!ranked.ready || !ranked.auth) {
+            setRankedStatus('Firebase ainda não configurado no código.');
+            return;
+          }
+          setRankedStatus('Abrindo login do Google...');
+          const provider = new firebase.auth.GoogleAuthProvider();
+          try {
+            await ranked.auth.signInWithPopup(provider);
+          } catch (popupErr) {
+            await ranked.auth.signInWithRedirect(provider);
+          }
+        } catch (err) {
+          setRankedStatus('Falha no login Google: ' + (err && err.message ? err.message : err));
+        }
+      }
+
+      async function signOutGoogleRanked() {
+        try {
+          await leaveRankedQueue(true);
+          stopRankedListeners();
+          if (ranked.auth) {
+            await ranked.auth.signOut();
+          }
+        } catch (err) {
+          reportError(err);
+        }
+      }
+
+      function stopRankedListeners() {
+        if (ranked.queueUnsub) {
+          try { ranked.queueUnsub(); } catch (_) {}
+          ranked.queueUnsub = null;
+        }
+        if (ranked.matchUnsub) {
+          try { ranked.matchUnsub(); } catch (_) {}
+          ranked.matchUnsub = null;
+        }
+      }
+
+      async function leaveRankedQueue(silent = false) {
+        ranked.searching = false;
+        if (ranked.queueUnsub) {
+          try { ranked.queueUnsub(); } catch (_) {}
+          ranked.queueUnsub = null;
+        }
+        const btn = document.getElementById('btn-ranked-queue');
+        if (btn) btn.textContent = 'Buscar Partida Rankeada';
+
+        if (ranked.db && ranked.user) {
+          try {
+            await ranked.db.collection('matchmaking_queue').doc(ranked.user.uid).delete();
+          } catch (_) {}
+        }
+        if (!silent) {
+          setRankedStatus('Busca cancelada.');
+        }
+      }
+
+      function getEloRangeByWaitSeconds(sec) {
+        if (sec < 10) return 120;
+        if (sec < 20) return 250;
+        if (sec < 35) return 500;
+        return 9999;
+      }
+
+      function calculateEloDelta(myElo, oppElo, score, kFactor = 32) {
+        const expected = 1 / (1 + Math.pow(10, (oppElo - myElo) / 400));
+        return Math.round(kFactor * (score - expected));
+      }
+
+      async function toggleRankedQueue() {
+        try {
+          if (!ranked.ready || !ranked.db || !ranked.user) {
+            setRankedStatus('Faça login com Google primeiro.');
+            return;
+          }
+          if (ranked.searching) {
+            await leaveRankedQueue(false);
+            return;
+          }
+
+          ranked.searching = true;
+          ranked.searchStartedAt = Date.now();
+          ranked.eloSettled = false;
+          const btn = document.getElementById('btn-ranked-queue');
+          if (btn) btn.textContent = 'Cancelar Busca...';
+          setRankedStatus(`Procurando oponente próximo ao Elo ${ranked.profile.elo}...`);
+
+          const myTicketRef = ranked.db.collection('matchmaking_queue').doc(ranked.user.uid);
+          await myTicketRef.set({
+            uid: ranked.user.uid,
+            displayName: ranked.profile.displayName || 'Jogador',
+            elo: ranked.profile.elo,
+            status: 'searching',
+            matchId: null,
+            role: null,
+            side: null,
+            joinedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+
+          ranked.queueUnsub = myTicketRef.onSnapshot(async (docSnap) => {
+            if (!docSnap.exists) return;
+            const data = docSnap.data() || {};
+            if (data.status === 'matched' && data.matchId) {
+              ranked.searching = false;
+              if (ranked.queueUnsub) {
+                try { ranked.queueUnsub(); } catch (_) {}
+                ranked.queueUnsub = null;
+              }
+              if (btn) btn.textContent = 'Buscar Partida Rankeada';
+              await myTicketRef.delete().catch(() => {});
+              attachToRankedMatch(data.matchId, data.role || 'guest', data.side || 'black');
+            }
+          });
+
+          const qSnap = await ranked.db
+            .collection('matchmaking_queue')
+            .where('status', '==', 'searching')
+            .get();
+
+          const waitedSec = Math.floor((Date.now() - ranked.searchStartedAt) / 1000);
+          const maxDiff = getEloRangeByWaitSeconds(waitedSec);
+
+          let bestCandidate = null;
+          let bestDiff = Infinity;
+
+          qSnap.forEach((d) => {
+            if (d.id === ranked.user.uid) return;
+            const cand = d.data() || {};
+            const candElo = typeof cand.elo === 'number' ? cand.elo : 1200;
+            const diff = Math.abs(candElo - ranked.profile.elo);
+            if (diff <= maxDiff && diff < bestDiff) {
+              bestDiff = diff;
+              bestCandidate = { ref: d.ref, ...cand, elo: candElo };
+            }
+          });
+
+          if (bestCandidate && ranked.searching) {
+            const matchId = 'rk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+            const hostIsWhite = Math.random() < 0.5;
+            const whiteUid = hostIsWhite ? ranked.user.uid : bestCandidate.uid;
+            const blackUid = hostIsWhite ? bestCandidate.uid : ranked.user.uid;
+            const whiteElo = hostIsWhite ? ranked.profile.elo : bestCandidate.elo;
+            const blackElo = hostIsWhite ? bestCandidate.elo : ranked.profile.elo;
+
+            const matchRef = ranked.db.collection('matches').doc(matchId);
+            await matchRef.set({
+              matchId,
+              mode: 'ranked',
+              whiteUid,
+              blackUid,
+              whiteName: hostIsWhite ? ranked.profile.displayName : bestCandidate.displayName,
+              blackName: hostIsWhite ? bestCandidate.displayName : ranked.profile.displayName,
+              whiteEloBefore: whiteElo,
+              blackEloBefore: blackElo,
+              status: 'active',
+              winnerSide: null,
+              reason: null,
+              eloApplied: false,
+              view: null,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            await bestCandidate.ref.set({
+              status: 'matched',
+              matchId,
+              role: 'guest',
+              side: hostIsWhite ? 'black' : 'white'
+            }, { merge: true });
+
+            await myTicketRef.set({
+              status: 'matched',
+              matchId,
+              role: 'host',
+              side: hostIsWhite ? 'white' : 'black'
+            }, { merge: true });
+          }
+        } catch (err) {
+          ranked.searching = false;
+          const btn = document.getElementById('btn-ranked-queue');
+          if (btn) btn.textContent = 'Buscar Partida Rankeada';
+          setRankedStatus('Erro na fila: ' + (err && err.message ? err.message : err));
+        }
+      }
+
+      function buildRankedViewForGuest() {
+        if (!state) return null;
+        return {
+          turn: state.turn,
+          round: state.round,
+          ownTurns: state.ownTurns,
+          actions: state.actions,
+          clocks: state.clocks,
+          board: state.board,
+          flop: state.flop,
+          status: document.getElementById('status-bar') ? document.getElementById('status-bar').textContent : '',
+          players: {
+            white: {
+              gold: state.players.white.gold,
+              handCount: state.players.white.hand.length
+            },
+            black: {
+              gold: state.players.black.gold,
+              hand: state.players.black.hand.slice()
+            }
+          },
+          gameOver: Boolean(state.gameOver),
+          gameOverData: state.gameOverData || null
+        };
+      }
+
+      async function syncRankedState() {
+        if (!isRankedMode() || ranked.role !== 'host' || !ranked.matchId || !ranked.db || !state) return;
+        try {
+          await ranked.db.collection('matches').doc(ranked.matchId).set({
+            view: buildRankedViewForGuest(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+        } catch (_) {}
+      }
+
+      function applyRankedGuestView(view, matchData) {
+        if (!view) return;
+        closeModal('ranked-modal');
+        closeModal('menu-modal');
+
+        state = {
+          mode: 'ranked',
+          turn: view.turn,
+          round: view.round,
+          ownTurns: view.ownTurns,
+          actions: view.actions,
+          clocks: view.clocks,
+          board: view.board,
+          deck: [],
+          discard: [],
+          flop: view.flop || [],
+          players: {
+            white: {
+              gold: view.players.white.gold,
+              hand: new Array(view.players.white.handCount || 0).fill(0)
+            },
+            black: {
+              gold: view.players.black.gold,
+              hand: view.players.black.hand || []
+            }
+          },
+          selected: null,
+          actionMode: null,
+          skillPhase: null,
+          copiedSkill: null,
+          gameOver: Boolean(view.gameOver),
+          gameOverData: view.gameOverData || null
+        };
+
+        if (view.status) setStatus(view.status);
+        renderAll();
+
+        if (matchData && matchData.status === 'finished' && matchData.winnerSide) {
+          const winLabel = matchData.winnerSide === 'white' ? '♔ Brancas' : '♚ Pretas';
+          document.getElementById('gameover-title').textContent = `Vitória das ${winLabel}`;
+          document.getElementById('gameover-desc').textContent = matchData.reason || 'Partida rankeada encerrada.';
+          openModal('gameover-modal');
+          settleRankedEloOnce(matchData);
+        }
+      }
+
+      async function settleRankedEloOnce(matchData) {
+        if (!ranked.db || !ranked.user || ranked.eloSettled || !matchData || !matchData.winnerSide) return;
+        ranked.eloSettled = true;
+        try {
+          const myUid = ranked.user.uid;
+          const amWhite = myUid === matchData.whiteUid;
+          const amBlack = myUid === matchData.blackUid;
+          if (!amWhite && !amBlack) return;
+
+          const mySide = amWhite ? 'white' : 'black';
+          const myElo = amWhite ? (matchData.whiteEloBefore || 1200) : (matchData.blackEloBefore || 1200);
+          const oppElo = amWhite ? (matchData.blackEloBefore || 1200) : (matchData.whiteEloBefore || 1200);
+
+          const score = matchData.winnerSide === 'draw' ? 0.5 : (matchData.winnerSide === mySide ? 1 : 0);
+          const delta = calculateEloDelta(myElo, oppElo, score, 32);
+          const newElo = Math.max(100, myElo + delta);
+
+          const userRef = ranked.db.collection('users').doc(myUid);
+          await userRef.set({
+            elo: newElo,
+            wins: ranked.profile.wins + (score === 1 ? 1 : 0),
+            losses: ranked.profile.losses + (score === 0 ? 1 : 0),
+            draws: ranked.profile.draws + (score === 0.5 ? 1 : 0),
+            gamesPlayed: ranked.profile.gamesPlayed + 1,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+
+          ranked.profile.elo = newElo;
+          if (score === 1) ranked.profile.wins += 1;
+          else if (score === 0) ranked.profile.losses += 1;
+          else ranked.profile.draws += 1;
+          ranked.profile.gamesPlayed += 1;
+          refreshRankedProfileUI();
+
+          const sign = delta >= 0 ? `+${delta}` : `${delta}`;
+          setStatus(`🏆 Ranked encerrada · Seu Elo: ${newElo} (${sign})`);
+        } catch (err) {
+          reportError(err);
+        }
+      }
+
+      function attachToRankedMatch(matchId, role, side) {
+        ranked.matchId = matchId;
+        ranked.role = role;
+        ranked.side = side;
+        ranked.eloSettled = false;
+
+        closeModal('ranked-modal');
+        closeModal('menu-modal');
+
+        if (role === 'host') {
+          state = {
+            mode: 'ranked',
+            turn: 'white',
+            round: 1,
+            ownTurns: { white: 1, black: 0 },
+            actions: 2,
+            clocks: { white: INITIAL_CLOCK_SECONDS, black: INITIAL_CLOCK_SECONDS },
+            board: buildInitialBoard(),
+            deck: createDeck(),
+            discard: [],
+            flop: [],
+            players: {
+              white: { gold: 2, hand: [] },
+              black: { gold: 2, hand: [] }
+            },
+            selected: null,
+            actionMode: null,
+            skillPhase: null,
+            copiedSkill: null,
+            gameOver: false,
+            gameOverData: null
+          };
+          for (let i = 0; i < 3; i++) {
+            const wc = drawCard();
+            const bc = drawCard();
+            if (wc !== null) state.players.white.hand.push(wc);
+            if (bc !== null) state.players.black.hand.push(bc);
+          }
+          dealFlop();
+          startClock();
+          setStatus(`🏆 Partida Ranked iniciada · Você é ${side === 'white' ? 'Brancas (♔)' : 'Pretas (♚)'} · Elo ${ranked.profile.elo}.`);
+          renderAll();
+          syncRankedState();
+        } else {
+          setStatus(`🏆 Pareado! Aguardando sincronia da partida (${side === 'white' ? 'Brancas ♔' : 'Pretas ♚'})...`);
+        }
+
+        if (ranked.matchUnsub) {
+          try { ranked.matchUnsub(); } catch (_) {}
+        }
+
+        ranked.matchUnsub = ranked.db.collection('matches').doc(matchId).onSnapshot((snap) => {
+          if (!snap.exists) return;
+          const mData = snap.data() || {};
+          ranked.matchDoc = mData;
+
+          if (ranked.role === 'guest' && mData.view) {
+            applyRankedGuestView(mData.view, mData);
+          }
+
+          if (mData.status === 'finished' && mData.winnerSide && !ranked.eloSettled) {
+            if (state && !state.gameOver) {
+              state.gameOver = true;
+              const winLabel = mData.winnerSide === 'white' ? '♔ Brancas' : '♚ Pretas';
+              state.gameOverData = {
+                title: `Vitória das ${winLabel}`,
+                desc: mData.reason || 'Partida rankeada encerrada.',
+                winnerSide: mData.winnerSide,
+                reason: mData.reason || 'Partida rankeada encerrada.'
+              };
+              document.getElementById('gameover-title').textContent = state.gameOverData.title;
+              document.getElementById('gameover-desc').textContent = state.gameOverData.desc;
+              openModal('gameover-modal');
+            }
+            settleRankedEloOnce(mData);
+          }
+        });
+      }
+
       function isOnlineMode() {
         return Boolean(state && state.mode === 'online');
       }
 
       function myOnlineSide() {
+        if (isRankedMode()) return ranked.side || 'white';
         if (!isOnlineMode()) return state ? state.turn : 'white';
         return net.role === 'guest' ? 'black' : 'white';
       }
@@ -1681,6 +2308,19 @@
         if (isOnlineMode() && net.role === 'host') {
           syncOnlineState();
         }
+        if (isRankedMode() && ranked.role === 'host') {
+          syncRankedState();
+        }
+        if (isRankedMode() && ranked.db && ranked.matchId) {
+          ranked.db.collection('matches').doc(ranked.matchId).set({
+            status: 'finished',
+            winnerSide: winnerColor,
+            reason: reason,
+            view: ranked.role === 'host' ? buildRankedViewForGuest() : (ranked.matchDoc ? ranked.matchDoc.view : null)
+          }, { merge: true }).then(() => {
+            if (ranked.matchDoc) settleRankedEloOnce({ ...ranked.matchDoc, winnerSide: winnerColor, reason });
+          }).catch(() => {});
+        }
         openModal('gameover-modal');
       }
 
@@ -1756,6 +2396,9 @@
         renderAll();
         if (isOnlineMode() && net.role === 'host') {
           syncOnlineState();
+        }
+        if (isRankedMode() && ranked.role === 'host') {
+          syncRankedState();
         }
       }
 
@@ -2585,6 +3228,9 @@
         if (isOnlineMode() && net.role === 'host') {
           syncOnlineState();
         }
+        if (isRankedMode() && ranked.role === 'host') {
+          syncRankedState();
+        }
       }
 
       function onEndTurn() {
@@ -2850,12 +3496,14 @@
       function syncModeButtons() {
         const pvpBtn = document.getElementById('btn-select-pvp');
         const onlineBtn = document.getElementById('btn-select-online');
+        const rankedBtn = document.getElementById('btn-select-ranked');
 
-        const activeCls = 'py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95';
-        const idleCls = 'py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95';
+        const activeCls = 'py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95';
+        const idleCls = 'py-2 px-1.5 rounded-xl text-[11px] font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95';
 
         pvpBtn.className = selectedMode === 'pvp' ? activeCls : idleCls;
         onlineBtn.className = selectedMode === 'online' ? activeCls : idleCls;
+        if (rankedBtn) rankedBtn.className = selectedMode === 'ranked' ? activeCls : idleCls;
       }
 
       function openSurrenderModal() {
@@ -2886,6 +3534,20 @@
           syncModeButtons();
           openModal('online-modal');
         });
+        document.getElementById('btn-select-ranked').addEventListener('click', () => {
+          selectedMode = 'ranked';
+          syncModeButtons();
+          initFirebaseRanked();
+          openModal('ranked-modal');
+        });
+        document.getElementById('btn-close-ranked').addEventListener('click', () => {
+          leaveRankedQueue(true);
+          closeModal('ranked-modal');
+        });
+        document.getElementById('btn-save-fb-config').addEventListener('click', saveFirebaseConfigFromModal);
+        document.getElementById('btn-google-signin').addEventListener('click', signInWithGoogleRanked);
+        document.getElementById('btn-google-signout').addEventListener('click', signOutGoogleRanked);
+        document.getElementById('btn-ranked-queue').addEventListener('click', toggleRankedQueue);
 
         document.getElementById('btn-close-online').addEventListener('click', () => closeModal('online-modal'));
         document.getElementById('btn-create-room').addEventListener('click', createOnlineRoom);
