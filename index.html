@@ -591,11 +591,57 @@
       };
 
       const RULEBOOK_PAGES = [
-        { title: '1. Objetivo & Recursos', html: '<p>Abata o Rei adversário (7♥) ou vença no tempo. Comece com ♦2, ♣2 e 3 cartas.</p>' },
-        { title: '2. Habilidades Ativas (♠)', html: '<p>Ativas custam ♦1 e 0♣ e consomem a jogada da peça no turno.</p>' },
-        { title: '3. Passivas', html: '<p>Peão promove a Rainha; Torre sofre 0♥ ao defender; Bispo causa 2♥ na defesa; Rainha cura +1♥ ao abater; Cavalo ignora bloqueios.</p>' },
-        { title: '4. Baralho (39)', html: '<p>3 cópias de A a K. Combate avalia 3 do Flop + 1 da mão + carta da peça.</p>' },
-        { title: '5. Combate e Combos', html: '<p>Ataque vencedor causa 2♥; defesa/empate causa 1♥ em ambos (com exceções de Torre e Bispo).</p>' }
+        {
+          title: '1. Objetivo, Recursos e Turnos',
+          html: `
+            <p><strong>Vitória:</strong> Abata o <strong>Rei</strong> adversário (7♥), vença por <strong>Desistência</strong> ou quando o relógio do oponente (15:00) chegar a zero.</p>
+            <p><strong>Início:</strong> Cada jogador começa com <strong>♦2</strong> (Ouro), <strong>♣2</strong> (Ações no turno) e <strong>3 cartas</strong> na mão (limite de 6 cartas).</p>
+            <p><strong>Turno e Compra:</strong> Ao selecionar uma peça aliada, o modo padrão é <strong>Mover</strong>. Você também pode usar <strong>Atacar</strong> ou <strong>Habilidade 1♦</strong>, comprar 1 carta por <strong>3♦</strong> (0♣) ou encerrar o turno em <strong>Fim Turno</strong>.</p>
+          `
+        },
+        {
+          title: '2. Peças, Alcance e Habilidades Ativas',
+          html: `
+            <p>Ativas custam <strong>♦1</strong> e consomem a ação/jogada da peça no turno:</p>
+            <ul class="list-disc pl-4 space-y-1">
+              <li><strong>♙ Peão (1♥ · Alcance 1 casa nas 8 direções):</strong> Ativa sacrifica a peça causando <strong>1♥</strong> a todos os inimigos no alcance.</li>
+              <li><strong>♖ Torre (3♥ · Até 3 casas ortogonais):</strong> Ativa troca de posição com outra peça no alcance.</li>
+              <li><strong>♗ Bispo (3♥ · Até 3 casas diagonais):</strong> Ativa cura aliados no alcance (e a si mesmo) em <strong>+1♥</strong>.</li>
+              <li><strong>♕ Rainha (5♥ · Até 3 casas nas 8 direções):</strong> Ativa copia e executa a habilidade ativa de outra peça no alcance.</li>
+              <li><strong>♘ Cavalo (3♥ · Salto em L):</strong> Ativa causa <strong>1♥</strong> de dano direto a um inimigo no alcance.</li>
+              <li><strong>♔ Rei (7♥ · Até 2 casas nas 8 direções):</strong> Ativa causa <strong>2♥</strong> de dano direto a um inimigo no alcance.</li>
+            </ul>
+          `
+        },
+        {
+          title: '3. Habilidades Passivas',
+          html: `
+            <p>Efeitos automáticos de cada peça:</p>
+            <ul class="list-disc pl-4 space-y-1">
+              <li><strong>♙ Peão:</strong> Promove-se a <strong>Rainha (♕)</strong> ao alcançar a fileira oposta do tabuleiro.</li>
+              <li><strong>♖ Torre:</strong> Sofre <strong>0♥</strong> de dano ao defender com sucesso.</li>
+              <li><strong>♗ Bispo:</strong> Causa <strong>2♥</strong> mesmo quando o alvo defende.</li>
+              <li><strong>♕ Rainha:</strong> Recupera <strong>+1♥</strong> ao abater uma peça.</li>
+              <li><strong>♘ Cavalo:</strong> Ignora obstáculos no salto em L.</li>
+              <li><strong>♔ Rei:</strong> Não possui passiva.</li>
+            </ul>
+          `
+        },
+        {
+          title: '4. Baralho (39 Cartas) e Flop',
+          html: `
+            <p>O baralho possui <strong>39 cartas</strong>: 3 cópias de cada valor de <strong>A (1)</strong> a <strong>K (13)</strong>, com descarte reciclado automaticamente quando o monte acaba.</p>
+            <p><strong>Flop:</strong> 3 cartas comunitárias abertas no topo do tabuleiro, renovadas a cada combate resolvido.</p>
+            <p><strong>Mão:</strong> Até <strong>6 cartas</strong>. Comprar carta custa <strong>3♦</strong> e não gasta ações (♣).</p>
+          `
+        },
+        {
+          title: '5. Combate de Pôquer e Ranqueada',
+          html: `
+            <p><strong>Resolução de Combate:</strong> Compara a força do atacante e do defensor considerando carta da mão e bônus tático da peça. Se o atacante vencer, causa <strong>2♥</strong> (e abate/captura com recompensa em ♦ ao zerar o HP). Se a defesa vencer ou empatar, ambos sofrem <strong>1♥</strong> (respeitando as passivas de Torre e Bispo).</p>
+            <p><strong>Ranqueada (Google):</strong> Pareamento por rating (ELO) com faixa que amplia com o tempo de espera e atualização de rating ao fim da partida.</p>
+          `
+        }
       ];
 
       let selectedMode = 'bot';
