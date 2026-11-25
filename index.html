@@ -389,16 +389,12 @@
       <div class="w-full space-y-2 my-1.5 shrink-0">
         <div class="grid grid-cols-2 gap-1.5">
           <button type="button" id="btn-select-offline" class="py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95">
-            📱 Off-line (Mesmo Aparelho)
+            Off-line
           </button>
           <button type="button" id="btn-select-ranked" class="py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95">
-            🏆 Ranked Elo
+            Ranked
           </button>
         </div>
-
-        <button type="button" id="btn-start-match" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#fff1b8] via-[#d4af37] to-[#9c7218] text-[#140e02] font-extrabold text-sm tracking-wide shadow-lg active:scale-95">
-          Iniciar Partida
-        </button>
 
         <button type="button" id="btn-open-rules" class="w-full py-2 rounded-xl bg-[#12141c]/95 border border-[#d4af37]/45 text-[#f3d678] font-bold text-xs tracking-wide active:scale-95">
           📖 Regras
@@ -437,29 +433,29 @@
     </div>
   </div>
 
-  <!-- MODAL MODO RANKEADO (FIREBASE AUTH + MATCHMAKING POR ELO) -->
+  <!-- MODAL MODO RANKEADO (FIREBASE AUTH + LOBBY + MATCHMAKING POR ELO) -->
   <div id="ranked-modal" class="xeker-modal">
     <div class="w-full max-w-[380px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl space-y-3 text-xs">
       <div class="flex items-center justify-between gap-2 pb-2 border-b border-white/10">
         <div class="flex items-center gap-2 min-w-0">
-          <h2 class="font-display font-bold text-sm text-[#f3d678] truncate">🏆 Modo Rankeado (Elo)</h2>
+          <h2 class="font-display font-bold text-sm text-[#f3d678] truncate">🏆 Modo Rankeado</h2>
           <span id="ranked-online-counter" class="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-[10px] font-bold text-emerald-300 shrink-0">● Online: —</span>
         </div>
         <button type="button" id="btn-close-ranked" class="px-2.5 py-1 rounded-lg bg-[#161820] border border-white/15 font-bold text-zinc-200 active:scale-95 shrink-0">✕</button>
       </div>
 
-      <!-- Desconectado -->
+      <!-- Desconectado (Tela de Login) -->
       <div id="ranked-logged-out" class="space-y-3">
         <p class="text-zinc-300 leading-relaxed">
-          Entre com sua conta Google para salvar sua pontuação <strong>Elo</strong>, histórico de vitórias e buscar oponentes ranqueados em tempo real.
+          Entre com sua conta Google para acessar o lobby, salvar sua pontuação, histórico de vitórias e buscar oponentes ranqueados em tempo real.
         </p>
         <button type="button" id="btn-google-login" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold text-sm shadow active:scale-95">
           Entrar com Google
         </button>
       </div>
 
-      <!-- Conectado -->
-      <div id="ranked-logged-in" class="hidden space-y-3">
+      <!-- Conectado / Lobby -->
+      <div id="ranked-logged-in" class="hidden space-y-2.5">
         <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/30">
           <div class="min-w-0">
             <div id="ranked-player-name" class="font-bold text-sm text-white truncate">Jogador</div>
@@ -478,6 +474,16 @@
           <span>Cancelar Busca</span>
           <span id="ranked-search-clock" class="font-mono text-xs text-amber-200">00:00</span>
         </button>
+
+        <div class="pt-1 border-t border-white/10 space-y-1.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-[#f3d678]">Lobby de Jogadores</span>
+            <span class="text-[10px] text-zinc-400">Convite sem valer Elo</span>
+          </div>
+          <div id="lobby-players-list" class="max-h-[210px] overflow-y-auto space-y-1.5 pr-0.5">
+            <div class="text-[11px] text-zinc-400 py-2 text-center">Carregando jogadores...</div>
+          </div>
+        </div>
       </div>
 
       <div id="ranked-feedback" class="hidden px-2.5 py-2 rounded-xl bg-black/50 border border-white/10 text-[11px] text-amber-200"></div>
@@ -899,7 +905,11 @@
       lastAtkCardSeq: 0,
       lastDefCardSeq: 0,
       lastSummaryAckSeq: 0,
-      lastAnnouncedTurnKey: null
+      lastAnnouncedTurnKey: null,
+      unratedMatch: false,
+      usersUnsub: null,
+      invitesUnsub: null,
+      presenceTimer: null
     };
 
     function getPlayerDisplayName(side) {
@@ -979,12 +989,12 @@
       const badge = document.getElementById('ranked-online-counter');
       if (!badge) return;
       try {
-        const usersSnap = await getCountFromServer(collection(db, 'users'));
-        const activeMatchesSnap = await getCountFromServer(
-          query(collection(db, 'matches'), where('status', '==', 'active'))
-        );
-        const total = (usersSnap.data().count || 0) + (activeMatchesSnap.data().count || 0) * 2;
-        badge.textContent = `● Online: ${total}`;
+        const usersSnap = await getDocs(collection(db, 'users'));
+        let onlineCount = 0;
+        usersSnap.forEach((docSnap) => {
+          if (isUserOnline(docSnap.data())) onlineCount += 1;
+        });
+        badge.textContent = `● Online: ${onlineCount}`;
       } catch (_) {
         badge.textContent = '● Online: —';
       }
@@ -1143,6 +1153,197 @@
       }
     }
 
+    function isUserOnline(uData) {
+      if (!uData) return false;
+      if (uData.online === true) {
+        const ts = uData.lastSeen && typeof uData.lastSeen.toMillis === 'function'
+          ? uData.lastSeen.toMillis()
+          : (typeof uData.lastSeen === 'number' ? uData.lastSeen : 0);
+        if (!ts) return true;
+        return (Date.now() - ts) < 120000;
+      }
+      return false;
+    }
+
+    async function setUserOnlineStatus(isOnline) {
+      if (!ranked.user || !ranked.user.uid) return;
+      const userRef = doc(db, 'users', ranked.user.uid);
+      await setDoc(userRef, {
+        uid: ranked.user.uid,
+        name: (ranked.profile && ranked.profile.name) || ranked.user.displayName || 'Jogador Xeker',
+        online: Boolean(isOnline),
+        lastSeen: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      }, { merge: true }).catch(() => {});
+    }
+
+    function startPresenceHeartbeat() {
+      stopPresenceHeartbeat();
+      setUserOnlineStatus(true);
+      ranked.presenceTimer = setInterval(() => {
+        if (ranked.user) setUserOnlineStatus(true);
+      }, 30000);
+    }
+
+    function stopPresenceHeartbeat() {
+      if (ranked.presenceTimer) {
+        clearInterval(ranked.presenceTimer);
+        ranked.presenceTimer = null;
+      }
+    }
+
+    function renderLobbyList(usersList) {
+      const container = document.getElementById('lobby-players-list');
+      if (!container) return;
+      const myUid = ranked.user ? ranked.user.uid : null;
+
+      const sorted = [...usersList].sort((a, b) => {
+        const aOn = isUserOnline(a) ? 1 : 0;
+        const bOn = isUserOnline(b) ? 1 : 0;
+        if (aOn !== bOn) return bOn - aOn;
+        const aElo = Number(a.elo) || 1200;
+        const bElo = Number(b.elo) || 1200;
+        return bElo - aElo;
+      });
+
+      if (sorted.length === 0) {
+        container.innerHTML = '<div class="text-[11px] text-zinc-400 py-2 text-center">Nenhum jogador cadastrado.</div>';
+        return;
+      }
+
+      container.innerHTML = '';
+      sorted.forEach((u) => {
+        const online = isUserOnline(u);
+        const elo = Number(u.elo) || 1200;
+        const wins = Number(u.wins) || 0;
+        const losses = Number(u.losses) || 0;
+        const totalGames = wins + losses;
+        const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0;
+        const isSelf = myUid && u.uid === myUid;
+
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between gap-2 p-2 rounded-xl bg-[#161820] border border-white/10';
+
+        const left = document.createElement('div');
+        left.className = 'min-w-0';
+        const statusDot = online
+          ? '<span class="text-emerald-400 font-bold">● On-line</span>'
+          : '<span class="text-zinc-500 font-bold">○ Off-line</span>';
+        left.innerHTML = `
+          <div class="flex items-center gap-1.5">
+            <span class="font-bold text-white truncate">${u.name || 'Jogador'}${isSelf ? ' (Você)' : ''}</span>
+            <span class="text-[10px] shrink-0">${statusDot}</span>
+          </div>
+          <div class="text-[10px] text-zinc-300">Elo: <strong class="text-[#f3d678]">${elo}</strong> · Vitória: <strong>${winRate}%</strong> (${wins}V/${losses}D)</div>
+        `;
+
+        row.appendChild(left);
+
+        if (!isSelf && online) {
+          const inviteBtn = document.createElement('button');
+          inviteBtn.type = 'button';
+          inviteBtn.className = 'px-2.5 py-1.5 rounded-lg bg-[#d4af37]/20 border border-[#f3d678]/60 text-[#fff1b8] text-[10px] font-extrabold active:scale-95 shrink-0';
+          inviteBtn.textContent = 'Convidar';
+          inviteBtn.addEventListener('click', () => sendFriendlyInvite(u));
+          row.appendChild(inviteBtn);
+        }
+
+        container.appendChild(row);
+      });
+    }
+
+    function startLobbyListeners() {
+      if (!ranked.user) return;
+      if (!ranked.usersUnsub) {
+        ranked.usersUnsub = onSnapshot(collection(db, 'users'), (snap) => {
+          const list = [];
+          snap.forEach((docSnap) => {
+            list.push({ uid: docSnap.id, ...docSnap.data() });
+          });
+          renderLobbyList(list);
+        }, () => {});
+      }
+      if (!ranked.invitesUnsub) {
+        const invRef = doc(db, 'lobby_invites', ranked.user.uid);
+        ranked.invitesUnsub = onSnapshot(invRef, async (snap) => {
+          if (!snap.exists()) return;
+          const inv = snap.data();
+          if (inv.status === 'pending' && inv.fromUid && inv.matchId) {
+            const accept = window.confirm(
+              `${inv.fromName || 'Jogador'} convidou você para uma partida amistosa (sem valer Elo). Aceitar?`
+            );
+            if (accept) {
+              await updateDoc(invRef, { status: 'accepted' }).catch(() => {});
+              await deleteDoc(invRef).catch(() => {});
+              await startRankedSession(inv.matchId, { unrated: true });
+            } else {
+              await updateDoc(invRef, { status: 'declined' }).catch(() => {});
+              await deleteDoc(invRef).catch(() => {});
+            }
+          } else if (inv.status === 'accepted' && inv.matchId && inv.fromUid === ranked.user.uid) {
+            await deleteDoc(invRef).catch(() => {});
+            await startRankedSession(inv.matchId, { unrated: true });
+          } else if (inv.status === 'declined' && inv.fromUid === ranked.user.uid) {
+            await deleteDoc(invRef).catch(() => {});
+            showRankedFeedback(`${inv.toName || 'Jogador'} recusou o convite.`);
+          }
+        }, () => {});
+      }
+    }
+
+    function stopLobbyListeners() {
+      if (ranked.usersUnsub) {
+        ranked.usersUnsub();
+        ranked.usersUnsub = null;
+      }
+      if (ranked.invitesUnsub) {
+        ranked.invitesUnsub();
+        ranked.invitesUnsub = null;
+      }
+    }
+
+    async function sendFriendlyInvite(targetUser) {
+      if (!ranked.user || !ranked.profile || !targetUser || !targetUser.uid) return;
+      try {
+        const newMatchId = `am_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        const matchRef = doc(db, 'matches', newMatchId);
+        await setDoc(matchRef, {
+          matchId: newMatchId,
+          unrated: true,
+          whiteUid: ranked.user.uid,
+          whiteName: ranked.profile.name || 'Jogador',
+          whiteEloBefore: ranked.profile.elo || 1200,
+          blackUid: targetUser.uid,
+          blackName: targetUser.name || 'Jogador',
+          blackEloBefore: targetUser.elo || 1200,
+          status: 'active',
+          winnerSide: null,
+          endReason: null,
+          viewJson: null,
+          clocksJson: null,
+          guestActionJson: null,
+          guestAtkCardJson: null,
+          guestDefCardJson: null,
+          guestSummaryAckSeq: 0,
+          createdAt: serverTimestamp()
+        });
+
+        await setDoc(doc(db, 'lobby_invites', targetUser.uid), {
+          fromUid: ranked.user.uid,
+          fromName: ranked.profile.name || 'Jogador',
+          toUid: targetUser.uid,
+          toName: targetUser.name || 'Jogador',
+          matchId: newMatchId,
+          status: 'pending',
+          createdAt: serverTimestamp()
+        });
+
+        showRankedFeedback(`Convite (sem valer Elo) enviado para ${targetUser.name || 'Jogador'}. Aguardando resposta...`);
+      } catch (err) {
+        showRankedFeedback('Erro ao enviar convite: ' + err.message, true);
+      }
+    }
+
     async function ensureRankedProfile(user) {
       const userRef = doc(db, 'users', user.uid);
       const snap = await getDoc(userRef);
@@ -1153,14 +1354,19 @@
           elo: 1200,
           wins: 0,
           losses: 0,
+          online: true,
+          lastSeen: serverTimestamp(),
           updatedAt: serverTimestamp()
         };
         await setDoc(userRef, fresh);
         ranked.profile = fresh;
       } else {
         ranked.profile = snap.data();
+        await setUserOnlineStatus(true);
       }
       refreshRankedUI();
+      startPresenceHeartbeat();
+      startLobbyListeners();
     }
 
     function refreshRankedUI() {
@@ -1189,6 +1395,8 @@
           showRankedFeedback('Erro ao carregar perfil: ' + err.message, true);
         }
       } else {
+        stopPresenceHeartbeat();
+        stopLobbyListeners();
         ranked.profile = null;
         refreshRankedUI();
       }
@@ -1327,14 +1535,15 @@
       }
     }
 
-    async function startRankedSession(matchId) {
+    async function startRankedSession(matchId, opts = {}) {
       if (ranked.matchUnsub) {
         ranked.matchUnsub();
         ranked.matchUnsub = null;
       }
 
       ranked.matchId = matchId;
-      ranked.eloApplied = false;
+      ranked.unratedMatch = Boolean(opts.unrated);
+      ranked.eloApplied = Boolean(opts.unrated);
       ranked.lastActionSeq = 0;
       ranked.lastAtkCardSeq = 0;
       ranked.lastDefCardSeq = 0;
@@ -1346,6 +1555,7 @@
       if (!initialSnap.exists()) return;
       const mData = initialSnap.data();
 
+      if (mData.unrated) ranked.unratedMatch = true;
       const amWhite = mData.whiteUid === ranked.user.uid;
       ranked.mySide = amWhite ? 'white' : 'black';
       ranked.matchNames = {
@@ -1366,7 +1576,8 @@
 
       if (amWhite) {
         startMatch();
-        setStatus(`🏆 Ranked Elo: Você é Brancas (♔ ${mData.whiteName} · ${mData.whiteEloBefore}) vs ♚ ${mData.blackName} (${mData.blackEloBefore})`);
+        const modeTag = ranked.unratedMatch ? 'Amistosa (sem Elo)' : 'Ranked Elo';
+        setStatus(`🏆 ${modeTag}: Você é Brancas (♔ ${mData.whiteName} · ${mData.whiteEloBefore}) vs ♚ ${mData.blackName} (${mData.blackEloBefore})`);
         syncOnlineState();
         showRankedTurnIndicator('white', 1);
       } else {
@@ -1394,7 +1605,8 @@
             gameOverData: null
           };
         }
-        setStatus(`🏆 Ranked Elo: Você é Pretas (♚ ${mData.blackName} · ${mData.blackEloBefore}) vs ♔ ${mData.whiteName} (${mData.whiteEloBefore}) · Aguardando Brancas...`);
+        const modeTag = ranked.unratedMatch ? 'Amistosa (sem Elo)' : 'Ranked Elo';
+        setStatus(`🏆 ${modeTag}: Você é Pretas (♚ ${mData.blackName} · ${mData.blackEloBefore}) vs ♔ ${mData.whiteName} (${mData.whiteEloBefore}) · Aguardando Brancas...`);
         renderAll();
       }
 
@@ -1466,7 +1678,7 @@
     }
 
     async function applyRankedEloUpdate(matchData) {
-      if (ranked.eloApplied || !ranked.user) return;
+      if (ranked.eloApplied || !ranked.user || ranked.unratedMatch || (matchData && matchData.unrated)) return;
       ranked.eloApplied = true;
 
       const amWhite = ranked.mySide === 'white';
@@ -2167,7 +2379,7 @@
           }
           showRankedTurnIndicator('white', 1);
         } else {
-          setStatus('Partida Off-line iniciada (Mesmo Aparelho) · Brancas (♔) começam.');
+          setStatus('Partida Off-line iniciada · Brancas (♔) começam.');
           renderAll();
         }
       } catch (err) {
@@ -3552,12 +3764,16 @@
       document.getElementById('btn-select-offline').addEventListener('click', () => {
         selectedMode = 'offline';
         syncModeButtons();
+        startMatch();
       });
       document.getElementById('btn-select-ranked').addEventListener('click', () => {
         selectedMode = 'ranked';
         syncModeButtons();
         refreshRankedUI();
         startRankedOnlineCounter();
+        if (ranked.user) {
+          startLobbyListeners();
+        }
         openModal('ranked-modal');
       });
 
@@ -3585,6 +3801,9 @@
       });
       document.getElementById('btn-google-logout').addEventListener('click', async () => {
         await leaveRankedQueue();
+        await setUserOnlineStatus(false);
+        stopPresenceHeartbeat();
+        stopLobbyListeners();
         await signOut(auth);
         hideRankedFeedback();
       });
@@ -3595,8 +3814,6 @@
         ev.stopPropagation();
         closeModal('ranked-turn-modal');
       });
-
-      document.getElementById('btn-start-match').addEventListener('click', startMatch);
 
       document.getElementById('btn-top-menu').addEventListener('click', () => openModal('menu-modal'));
       document.getElementById('btn-back-menu').addEventListener('click', () => {
