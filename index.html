@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>XEKER — Xadrez &amp; Pôquer Tático</title>
+  <title>Xeker — 1v1 Tático</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -403,13 +403,13 @@
       <div class="w-full space-y-2 my-1.5 shrink-0">
         <div class="grid grid-cols-3 gap-1.5">
           <button type="button" id="btn-select-pvp" class="py-2.5 px-1.5 rounded-xl text-xs font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95">
-            👥 Local
+            🤖 IA Bot
           </button>
           <button type="button" id="btn-select-online" class="py-2.5 px-1.5 rounded-xl text-xs font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95">
-            🌐 On-line
+            ⚡ 1v1 Online
           </button>
           <button type="button" id="btn-select-ranked" class="py-2.5 px-1.5 rounded-xl text-xs font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95">
-            🏆 Ranked
+            🏆 Ranked Elo
           </button>
         </div>
 
@@ -901,7 +901,7 @@
       }
     ];
 
-    let selectedMode = 'pvp';
+    let selectedMode = 'bot';
     let state = null;
     let duelContext = null;
     let pendingCombatPassAction = null;
@@ -1295,9 +1295,9 @@
 
       if (amWhite) {
         startMatch();
-        setStatus(`🏆 Ranked: Você (♔ ${mData.whiteName} · ${mData.whiteEloBefore}) vs ♚ ${mData.blackName} (${mData.blackEloBefore})`);
+        setStatus(`🏆 Ranked Elo: Você (♔ ${mData.whiteName} · ${mData.whiteEloBefore}) vs ♚ ${mData.blackName} (${mData.blackEloBefore})`);
       } else {
-        setStatus(`🏆 Ranked: Você (♚ ${mData.blackName} · ${mData.blackEloBefore}) vs ♔ ${mData.whiteName} (${mData.whiteEloBefore}) · Aguardando Brancas...`);
+        setStatus(`🏆 Ranked Elo: Você (♚ ${mData.blackName} · ${mData.blackEloBefore}) vs ♔ ${mData.whiteName} (${mData.whiteEloBefore}) · Aguardando Brancas...`);
       }
 
       ranked.matchUnsub = onSnapshot(matchRef, (snap) => {
@@ -3143,6 +3143,10 @@
           setStatus(`Turno das Pretas · ♣2${bDrawMsg}`);
           renderAll();
           if (net.role === 'host') syncOnlineState();
+        } else if (state.mode === 'bot') {
+          setStatus(`Turno da IA (Pretas) · ♣2${bDrawMsg}`);
+          renderAll();
+          setTimeout(runBotTurn, 450);
         } else {
           document.getElementById('pass-heading').textContent = 'Vez das Pretas (♚)';
           setStatus(`Turno das Pretas · ♣2${bDrawMsg}`);
@@ -3409,7 +3413,9 @@
 
     function bindEvents() {
       document.getElementById('btn-select-pvp').addEventListener('click', () => {
-        selectedMode = 'pvp';
+        selectedMode = selectedMode === 'bot' ? 'pvp' : 'bot';
+        const btn = document.getElementById('btn-select-pvp');
+        btn.textContent = selectedMode === 'bot' ? '🤖 IA Bot' : '🤖 IA Bot';
         syncModeButtons();
       });
       document.getElementById('btn-select-online').addEventListener('click', () => {
@@ -3433,7 +3439,16 @@
         try {
           await signInWithPopup(auth, googleProvider);
         } catch (err) {
-          showRankedFeedback('Falha no login Google: ' + err.message, true);
+          const code = err && err.code ? err.code : '';
+          if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment' || code === 'auth/unauthorized-domain') {
+            const guestUid = 'guest_' + (localStorage.getItem('xeker_guest_uid') || Math.random().toString(36).slice(2, 10));
+            localStorage.setItem('xeker_guest_uid', guestUid);
+            ranked.user = { uid: guestUid, displayName: 'Desafiante Xeker' };
+            await ensureRankedProfile(ranked.user);
+            showRankedFeedback('Sessão local de Ranked ativada (fallback automático).');
+          } else {
+            showRankedFeedback('Falha no login Google: ' + (err.message || code), true);
+          }
         }
       });
       document.getElementById('btn-google-logout').addEventListener('click', async () => {
@@ -3504,6 +3519,51 @@
           fn();
         }
       });
+    }
+
+
+    function runBotTurn() {
+      try {
+        if (!state || state.gameOver || state.turn !== 'black' || state.mode !== 'bot') return;
+        if (hasOpenModal()) {
+          setTimeout(runBotTurn, 400);
+          return;
+        }
+        if (state.actions > 0) {
+          const candidates = [];
+          for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+              const p = state.board[r][c];
+              if (p && p.color === 'black' && !p.acted) {
+                const reach = getReachInfo(r, c);
+                for (const atk of reach.attacks) {
+                  candidates.push({ kind: 'attack', r, c, tr: atk.r, tc: atk.c, prio: 10 });
+                }
+                for (const mv of reach.moves) {
+                  const advanceScore = mv.r;
+                  candidates.push({ kind: 'move', r, c, tr: mv.r, tc: mv.c, prio: advanceScore });
+                }
+              }
+            }
+          }
+          if (candidates.length > 0) {
+            candidates.sort((a, b) => b.prio - a.prio);
+            const chosen = candidates[0];
+            if (chosen.kind === 'attack' && state.players.black.hand.length > 0) {
+              startCombat(chosen.r, chosen.c, chosen.tr, chosen.tc);
+              return;
+            }
+            if (chosen.kind === 'move') {
+              doMove(chosen.r, chosen.c, chosen.tr, chosen.tc);
+              setTimeout(runBotTurn, 400);
+              return;
+            }
+          }
+        }
+        onEndTurn();
+      } catch (err) {
+        reportError(err);
+      }
     }
 
     function initApp() {
