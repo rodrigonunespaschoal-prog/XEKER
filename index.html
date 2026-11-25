@@ -749,7 +749,7 @@
       3: 'Trinca: Causa +1♥ de dano extra.',
       4: 'Sequência: Concede +1♣ (ação) e compra +1 carta.',
       5: 'Full House: Causa +1♥ de dano extra e cura a peça usada em +2♥.',
-      6: 'Quadra: Abate imediato da peça adversária e concede +8♦ de ouro.'
+      6: 'Quadra: Abate imediato da peça adversária e garante +8♦ de ouro.'
     };
 
     const RULEBOOK_PAGES = [
@@ -868,6 +868,7 @@
     let state = null;
     let duelContext = null;
     let pendingCombatPassAction = null;
+    let combatCardLocked = false;
     let rulesIdx = 0;
     let timerId = null;
     let actionSeqCounter = 0;
@@ -1572,6 +1573,7 @@
       net.lastSummary = view.lastSummary || null;
 
       if (net.pendingCombat && net.pendingCombat.stage === 'awaiting_attacker' && net.pendingCombat.atkPiece && net.pendingCombat.atkPiece.color === 'black') {
+        combatCardLocked = false;
         closeModal('combat-pass-modal');
         const flopEl = document.getElementById('combat-flop');
         flopEl.innerHTML = '';
@@ -1606,6 +1608,7 @@
           }
         );
       } else if (net.pendingCombat && net.pendingCombat.stage === 'awaiting_defender' && net.pendingCombat.defPiece && net.pendingCombat.defPiece.color === 'black') {
+        combatCardLocked = false;
         closeModal('combat-pass-modal');
         const flopEl = document.getElementById('combat-flop');
         flopEl.innerHTML = '';
@@ -1629,6 +1632,7 @@
           sendNet({ type: 'online_def_card', cardIdx: dIdx });
         });
       } else if (net.lastSummary && JSON.stringify(net.lastSummary) !== JSON.stringify(prevSummary)) {
+        combatCardLocked = false;
         const s = net.lastSummary;
         const flopEl = document.getElementById('combat-flop');
         flopEl.innerHTML = '';
@@ -1646,6 +1650,7 @@
           renderAll();
         });
       } else if (!net.pendingCombat && !net.lastSummary) {
+        combatCardLocked = false;
         closeModal('combat-modal');
       }
 
@@ -2087,6 +2092,7 @@
         closeAllModals();
         duelContext = null;
         pendingCombatPassAction = null;
+        combatCardLocked = false;
         net.pendingCombat = null;
         net.lastSummary = null;
         ranked.lastAnnouncedTurnKey = null;
@@ -2339,6 +2345,7 @@
     }
 
     function showPostCombatSummary(summary, onDoneOverride = null) {
+      combatCardLocked = false;
       document.getElementById('combat-heading').textContent = '📋 Resumo do Combate';
       document.getElementById('combat-atk-sub').innerHTML = `
         <div>Carta usada: <strong>${summary.atkCard !== null && summary.atkCard !== undefined ? RANK_TEXT[summary.atkCard] : 'Oculta'}</strong> · Peça: <strong>${summary.atkRep}</strong></div>
@@ -2396,6 +2403,7 @@
 
     function settleCombat(atkCard, defCard) {
       if (!duelContext) return;
+      combatCardLocked = false;
       const atkPiece = state.board[duelContext.atkR][duelContext.atkC];
       const defPiece = state.board[duelContext.defR][duelContext.defC];
       if (!atkPiece || !defPiece) {
@@ -2594,6 +2602,7 @@
     }
 
     function renderAttackerCardSelection(atkR, atkC, defR, defC, atkPiece, defPiece, atkPlayer, defPlayer, onSelectOverride = null) {
+      combatCardLocked = false;
       const body = document.getElementById('combat-body');
       body.innerHTML = `<div class="text-xs font-bold text-[#f3d678] text-center">Atacante (${atkPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'}): escolha 1 carta da mão</div>`;
 
@@ -2606,6 +2615,9 @@
         btn.className = 'xeker-card w-11 h-14 rounded-lg text-sm';
         btn.textContent = RANK_TEXT[cVal];
         btn.addEventListener('click', () => {
+          if (combatCardLocked) return;
+          combatCardLocked = true;
+          atkCardsRow.querySelectorAll('button').forEach((b) => { b.disabled = true; });
           if (typeof onSelectOverride === 'function') {
             onSelectOverride(idx);
             return;
@@ -2649,6 +2661,7 @@
     }
 
     function renderDefenderCardSelection(chosenAtk, defPiece, defPlayer, onSelectOverride = null) {
+      combatCardLocked = false;
       const body = document.getElementById('combat-body');
       body.innerHTML = `<div class="text-xs font-bold text-red-300 text-center">Defensor (${defPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'}): escolha 1 carta para defender</div>`;
       const defCardsRow = document.createElement('div');
@@ -2659,6 +2672,9 @@
         dBtn.className = 'xeker-card w-11 h-14 rounded-lg text-sm';
         dBtn.textContent = RANK_TEXT[dVal];
         dBtn.addEventListener('click', () => {
+          if (combatCardLocked) return;
+          combatCardLocked = true;
+          defCardsRow.querySelectorAll('button').forEach((b) => { b.disabled = true; });
           if (typeof onSelectOverride === 'function') {
             onSelectOverride(dIdx);
             return;
@@ -2677,6 +2693,7 @@
       const defPiece = state.board[defR][defC];
       if (!atkPiece || !defPiece) return;
 
+      combatCardLocked = false;
       const atkPlayer = state.players[atkPiece.color];
       const defPlayer = state.players[defPiece.color];
 
