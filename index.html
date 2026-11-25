@@ -257,17 +257,23 @@
     #ranked-modal {
       z-index: 70;
     }
-    .bulb-off {
-      filter: grayscale(1) brightness(0.45);
-      opacity: 0.45;
+    .menu-btn-lit {
+      background-color: rgba(212, 175, 55, 0.25);
+      border-color: #f3d678;
+      color: #fff1b8;
+      box-shadow: 0 0 14px rgba(243, 214, 120, 0.25);
     }
-    .bulb-red-on {
-      filter: hue-rotate(-55deg) saturate(5) brightness(1.1) drop-shadow(0 0 6px #ef4444);
-      opacity: 1;
+    .ranked-btn-lit {
+      background-color: rgba(212, 175, 55, 0.25);
+      border-color: #f3d678;
+      color: #fff1b8;
+      box-shadow: 0 0 14px rgba(243, 214, 120, 0.35);
     }
-    .bulb-green-on {
-      filter: hue-rotate(75deg) saturate(4.5) brightness(1.15) drop-shadow(0 0 6px #22c55e);
-      opacity: 1;
+    .ranked-btn-dim {
+      background-color: #161820;
+      border-color: rgba(255, 255, 255, 0.15);
+      color: #d4d4d8;
+      box-shadow: none;
     }
   </style>
 </head>
@@ -400,15 +406,15 @@
       <!-- Seletor de Modo & Botões Principais -->
       <div class="w-full space-y-2 my-1.5 shrink-0">
         <div class="grid grid-cols-2 gap-1.5">
-          <button type="button" id="btn-select-offline" class="py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95">
+          <button type="button" id="btn-select-offline" class="py-2.5 px-2 rounded-xl text-xs font-bold border menu-btn-lit active:scale-95">
             Jogar Off-line
           </button>
-          <button type="button" id="btn-select-ranked" class="py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95">
+          <button type="button" id="btn-select-ranked" class="py-2.5 px-2 rounded-xl text-xs font-bold border menu-btn-lit active:scale-95">
             Jogar Ranked
           </button>
         </div>
 
-        <button type="button" id="btn-open-rules" class="w-full py-2 rounded-xl bg-[#12141c]/95 border border-[#d4af37]/45 text-[#f3d678] font-bold text-xs tracking-wide active:scale-95">
+        <button type="button" id="btn-open-rules" class="w-full py-2 rounded-xl border font-bold text-xs tracking-wide menu-btn-lit active:scale-95">
           Aprender a Jogar
         </button>
       </div>
@@ -451,7 +457,6 @@
       <div class="flex items-center justify-between gap-2 pb-2 border-b border-white/10">
         <div class="flex items-center gap-2 min-w-0">
           <h2 class="font-display font-bold text-sm text-[#f3d678] truncate">🏆 Modo Rankeado</h2>
-          <span id="ranked-online-counter" class="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-[10px] font-bold text-emerald-300 shrink-0">● Online: —</span>
         </div>
         <button type="button" id="btn-close-ranked" class="px-2.5 py-1 rounded-lg bg-[#161820] border border-white/15 font-bold text-zinc-200 active:scale-95 shrink-0">✕</button>
       </div>
@@ -469,32 +474,31 @@
       <!-- Conectado / Lobby -->
       <div id="ranked-logged-in" class="hidden space-y-2.5">
         <div class="grid grid-cols-2 gap-1.5">
-          <button type="button" id="btn-find-ranked" class="w-full py-2.5 px-2 rounded-xl bg-[#d4af37]/25 border border-[#f3d678] text-[#fff1b8] font-extrabold text-xs shadow-[0_0_14px_rgba(243,214,120,0.35)] active:scale-95 flex items-center justify-center gap-1.5 transition-all">
-            <span id="bulb-searching" class="inline-flex items-center justify-center w-3.5 h-3.5 transition-all bulb-green-on">💡</span>
+          <button type="button" id="btn-find-ranked" class="w-full py-2.5 px-2 rounded-xl border font-extrabold text-xs active:scale-95 flex items-center justify-center gap-1.5 transition-all ranked-btn-lit">
             <span id="btn-find-ranked-label">Buscar</span>
             <span id="ranked-search-clock" class="hidden font-mono text-[11px] text-amber-200">00:00</span>
           </button>
 
-          <button type="button" id="btn-cancel-ranked" class="w-full py-2.5 px-2 rounded-xl bg-[#161820] border border-white/15 text-zinc-300 font-bold text-xs active:scale-95 flex items-center justify-center gap-1.5">
-            <span id="bulb-cancel-search" class="inline-flex items-center justify-center w-3.5 h-3.5 transition-all bulb-off">💡</span>
+          <button type="button" id="btn-cancel-ranked" class="w-full py-2.5 px-2 rounded-xl border font-bold text-xs active:scale-95 flex items-center justify-center gap-1.5 transition-all ranked-btn-dim">
             <span>Cancelar Busca</span>
           </button>
         </div>
 
         <div class="grid grid-cols-2 gap-1.5 pt-1 border-t border-white/10">
-          <button type="button" id="btn-set-offline" class="w-full py-2 px-2 rounded-xl bg-[#161820] border border-white/15 text-zinc-300 text-xs font-bold active:scale-95 flex items-center justify-center gap-1.5">
-            <span id="bulb-offline" class="inline-flex items-center justify-center w-3.5 h-3.5 transition-all bulb-off">💡</span>
+          <button type="button" id="btn-set-offline" class="w-full py-2 px-2 rounded-xl border text-xs font-bold active:scale-95 flex items-center justify-center gap-1.5 transition-all ranked-btn-lit">
             <span>Ficar Off-line</span>
           </button>
-          <button type="button" id="btn-set-online" class="w-full py-2 px-2 rounded-xl bg-[#161820] border border-white/15 text-zinc-300 text-xs font-bold active:scale-95 flex items-center justify-center gap-1.5">
-            <span id="bulb-online" class="inline-flex items-center justify-center w-3.5 h-3.5 transition-all bulb-off">💡</span>
+          <button type="button" id="btn-set-online" class="w-full py-2 px-2 rounded-xl border text-xs font-bold active:scale-95 flex items-center justify-center gap-1.5 transition-all ranked-btn-dim">
             <span>Ficar Online</span>
           </button>
         </div>
 
         <div class="space-y-1.5">
           <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold text-[#f3d678]">Lobby de Jogadores</span>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-bold text-[#f3d678]">Lobby de Jogadores</span>
+              <span id="ranked-online-counter" class="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-[10px] font-bold text-emerald-300">● Online: —</span>
+            </div>
             <span class="text-[10px] text-zinc-400">Convite sem valer Elo</span>
           </div>
           <div id="lobby-players-list" class="max-h-[210px] overflow-y-auto space-y-1.5 pr-0.5">
@@ -1184,39 +1188,25 @@
       return false;
     }
 
+    function setRankedBtnLit(btn, lit) {
+      if (!btn) return;
+      btn.classList.remove('ranked-btn-lit', 'ranked-btn-dim');
+      btn.classList.add(lit ? 'ranked-btn-lit' : 'ranked-btn-dim');
+    }
+
     function updateStatusBulbs() {
-      const bulbOffline = document.getElementById('bulb-offline');
-      const bulbOnline = document.getElementById('bulb-online');
+      const offBtn = document.getElementById('btn-set-offline');
+      const onBtn = document.getElementById('btn-set-online');
       const isOff = Boolean(ranked.isManualOffline);
-      if (bulbOffline) {
-        bulbOffline.className = `inline-flex items-center justify-center w-3.5 h-3.5 transition-all ${isOff ? 'bulb-red-on' : 'bulb-off'}`;
-      }
-      if (bulbOnline) {
-        bulbOnline.className = `inline-flex items-center justify-center w-3.5 h-3.5 transition-all ${isOff ? 'bulb-green-on' : 'bulb-off'}`;
-      }
+      setRankedBtnLit(offBtn, !isOff);
+      setRankedBtnLit(onBtn, isOff);
     }
 
     function updateSearchBulbs() {
-      const findBtn = document.getElementById('btn-find-ranked');
-      const findLabel = document.getElementById('btn-find-ranked-label');
-      const bulbSearching = document.getElementById('bulb-searching');
-      const bulbCancel = document.getElementById('bulb-cancel-search');
+      const cancelBtn = document.getElementById('btn-cancel-ranked');
       const clockEl = document.getElementById('ranked-search-clock');
       const searching = Boolean(ranked.isSearching);
-      if (findBtn) {
-        findBtn.className = searching
-          ? 'w-full py-2.5 px-2 rounded-xl bg-[#161820] border border-[#d4af37]/50 text-[#f3d678] font-extrabold text-xs shadow active:scale-95 flex items-center justify-center gap-1.5 transition-all'
-          : 'w-full py-2.5 px-2 rounded-xl bg-[#d4af37]/25 border border-[#f3d678] text-[#fff1b8] font-extrabold text-xs shadow-[0_0_14px_rgba(243,214,120,0.35)] active:scale-95 flex items-center justify-center gap-1.5 transition-all';
-      }
-      if (findLabel) {
-        findLabel.textContent = searching ? 'Buscando' : 'Buscar';
-      }
-      if (bulbSearching) {
-        bulbSearching.className = `inline-flex items-center justify-center w-3.5 h-3.5 transition-all ${searching ? 'bulb-off' : 'bulb-green-on'}`;
-      }
-      if (bulbCancel) {
-        bulbCancel.className = `inline-flex items-center justify-center w-3.5 h-3.5 transition-all ${searching ? 'bulb-red-on' : 'bulb-off'}`;
-      }
+      setRankedBtnLit(cancelBtn, searching);
       if (clockEl) {
         if (searching) {
           clockEl.classList.remove('hidden');
@@ -1259,6 +1249,13 @@
       const container = document.getElementById('lobby-players-list');
       if (!container) return;
       const myUid = ranked.user ? ranked.user.uid : null;
+
+      let onlineCount = 0;
+      usersList.forEach((u) => {
+        if (isUserOnline(u)) onlineCount += 1;
+      });
+      const counterBadge = document.getElementById('ranked-online-counter');
+      if (counterBadge) counterBadge.textContent = `● Online: ${onlineCount}`;
 
       const sorted = [...usersList].sort((a, b) => {
         const aOn = isUserOnline(a) ? 1 : 0;
@@ -3122,7 +3119,7 @@
       }
 
       if (state.mode === 'offline') {
-        document.getElementById('combat-body').innerHTML = `<div class="text-xs text-zinc-400 text-center py-2">Passe o aparelho para o atacante antes de revelar as cartas...</div>`;
+        document.getElementById('combat-body').innerHTML = `<div class="text-xs text-zinc-400 text-center py-2">Passe o aparelho para o defensor antes de revelar as cartas...</div>`;
         openCombatPrivacyPass(
           atkPiece.color,
           'Passe o aparelho para o atacante escolher sua carta de combate sem que o outro jogador veja a mão.',
@@ -3794,12 +3791,14 @@
     function syncModeButtons() {
       const offlineBtn = document.getElementById('btn-select-offline');
       const rankedBtn = document.getElementById('btn-select-ranked');
+      const rulesBtn = document.getElementById('btn-open-rules');
 
-      const activeCls = 'py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#d4af37]/25 border-[#f3d678] text-[#fff1b8] active:scale-95';
-      const idleCls = 'py-2.5 px-2 rounded-xl text-xs font-bold border bg-[#12141c]/90 border-[#d4af37]/30 text-zinc-300 active:scale-95';
-
-      offlineBtn.className = selectedMode === 'offline' ? activeCls : idleCls;
-      rankedBtn.className = selectedMode === 'ranked' ? activeCls : idleCls;
+      const litCls = 'py-2.5 px-2 rounded-xl text-xs font-bold border menu-btn-lit active:scale-95';
+      offlineBtn.className = litCls;
+      rankedBtn.className = litCls;
+      if (rulesBtn) {
+        rulesBtn.className = 'w-full py-2 rounded-xl border font-bold text-xs tracking-wide menu-btn-lit active:scale-95';
+      }
     }
 
     function openSurrenderModal() {
