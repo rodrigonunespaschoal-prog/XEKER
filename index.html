@@ -294,6 +294,53 @@
       color: #d4d4d8;
       box-shadow: none;
     }
+  
+    /* Animações suaves de movimento e captura das peças */
+    @keyframes xekerPieceSlide {
+      0% {
+        transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(1.08);
+        z-index: 25;
+      }
+      100% {
+        transform: translate(0px, 0px) scale(1);
+        z-index: 2;
+      }
+    }
+
+    .piece-anim-move {
+      animation: xekerPieceSlide 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+      z-index: 25;
+    }
+
+    @keyframes xekerPieceCaptureBurst {
+      0% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+        filter: brightness(1.4);
+      }
+      45% {
+        transform: scale(1.22) rotate(-8deg);
+        opacity: 0.9;
+        filter: brightness(1.9) drop-shadow(0 0 10px rgba(248, 113, 113, 0.95));
+      }
+      100% {
+        transform: scale(0.15) rotate(16deg);
+        opacity: 0;
+        filter: brightness(0.4);
+      }
+    }
+
+    .capture-fx-ghost {
+      position: fixed;
+      pointer-events: none;
+      z-index: 30;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: xekerPieceCaptureBurst 360ms cubic-bezier(0.32, 0, 0.67, 1) forwards;
+    }
+
   </style>
 </head>
 <body>
@@ -2639,9 +2686,70 @@
       state.copiedSkill = null;
     }
 
+
+    // --- Animações de Movimento e Captura ---
+    let pendingMoveAnim = null;
+    const pendingCaptureAnims = [];
+
+    function captureTileRect(r, c) {
+      const boardEl = document.getElementById('board-grid');
+      if (!boardEl || !boardEl.children || r < 0 || r >= 8 || c < 0 || c >= 8) return null;
+      const idx = r * 8 + c;
+      const tile = boardEl.children[idx];
+      if (!tile) return null;
+      return tile.getBoundingClientRect();
+    }
+
+    function queueMoveAnimation(fromR, fromC, toR, toC) {
+      const fromRect = captureTileRect(fromR, fromC);
+      const toRect = captureTileRect(toR, toC);
+      if (!fromRect || !toRect) return;
+      const dx = fromRect.left - toRect.left;
+      const dy = fromRect.top - toRect.top;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+      pendingMoveAnim = { r: toR, c: toC, dx, dy };
+    }
+
+    function queueCaptureAnimation(r, c, pieceObj) {
+      if (!pieceObj || !pieceObj.type || !PIECE_DATA[pieceObj.type]) return;
+      const rect = captureTileRect(r, c);
+      if (!rect) return;
+      pendingCaptureAnims.push({ rect, piece: { ...pieceObj } });
+    }
+
+    function flushCaptureAnimations() {
+      while (pendingCaptureAnims.length > 0) {
+        const item = pendingCaptureAnims.shift();
+        const info = PIECE_DATA[item.piece.type];
+        const pColor = item.piece.color === 'black' ? 'black' : 'white';
+        const ghost = document.createElement('div');
+        const sizeW = Math.max(20, item.rect.width * 0.86);
+        const sizeH = Math.max(20, item.rect.height * 0.86);
+        ghost.className = `piece-token ${pColor} capture-fx-ghost`;
+        ghost.style.width = `${sizeW}px`;
+        ghost.style.height = `${sizeH}px`;
+        ghost.style.left = `${item.rect.left + (item.rect.width - sizeW) / 2}px`;
+        ghost.style.top = `${item.rect.top + (item.rect.height - sizeH) / 2}px`;
+
+        const glyph = document.createElement('span');
+        glyph.className = 'piece-glyph';
+        glyph.textContent = pColor === 'white' ? info.white : info.black;
+        ghost.appendChild(glyph);
+
+        document.body.appendChild(ghost);
+        ghost.addEventListener('animationend', () => {
+          ghost.remove();
+        }, { once: true });
+        setTimeout(() => {
+          if (ghost.parentNode) ghost.remove();
+        }, 450);
+      }
+    }
+
     function doMove(fromR, fromC, toR, toC) {
       const piece = state.board[fromR][fromC];
       if (!piece) return;
+      queueMoveAnimation(fromR, fromC, toR, toC);
       state.board[toR][toC] = piece;
       state.board[fromR][fromC] = null;
       finishPieceAction(piece);
@@ -2858,6 +2966,7 @@
       let winnerSideEnd = null;
 
       if (defDead) {
+        queueCaptureAnimation(duelContext.defR, duelContext.defC, defSnap);
         state.board[duelContext.defR][duelContext.defC] = null;
         const qHeal = applyQueenAbatePassive(atkPiece.color);
         if (qHeal > 0) extras.push(`Passiva da Rainha: +${qHeal}♥`);
@@ -2871,6 +2980,7 @@
       }
 
       if (!winnerSideEnd && atkDead) {
+        queueCaptureAnimation(duelContext.atkR, duelContext.atkC, atkSnap);
         state.board[duelContext.atkR][duelContext.atkC] = null;
         const qHeal = applyQueenAbatePassive(defPiece.color);
         if (qHeal > 0) extras.push(`Passiva da Rainha: +${qHeal}♥`);
@@ -2885,10 +2995,12 @@
 
       if (!winnerSideEnd) {
         if (defDead && !atkDead) {
+          queueMoveAnimation(duelContext.atkR, duelContext.atkC, duelContext.defR, duelContext.defC);
           state.board[duelContext.defR][duelContext.defC] = atkPiece;
           state.board[duelContext.atkR][duelContext.atkC] = null;
           promotePawnIfCrossed(atkPiece, duelContext.defR, duelContext.defC);
         } else if (atkDead && !defDead) {
+          queueMoveAnimation(duelContext.defR, duelContext.defC, duelContext.atkR, duelContext.atkC);
           state.board[duelContext.atkR][duelContext.atkC] = defPiece;
           state.board[duelContext.defR][duelContext.defC] = null;
           promotePawnIfCrossed(defPiece, duelContext.atkR, duelContext.atkC);
@@ -3116,6 +3228,8 @@
         const extras = ['Flop renovado'];
         let winnerSideEnd = null;
         if (dead) {
+          queueCaptureAnimation(defR, defC, defPiece);
+          queueMoveAnimation(atkR, atkC, defR, defC);
           state.board[defR][defC] = atkPiece;
           state.board[atkR][atkC] = null;
           const qH = applyQueenAbatePassive(atkPiece.color);
@@ -3263,6 +3377,7 @@
           return;
         }
         player.gold -= 1;
+        queueCaptureAnimation(userR, userC, userPiece);
         state.board[userR][userC] = null;
 
         let hitCount = 0;
@@ -3270,9 +3385,11 @@
         for (const item of reach.enemies) {
           const enemy = state.board[item.r][item.c];
           if (!enemy) continue;
+          const enemySnap = { ...enemy };
           enemy.hp -= 1;
           hitCount += 1;
           if (enemy.hp <= 0) {
+            queueCaptureAnimation(item.r, item.c, enemySnap);
             state.board[item.r][item.c] = null;
             if (handleAbatement(state.turn, enemy)) {
               endNow = true;
@@ -3318,6 +3435,8 @@
           return;
         }
         player.gold -= 1;
+        queueMoveAnimation(userR, userC, targetR, targetC);
+        queueMoveAnimation(targetR, targetC, userR, userC);
         state.board[targetR][targetC] = userPiece;
         state.board[userR][userC] = targetPiece;
         finishPieceSkillAction(userPiece);
@@ -3340,6 +3459,7 @@
           return;
         }
         player.gold -= 1;
+        queueMoveAnimation(targetR, targetC, dest.r, dest.c);
         state.board[dest.r][dest.c] = movedTarget;
         state.board[targetR][targetC] = null;
         promotePawnIfCrossed(movedTarget, dest.r, dest.c);
@@ -3369,9 +3489,11 @@
 
       const dmg = 1;
       player.gold -= 1;
+      const enemySnap = { ...enemy };
       enemy.hp -= dmg;
       let ended = false;
       if (enemy.hp <= 0) {
+        queueCaptureAnimation(targetR, targetC, enemySnap);
         state.board[targetR][targetC] = null;
         ended = handleAbatement(state.turn, enemy);
       }
@@ -3796,6 +3918,18 @@
             hpBadge.className = 'piece-badge-hp';
             hpBadge.textContent = String(hpVal);
 
+            if (pendingMoveAnim && pendingMoveAnim.r === r && pendingMoveAnim.c === c) {
+              token.style.setProperty('--dx', `${pendingMoveAnim.dx}px`);
+              token.style.setProperty('--dy', `${pendingMoveAnim.dy}px`);
+              token.classList.add('piece-anim-move');
+              token.addEventListener('animationend', () => {
+                token.classList.remove('piece-anim-move');
+                token.style.removeProperty('--dx');
+                token.style.removeProperty('--dy');
+              }, { once: true });
+              pendingMoveAnim = null;
+            }
+
             token.appendChild(rankBadge);
             token.appendChild(glyph);
             token.appendChild(hpBadge);
@@ -3899,6 +4033,7 @@
       }
 
       updateTurnBanner();
+      flushCaptureAnimations();
     }
 
     function renderRulebookPage() {
