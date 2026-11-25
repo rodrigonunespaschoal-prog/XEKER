@@ -1363,8 +1363,8 @@
           const initBoard = buildInitialBoard();
           const initDeck = createDeck();
           const initFlop = [initDeck.pop(), initDeck.pop(), initDeck.pop()];
-          const wHand = [initDeck.pop(), initDeck.pop(), initDeck.pop()];
-          const bHand = [initDeck.pop(), initDeck.pop(), initDeck.pop()];
+          const whiteHand = [initDeck.pop(), initDeck.pop(), initDeck.pop()];
+          const blackHand = [initDeck.pop(), initDeck.pop(), initDeck.pop()];
 
           let created = false;
           await ranked.db.runTransaction(async (tx) => {
@@ -1388,8 +1388,8 @@
               flop: initFlop,
               whiteGold: 2,
               blackGold: 2,
-              whiteHand,
-              blackHand: bHand,
+              whiteHand: whiteHand.filter((x) => x !== undefined),
+              blackHand: blackHand.filter((x) => x !== undefined),
               statusText: `Partida Ranqueada iniciada (${whiteRating} vs ${blackRating} ELO).`,
               status: 'active',
               winner: null,
