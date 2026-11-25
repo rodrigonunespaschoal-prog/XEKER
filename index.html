@@ -1254,14 +1254,30 @@
         }
         const provider = new firebase.auth.GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
-        setOnlineStatus('Redirecionando para login Google...');
+        setOnlineStatus('Abrindo login Google...');
         try {
-          await ranked.auth.signInWithRedirect(provider);
-        } catch (err) {
-          try {
-            await ranked.auth.signInWithPopup(provider);
-          } catch (popErr) {
-            setOnlineStatus('Erro no login Google: ' + (popErr && popErr.code ? popErr.code : popErr.message));
+          const res = await ranked.auth.signInWithPopup(provider);
+          if (res && res.user) {
+            openModal('online-modal');
+            switchLobbyTab('ranked');
+            setOnlineStatus(`Conectado como ${res.user.displayName || 'Jogador'}.`);
+          }
+        } catch (popErr) {
+          const code = popErr && popErr.code ? popErr.code : '';
+          if (
+            code === 'auth/popup-blocked' ||
+            code === 'auth/popup-closed-by-user' ||
+            code === 'auth/cancelled-popup-request' ||
+            code === 'auth/operation-not-supported-in-this-environment'
+          ) {
+            setOnlineStatus('Redirecionando para login Google...');
+            try {
+              await ranked.auth.signInWithRedirect(provider);
+            } catch (redirErr) {
+              setOnlineStatus('Erro no login Google: ' + (redirErr && redirErr.code ? redirErr.code : redirErr.message));
+            }
+          } else {
+            setOnlineStatus('Erro no login Google: ' + (code || (popErr && popErr.message) || String(popErr)));
           }
         }
       }
@@ -1467,6 +1483,9 @@
           if (!firebase.apps.length) firebase.initializeApp(XEKER_FIREBASE_CONFIG);
           ranked.auth = firebase.auth();
           ranked.db = firebase.firestore();
+          try {
+            await ranked.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+          } catch (_) {}
 
           try {
             const res = await ranked.auth.getRedirectResult();
@@ -1533,6 +1552,10 @@
             });
 
             renderRankedUI();
+            if (selectedMode === 'online') {
+              openModal('online-modal');
+              switchLobbyTab('ranked');
+            }
             setOnlineStatus(`Conectado como ${user.displayName || 'Jogador'} (${ranked.profile.rating} ELO).`);
           });
         } catch (err) {
