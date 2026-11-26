@@ -294,8 +294,8 @@
       color: #d4d4d8;
       box-shadow: none;
     }
-  
-    /* Animações suaves de movimento e captura das peças */
+
+    /* Animações suaves de movimento e captura das peças (1.5s) */
     @keyframes xekerPieceSlide {
       0% {
         transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(1.08);
@@ -308,7 +308,7 @@
     }
 
     .piece-anim-move {
-      animation: xekerPieceSlide 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+      animation: xekerPieceSlide 1500ms cubic-bezier(0.22, 1, 0.36, 1) both;
       z-index: 25;
     }
 
@@ -338,9 +338,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      animation: xekerPieceCaptureBurst 500ms cubic-bezier(0.32, 0, 0.67, 1) forwards;
+      animation: xekerPieceCaptureBurst 1500ms cubic-bezier(0.32, 0, 0.67, 1) forwards;
     }
-
   </style>
 </head>
 <body>
@@ -350,7 +349,7 @@
   <!-- Tela Principal do Jogo -->
   <div id="game-shell" class="w-full max-w-[460px] mx-auto h-[100dvh] flex flex-col justify-between bg-[#09090b] border-x border-[#d4af37]/25 overflow-hidden">
 
-    <!-- Topo: Título, Ouro (♦), Cartas, Relógios 15:00, Regras e Menu -->
+    <!-- Topo: Título, Ouro (♦), Cartas, Relógios de Jogada (01:00), Regras e Menu -->
     <header class="shrink-0 flex items-center justify-between gap-1 px-2 py-1 bg-[#111217] border-b border-[#d4af37]/25">
       <span class="font-display font-extrabold text-sm tracking-widest text-[#f3d678]">XEKER</span>
 
@@ -359,14 +358,14 @@
           <span>♔</span>
           <span class="sym-diamond">♦<span id="val-gold-white">0</span></span>
           <span class="text-zinc-400">🃏<span id="val-cards-white">3</span></span>
-          <span id="val-clock-white" class="font-mono text-[10px] text-amber-200">15:00</span>
+          <span id="val-clock-white" class="font-mono text-[10px] text-amber-200">01:00</span>
         </div>
 
         <div id="hud-black" class="flex items-center gap-1 px-1.5 py-1 rounded-lg bg-[#161820] border border-white/10 text-[11px] font-bold">
           <span>♚</span>
           <span class="sym-diamond">♦<span id="val-gold-black">0</span></span>
           <span class="text-zinc-400">🃏<span id="val-cards-black">3</span></span>
-          <span id="val-clock-black" class="font-mono text-[10px] text-amber-200">15:00</span>
+          <span id="val-clock-black" class="font-mono text-[10px] text-amber-200">01:00</span>
         </div>
       </div>
 
@@ -399,12 +398,12 @@
       </div>
     </section>
 
-    <!-- Centro: Banner de Vez em Destaque + Tabuleiro 8x8 -->
+    <!-- Centro: Tabuleiro 8x8 + Indicador de Vez Abaixo do Tabuleiro -->
     <main class="flex-1 min-h-0 px-1.5 py-0.5 flex flex-col items-center justify-center gap-1">
-      <div id="turn-banner" class="w-full max-w-[380px] px-3 py-1 rounded-xl bg-gradient-to-r from-[#f3d678]/35 via-[#d4af37]/30 to-[#f3d678]/35 border-2 border-[#fff1b8] text-center text-xs sm:text-sm font-black tracking-wide text-[#fff1b8] shadow-[0_0_20px_rgba(243,214,120,0.45)]">
-        Vez do jogador —
-      </div>
       <div id="board-grid" class="xeker-board"></div>
+      <div id="turn-banner" class="w-full max-w-[380px] px-3 py-1 rounded-xl bg-gradient-to-r from-[#f3d678]/35 via-[#d4af37]/30 to-[#f3d678]/35 border-2 border-[#fff1b8] text-center text-xs sm:text-sm font-black tracking-wide text-[#fff1b8] shadow-[0_0_20px_rgba(243,214,120,0.45)]">
+        Vez das Brancas
+      </div>
     </main>
 
     <!-- Inferior: Habilidades da Peça Selecionada, Menu de 3 Opções, Fim de Turno, Mão e Mensagens -->
@@ -584,7 +583,7 @@
       <div id="ranked-turn-side-badge" class="inline-block px-3 py-1 rounded-full bg-[#d4af37]/15 border border-[#d4af37]/50 text-[11px] font-extrabold text-[#f3d678]">
         Você joga de Brancas (♔)
       </div>
-      <h2 id="ranked-turn-heading" class="font-display font-extrabold text-xl text-[#fff1b8] drop-shadow-[0_0_12px_rgba(243,214,120,0.45)]">Vez do jogador —</h2>
+      <h2 id="ranked-turn-heading" class="font-display font-extrabold text-xl text-[#fff1b8] drop-shadow-[0_0_12px_rgba(243,214,120,0.45)]">Vez das Brancas</h2>
       <p id="ranked-turn-desc" class="text-xs text-zinc-300 leading-relaxed"></p>
       <button type="button" id="btn-ranked-turn-ok" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold text-sm active:scale-95">
         Entendido
@@ -753,7 +752,7 @@
     });
 
     const MAX_HAND_SIZE = 6;
-    const INITIAL_CLOCK_SECONDS = 15 * 60;
+    const TURN_CLOCK_SECONDS = 60;
 
     const RANK_TEXT = {
       1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7',
@@ -849,8 +848,8 @@
       {
         title: '1. Objetivo, Relógios & Economia',
         html: `
-          <p><strong class="text-[#f3d678]">Objetivo:</strong> Abater o <strong>Rei adversário (7♥)</strong> ou vencer quando o tempo do oponente zerar.</p>
-          <p><strong class="text-[#f3d678]">Relógios (15:00):</strong> Cada jogador tem 15:00. O relógio do jogador ativo corre apenas fora de modais/resumos.</p>
+          <p><strong class="text-[#f3d678]">Objetivo:</strong> Abater o <strong>Rei adversário (7♥)</strong>.</p>
+          <p><strong class="text-[#f3d678]">Relógio de Jogada (01:00):</strong> Cada jogador tem <strong>1 minuto (01:00)</strong> para realizar sua jogada a cada vez que inicia seu turno. Se o tempo acabar, a vez passa automaticamente para o adversário.</p>
           <div class="p-2.5 rounded-xl bg-[#161820] border border-[#d4af37]/30 space-y-1">
             <div class="font-bold text-[#f3d678]">Regras de Turno e Recursos:</div>
             <p>• <strong>Ouro Inicial:</strong> Ambos os jogadores começam com <span class="sym-diamond">♦0</span>.</p>
@@ -1001,46 +1000,24 @@
       isSearching: false
     };
 
-    function getPlayerDisplayName(side) {
-      if (isRankedMode()) {
-        if (ranked.matchNames && ranked.matchNames[side]) {
-          return ranked.matchNames[side];
-        }
-        if (side === myOnlineSide() && ranked.profile && ranked.profile.name) {
-          return ranked.profile.name;
-        }
-        if (side !== myOnlineSide() && ranked.oppProfile && ranked.oppProfile.name) {
-          return ranked.oppProfile.name;
-        }
-      }
-      return side === 'white' ? 'Brancas' : 'Pretas';
+    function getSideTurnText(side) {
+      return side === 'black' ? 'Vez das Pretas' : 'Vez das Brancas';
     }
 
     function getSideColorLabel(side) {
       return side === 'white' ? 'Brancas (♔)' : 'Pretas (♚)';
     }
 
-    function formatTurnPlayerWithColor(side) {
-      const pName = getPlayerDisplayName(side);
-      const colorLabel = getSideColorLabel(side);
-      if (isRankedMode() && ranked.matchNames && ranked.matchNames[side]) {
-        return `${pName} · ${colorLabel}`;
-      }
-      return pName === colorLabel || pName.includes('Brancas') || pName.includes('Pretas')
-        ? colorLabel
-        : `${pName} (${colorLabel})`;
-    }
-
     function updateTurnBanner() {
       const banner = document.getElementById('turn-banner');
       if (!banner) return;
       if (!state || state.gameOver) {
-        banner.textContent = 'Vez do jogador —';
+        banner.textContent = 'Vez das Brancas';
         return;
       }
-      const turnLabel = formatTurnPlayerWithColor(state.turn);
+      const turnText = getSideTurnText(state.turn);
       const isMyTurn = !isRankedMode() || state.turn === myOnlineSide();
-      banner.textContent = `Vez do jogador ${turnLabel}`;
+      banner.textContent = turnText;
       banner.className = isMyTurn
         ? 'w-full max-w-[380px] px-3 py-1 rounded-xl bg-gradient-to-r from-[#f3d678]/35 via-[#d4af37]/30 to-[#f3d678]/35 border-2 border-[#fff1b8] text-center text-xs sm:text-sm font-black tracking-wide text-[#fff1b8] shadow-[0_0_20px_rgba(243,214,120,0.45)]'
         : 'w-full max-w-[380px] px-3 py-1 rounded-xl bg-[#161820] border border-[#d4af37]/40 text-center text-xs font-bold tracking-wide text-zinc-300';
@@ -1132,17 +1109,17 @@
       if (ranked.lastAnnouncedTurnKey === key) return;
       ranked.lastAnnouncedTurnKey = key;
 
-      const turnPlayerLabel = formatTurnPlayerWithColor(turnSide);
+      const turnText = getSideTurnText(turnSide);
       const mySide = myOnlineSide();
       const isMyTurn = turnSide === mySide;
       const myColorLabel = getSideColorLabel(mySide);
 
       document.getElementById('ranked-turn-icon').textContent = turnSide === 'white' ? '♔' : '♚';
       document.getElementById('ranked-turn-side-badge').textContent = `Você joga de ${myColorLabel}`;
-      document.getElementById('ranked-turn-heading').textContent = `Vez do jogador ${turnPlayerLabel}`;
+      document.getElementById('ranked-turn-heading').textContent = turnText;
       document.getElementById('ranked-turn-desc').textContent = isMyTurn
-        ? `É a sua vez de jogar (Rodada ${roundNum || 1}). Você está com as ${myColorLabel}.`
-        : `Aguardando a vez do jogador ${turnPlayerLabel} (Rodada ${roundNum || 1}). Você é das ${myColorLabel}.`;
+        ? `${turnText} (Rodada ${roundNum || 1}) · Você tem 01:00 para realizar sua jogada.`
+        : `${turnText} (Rodada ${roundNum || 1}) · Aguardando a jogada do adversário (01:00).`;
 
       openModal('ranked-turn-modal');
     }
@@ -1724,7 +1701,7 @@
             round: 1,
             ownTurns: { white: 1, black: 0 },
             actions: 2,
-            clocks: { white: INITIAL_CLOCK_SECONDS, black: INITIAL_CLOCK_SECONDS },
+            clocks: { white: TURN_CLOCK_SECONDS, black: TURN_CLOCK_SECONDS },
             board: buildInitialBoard(),
             deck: [],
             discard: [],
@@ -1742,7 +1719,7 @@
           };
         }
         const modeTag = ranked.unratedMatch ? 'Amistosa (sem Elo)' : 'Ranked Elo';
-        setStatus(`🏆 ${modeTag}: Você é Pretas (♚ ${mData.blackName} · ${mData.blackEloBefore}) vs ♔ ${mData.whiteName} (${mData.whiteEloBefore}) · Aguardando Brancas...`);
+        setStatus(`🏆 ${modeTag}: Você é Pretas (♚ ${mData.blackName} · ${mData.blackEloBefore}) vs ♔ ${mData.whiteName} (${mData.whiteEloBefore}) · Vez das Brancas...`);
         renderAll();
       }
 
@@ -1797,6 +1774,8 @@
             if (state && state.gameOver && state.gameOverData) {
               endMatch(state.gameOverData.winnerSide, state.gameOverData.reason);
             }
+            renderAll();
+            flushCaptureAnimations();
             syncOnlineState();
           }
         }
@@ -1856,7 +1835,6 @@
       closeModal('menu-modal');
       closeModal('ranked-modal');
       const prevSummary = net.lastSummary;
-      const prevTurn = state ? state.turn : null;
       const prevSelected = state ? state.selected : null;
       const prevActionMode = state ? state.actionMode : null;
       const prevSkillPhase = state ? state.skillPhase : null;
@@ -1869,7 +1847,6 @@
 
       if (
         prevSelected &&
-        prevTurn === view.turn &&
         !view.gameOver &&
         !view.pendingCombat &&
         view.board &&
@@ -1903,10 +1880,10 @@
         actions: Number.isFinite(Number(view.actions)) ? Number(view.actions) : 2,
         clocks: view.clocks && typeof view.clocks === 'object'
           ? {
-              white: Number.isFinite(Number(view.clocks.white)) ? Number(view.clocks.white) : INITIAL_CLOCK_SECONDS,
-              black: Number.isFinite(Number(view.clocks.black)) ? Number(view.clocks.black) : INITIAL_CLOCK_SECONDS
+              white: Number.isFinite(Number(view.clocks.white)) ? Number(view.clocks.white) : TURN_CLOCK_SECONDS,
+              black: Number.isFinite(Number(view.clocks.black)) ? Number(view.clocks.black) : TURN_CLOCK_SECONDS
             }
-          : { white: INITIAL_CLOCK_SECONDS, black: INITIAL_CLOCK_SECONDS },
+          : { white: TURN_CLOCK_SECONDS, black: TURN_CLOCK_SECONDS },
         board: safeBoard,
         deck: [],
         discard: [],
@@ -2030,6 +2007,64 @@
       renderAll();
     }
 
+    function advanceTurnByTimeoutOrEnd(currentTurnSide) {
+      if (!state || state.gameOver) return;
+      state.selected = null;
+      state.actionMode = null;
+      state.skillPhase = null;
+      state.copiedSkill = null;
+      state.clocks.white = TURN_CLOCK_SECONDS;
+      state.clocks.black = TURN_CLOCK_SECONDS;
+
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          const p = state.board[r][c];
+          if (p) p.acted = false;
+        }
+      }
+
+      if (currentTurnSide === 'white') {
+        state.turn = 'black';
+        state.actions = 2;
+        const bCard = maybeDrawEveryTwoOwnTurns('black');
+        const bDrawMsg = bCard !== null ? ` · Pretas receberam +1 carta [${RANK_TEXT[bCard]}]` : '';
+        const blackTurnText = getSideTurnText('black');
+
+        if (isRankedMode()) {
+          setStatus(`Tempo esgotado! ${blackTurnText} · ♣2${bDrawMsg}`);
+          renderAll();
+          if (net.role === 'host') syncOnlineState();
+          showRankedTurnIndicator('black', state.round);
+        } else {
+          document.getElementById('pass-heading').textContent = `Passe o aparelho — ${blackTurnText}`;
+          document.getElementById('pass-desc').textContent = `O tempo acabou! ${blackTurnText}. Passe o aparelho antes de revelar a mão.`;
+          setStatus(`Tempo esgotado! ${blackTurnText} · ♣2${bDrawMsg}`);
+          renderAll();
+          openModal('pass-modal');
+        }
+      } else {
+        state.turn = 'white';
+        state.round += 1;
+        state.actions = 2;
+        const wCard = maybeDrawEveryTwoOwnTurns('white');
+        const wDrawMsg = wCard !== null ? ` · Brancas receberam +1 carta [${RANK_TEXT[wCard]}]` : '';
+        const whiteTurnText = getSideTurnText('white');
+
+        if (isRankedMode()) {
+          setStatus(`Tempo esgotado! Rodada ${state.round} · ${whiteTurnText} · ♣2${wDrawMsg}`);
+          renderAll();
+          if (net.role === 'host') syncOnlineState();
+          showRankedTurnIndicator('white', state.round);
+        } else {
+          document.getElementById('pass-heading').textContent = `Passe o aparelho — ${whiteTurnText}`;
+          document.getElementById('pass-desc').textContent = `O tempo acabou! Rodada ${state.round} · ${whiteTurnText}. Passe o aparelho antes de revelar a mão.`;
+          setStatus(`Tempo esgotado! Rodada ${state.round} · ${whiteTurnText} · ♣2${wDrawMsg}`);
+          renderAll();
+          openModal('pass-modal');
+        }
+      }
+    }
+
     function handleGuestActionRequest(action) {
       if (!state || state.gameOver || !action) return;
       if (action.kind === 'surrender') {
@@ -2074,27 +2109,7 @@
       } else if (action.kind === 'buy') {
         onBuyCard();
       } else if (action.kind === 'end_turn') {
-        state.turn = 'black';
-        state.selected = null;
-        state.actionMode = null;
-        state.skillPhase = null;
-        state.copiedSkill = null;
-        for (let r = 0; r < 8; r++) {
-          for (let c = 0; c < 8; c++) {
-            const p = state.board[r][c];
-            if (p) p.acted = false;
-          }
-        }
-        state.turn = 'white';
-        state.round += 1;
-        state.actions = 2;
-        const wCard = maybeDrawEveryTwoOwnTurns('white');
-        const wDrawMsg = wCard !== null ? ` · Brancas receberam +1 carta [${RANK_TEXT[wCard]}]` : '';
-        const whiteTurnLabel = formatTurnPlayerWithColor('white');
-        setStatus(`Rodada ${state.round} · Vez do jogador ${whiteTurnLabel} · ♣2${wDrawMsg}`);
-        renderAll();
-        syncOnlineState();
-        showRankedTurnIndicator('white', state.round);
+        advanceTurnByTimeoutOrEnd('black');
       }
     }
 
@@ -2131,7 +2146,7 @@
       document.getElementById('combat-def-glyph').textContent = PIECE_DATA[defPiece.type].white;
       document.getElementById('combat-def-info').textContent = `${PIECE_DATA[defPiece.type].name} (${defPiece.hp}♥)`;
       document.getElementById('combat-def-sub').innerHTML = `
-        <div>Peça: ${formatPieceRep(defP)}</div>
+        <div>Peça: ${formatPieceRep(defPiece)}</div>
         <div class="text-[10px] text-red-300">Escolha sua carta</div>
       `;
       renderDefenderCardSelection(chosenAtk, defPiece, defPlayer);
@@ -2162,12 +2177,12 @@
       const wEl = document.getElementById('val-clock-white');
       const bEl = document.getElementById('val-clock-black');
       if (!state) {
-        if (wEl) wEl.textContent = '15:00';
-        if (bEl) bEl.textContent = '15:00';
+        if (wEl) wEl.textContent = '01:00';
+        if (bEl) bEl.textContent = '01:00';
         return;
       }
       if (wEl) wEl.textContent = formatTime(state.clocks.white);
-      if (bEl) wEl.textContent = formatTime(state.clocks.black);
+      if (bEl) bEl.textContent = formatTime(state.clocks.black);
     }
 
     function hasOpenModal() {
@@ -2216,23 +2231,24 @@
           if (!state || state.gameOver) return;
           if (hasOpenModal() && !(state.mode === 'offline' && document.getElementById('pass-modal').classList.contains('open') && document.querySelectorAll('.xeker-modal.open').length === 1)) return;
           if (isRankedMode() && !net.connected) return;
+          if (isRankedMode() && net.role === 'guest') return;
 
           if (!state.clocks || typeof state.clocks !== 'object') {
-            state.clocks = { white: INITIAL_CLOCK_SECONDS, black: INITIAL_CLOCK_SECONDS };
+            state.clocks = { white: TURN_CLOCK_SECONDS, black: TURN_CLOCK_SECONDS };
           }
 
           const active = state.turn === 'black' ? 'black' : 'white';
-          const curVal = Number.isFinite(Number(state.clocks[active])) ? Number(state.clocks[active]) : INITIAL_CLOCK_SECONDS;
-          state.clocks[active] = Math.max(0, curVal - 1);
+          const curVal = Number.isFinite(Number(state.clocks[active])) ? Number(state.clocks[active]) : TURN_CLOCK_SECONDS;
+          const nextVal = Math.max(0, curVal - 1);
+          state.clocks[active] = nextVal;
           refreshClocks();
 
           if (isRankedMode() && net.role === 'host') {
             sendNet({ type: 'clock_sync', clocks: state.clocks });
           }
 
-          if (state.clocks[active] <= 0) {
-            const winner = active === 'white' ? 'black' : 'white';
-            endMatch(winner, 'O tempo de 15:00 se esgotou.');
+          if (nextVal <= 0) {
+            advanceTurnByTimeoutOrEnd(active);
           }
         } catch (err) {
           reportError(err);
@@ -2486,8 +2502,8 @@
           ownTurns: { white: 1, black: 0 },
           actions: 2,
           clocks: {
-            white: INITIAL_CLOCK_SECONDS,
-            black: INITIAL_CLOCK_SECONDS
+            white: TURN_CLOCK_SECONDS,
+            black: TURN_CLOCK_SECONDS
           },
           board: buildInitialBoard(),
           deck: createDeck(),
@@ -2516,14 +2532,14 @@
         startClock();
 
         if (state.mode === 'ranked') {
-          setStatus('Partida Ranked iniciada · Você é Brancas (♔).');
+          setStatus('Partida Ranked iniciada · Vez das Brancas (01:00 por jogada).');
           renderAll();
           if (net.role === 'host') {
             syncOnlineState();
           }
           showRankedTurnIndicator('white', 1);
         } else {
-          setStatus('Partida Off-line iniciada · Brancas (♔) começam.');
+          setStatus('Partida Off-line iniciada · Vez das Brancas (01:00 por jogada).');
           renderAll();
         }
       } catch (err) {
@@ -2625,6 +2641,7 @@
       document.getElementById('gameover-title').textContent = title;
       document.getElementById('gameover-desc').textContent = reason;
       renderAll();
+      flushCaptureAnimations();
       if (isRankedMode() && net.role === 'host') {
         syncOnlineState();
       }
@@ -2690,8 +2707,7 @@
       state.copiedSkill = null;
     }
 
-
-    // --- Animações de Movimento e Captura ---
+    // --- Animações de Movimento e Captura (1500ms) ---
     let pendingMoveAnim = null;
     const pendingCaptureAnims = [];
 
@@ -2722,6 +2738,7 @@
     }
 
     function flushCaptureAnimations() {
+      if (document.getElementById('combat-modal').classList.contains('open')) return;
       while (pendingCaptureAnims.length > 0) {
         const item = pendingCaptureAnims.shift();
         const info = PIECE_DATA[item.piece.type];
@@ -2746,7 +2763,7 @@
         }, { once: true });
         setTimeout(() => {
           if (ghost.parentNode) ghost.remove();
-        }, 600);
+        }, 1600);
       }
     }
 
@@ -2864,7 +2881,6 @@
         net.lastSummary = null;
         if (summary.winnerSideEnd) {
           endMatch(summary.winnerSideEnd, 'O Rei adversário foi abatido!');
-          flushCaptureAnimations();
           return;
         }
         renderAll();
@@ -3761,21 +3777,21 @@
         return;
       }
 
-      if (isRankedMode() && net.role === 'guest') {
-        state.selected = null;
-        state.actionMode = null;
-        state.skillPhase = null;
-        state.copiedSkill = null;
-        setStatus(`Passando a vez para o jogador ${formatTurnPlayerWithColor('white')}...`);
-        renderAll();
-        sendNet({ type: 'online_action', action: { kind: 'end_turn' } });
-        return;
-      }
-
+      const currentTurnSide = state.turn;
       state.selected = null;
       state.actionMode = null;
       state.skillPhase = null;
       state.copiedSkill = null;
+      state.clocks.white = TURN_CLOCK_SECONDS;
+      state.clocks.black = TURN_CLOCK_SECONDS;
+
+      if (isRankedMode() && net.role === 'guest') {
+        const nextTurnText = getSideTurnText('white');
+        setStatus(`Passando para ${nextTurnText}...`);
+        renderAll();
+        sendNet({ type: 'online_action', action: { kind: 'end_turn' } });
+        return;
+      }
 
       for (let r = 0; r < 8; r++) {
         for (let c = 0; c < 8; c++) {
@@ -3784,22 +3800,22 @@
         }
       }
 
-      if (state.turn === 'white') {
+      if (currentTurnSide === 'white') {
         state.turn = 'black';
         state.actions = 2;
         const bCard = maybeDrawEveryTwoOwnTurns('black');
         const bDrawMsg = bCard !== null ? ` · Pretas receberam +1 carta [${RANK_TEXT[bCard]}]` : '';
-        const blackTurnLabel = formatTurnPlayerWithColor('black');
+        const blackTurnText = getSideTurnText('black');
 
         if (isRankedMode()) {
-          setStatus(`Vez do jogador ${blackTurnLabel} · ♣2${bDrawMsg}`);
+          setStatus(`${blackTurnText} · ♣2${bDrawMsg}`);
           renderAll();
           if (net.role === 'host') syncOnlineState();
           showRankedTurnIndicator('black', state.round);
         } else {
-          document.getElementById('pass-heading').textContent = `Passe o aparelho para ${blackTurnLabel}`;
-          document.getElementById('pass-desc').textContent = `Passe o aparelho para o jogador ${blackTurnLabel} antes de revelar a mão.`;
-          setStatus(`Vez do jogador ${blackTurnLabel} · ♣2${bDrawMsg}`);
+          document.getElementById('pass-heading').textContent = `Passe o aparelho — ${blackTurnText}`;
+          document.getElementById('pass-desc').textContent = `${blackTurnText}. Passe o aparelho antes de revelar a mão.`;
+          setStatus(`${blackTurnText} · ♣2${bDrawMsg}`);
           renderAll();
           openModal('pass-modal');
         }
@@ -3809,17 +3825,17 @@
         state.actions = 2;
         const wCard = maybeDrawEveryTwoOwnTurns('white');
         const wDrawMsg = wCard !== null ? ` · Brancas receberam +1 carta [${RANK_TEXT[wCard]}]` : '';
-        const whiteTurnLabel = formatTurnPlayerWithColor('white');
+        const whiteTurnText = getSideTurnText('white');
 
         if (isRankedMode()) {
-          setStatus(`Rodada ${state.round} · Vez do jogador ${whiteTurnLabel} · ♣2${wDrawMsg}`);
+          setStatus(`Rodada ${state.round} · ${whiteTurnText} · ♣2${wDrawMsg}`);
           renderAll();
           if (net.role === 'host') syncOnlineState();
           showRankedTurnIndicator('white', state.round);
         } else {
-          document.getElementById('pass-heading').textContent = `Passe o aparelho para ${whiteTurnLabel}`;
-          document.getElementById('pass-desc').textContent = `Passe o aparelho para o jogador ${whiteTurnLabel} antes de revelar a mão.`;
-          setStatus(`Rodada ${state.round} · Vez do jogador ${whiteTurnLabel} · ♣2${wDrawMsg}`);
+          document.getElementById('pass-heading').textContent = `Passe o aparelho — ${whiteTurnText}`;
+          document.getElementById('pass-desc').textContent = `Rodada ${state.round} · ${whiteTurnText}. Passe o aparelho antes de revelar a mão.`;
+          setStatus(`Rodada ${state.round} · ${whiteTurnText} · ♣2${wDrawMsg}`);
           renderAll();
           openModal('pass-modal');
         }
