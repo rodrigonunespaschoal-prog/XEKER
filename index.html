@@ -873,6 +873,7 @@
       getDocs,
       getCountFromServer,
       onSnapshot,
+      runTransaction,
       serverTimestamp
     } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
@@ -1805,7 +1806,8 @@
           elo: ranked.profile.elo || 1200,
           status: 'searching',
           matchId: null,
-          createdAt: serverTimestamp()
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
         });
 
         if (ranked.queueUnsub) ranked.queueUnsub();
@@ -1820,6 +1822,13 @@
         });
 
         const tryPairOpponent = async () => {
+          if (!ranked.isSearching) return;
+
+          await updateDoc(myQueueRef, {
+            status: 'searching',
+            updatedAt: serverTimestamp()
+          }).catch(() => {});
+
           const q = query(
             collection(db, 'matchmaking_queue'),
             where('status', '==', 'searching')
@@ -1827,10 +1836,22 @@
           const snap = await getDocs(q);
           let bestOpp = null;
           let minDiff = Infinity;
+          const nowMs = Date.now();
 
           snap.forEach((item) => {
             const cand = item.data();
-            if (cand.uid !== myUid && cand.status === 'searching') {
+            if (cand.uid && cand.uid !== myUid && cand.status === 'searching') {
+              const candTs = cand.updatedAt && typeof cand.updatedAt.toMillis === 'function'
+                ? cand.updatedAt.toMillis()
+                : (cand.createdAt && typeof cand.createdAt.toMillis === 'function' ? cand.createdAt.toMillis() : 0);
+
+              if (candTs && (nowMs - candTs) > 45000) {
+                deleteDoc(doc(db, 'matchmaking_queue', cand.uid)).catch(() => {});
+                return;
+              }
+
+              if (myUid > cand.uid) return;
+
               const diff = Math.abs((cand.elo || 1200) - (ranked.profile.elo || 1200));
               if (diff < minDiff) {
                 minDiff = diff;
@@ -1842,6 +1863,7 @@
           if (bestOpp) {
             const newMatchId = `rk_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
             const matchRef = doc(db, 'matches', newMatchId);
+            const oppQueueRef = doc(db, 'matchmaking_queue', bestOpp.uid);
             const iAmWhite = Math.random() < 0.5;
 
             const whiteP = iAmWhite
@@ -1852,34 +1874,45 @@
               ? { uid: bestOpp.uid, name: bestOpp.name, elo: bestOpp.elo || 1200 }
               : { uid: myUid, name: ranked.profile.name, elo: ranked.profile.elo || 1200 };
 
-            await setDoc(matchRef, {
-              matchId: newMatchId,
-              whiteUid: whiteP.uid,
-              whiteName: whiteP.name,
-              whiteEloBefore: whiteP.elo,
-              blackUid: blackP.uid,
-              blackName: blackP.name,
-              blackEloBefore: blackP.elo,
-              status: 'active',
-              winnerSide: null,
-              endReason: null,
-              viewJson: null,
-              clocksJson: null,
-              guestActionJson: null,
-              guestAtkCardJson: null,
-              guestDefCardJson: null,
-              guestSummaryAckSeq: 0,
-              createdAt: serverTimestamp()
+            const paired = await runTransaction(db, async (tx) => {
+              const mySnap = await tx.get(myQueueRef);
+              const oppSnap = await tx.get(oppQueueRef);
+              if (!mySnap.exists() || !oppSnap.exists()) return false;
+              if (mySnap.data().status !== 'searching' || oppSnap.data().status !== 'searching') return false;
+
+              tx.set(matchRef, {
+                matchId: newMatchId,
+                whiteUid: whiteP.uid,
+                whiteName: whiteP.name,
+                whiteEloBefore: whiteP.elo,
+                blackUid: blackP.uid,
+                blackName: blackP.name,
+                blackEloBefore: blackP.elo,
+                status: 'active',
+                winnerSide: null,
+                endReason: null,
+                viewJson: null,
+                clocksJson: null,
+                guestActionJson: null,
+                guestAtkCardJson: null,
+                guestDefCardJson: null,
+                guestSummaryAckSeq: 0,
+                createdAt: serverTimestamp()
+              });
+
+              tx.update(oppQueueRef, {
+                status: 'matched',
+                matchId: newMatchId
+              });
+
+              tx.delete(myQueueRef);
+              return true;
             });
 
-            await updateDoc(doc(db, 'matchmaking_queue', bestOpp.uid), {
-              status: 'matched',
-              matchId: newMatchId
-            });
-
-            cleanupRankedQueue();
-            await deleteDoc(myQueueRef).catch(() => {});
-            await startRankedSession(newMatchId);
+            if (paired) {
+              cleanupRankedQueue();
+              await startRankedSession(newMatchId);
+            }
           }
         };
 
@@ -4820,6 +4853,15 @@
         startClock();
         window.addEventListener('resize', () => {
           if (state) renderAll();
+        });
+        window.addEventListener('beforeunload', () => {
+          if (ranked.user && ranked.user.uid) {
+            deleteDoc(doc(db, 'matchmaking_queue', ranked.user.uid)).catch(() => {});
+            setDoc(doc(db, 'users', ranked.user.uid), {
+              online: false,
+              lastSeen: serverTimestamp()
+            }, { merge: true }).catch(() => {});
+          }
         });
       } catch (err) {
         reportError(err);
