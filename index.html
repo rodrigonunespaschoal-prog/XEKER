@@ -308,7 +308,7 @@
     }
 
     .piece-anim-move {
-      animation: xekerPieceSlide 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+      animation: xekerPieceSlide 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
       z-index: 25;
     }
 
@@ -338,7 +338,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      animation: xekerPieceCaptureBurst 360ms cubic-bezier(0.32, 0, 0.67, 1) forwards;
+      animation: xekerPieceCaptureBurst 500ms cubic-bezier(0.32, 0, 0.67, 1) forwards;
     }
 
   </style>
@@ -2012,6 +2012,7 @@
           closeModal('combat-modal');
           sendNet({ type: 'online_summary_ack' });
           renderAll();
+          flushCaptureAnimations();
         });
       } else if (!net.pendingCombat && !net.lastSummary) {
         combatCardLocked = false;
@@ -2128,7 +2129,7 @@
         <div class="text-[10px] text-amber-200">Peça: ${formatPieceRep(atkP)}</div>
       `;
       document.getElementById('combat-def-glyph').textContent = PIECE_DATA[defPiece.type].white;
-      document.getElementById('combat-def-info').textContent = `${PIECE_DATA[defPiece.type].name} (${defP.hp}♥)`;
+      document.getElementById('combat-def-info').textContent = `${PIECE_DATA[defPiece.type].name} (${defPiece.hp}♥)`;
       document.getElementById('combat-def-sub').innerHTML = `
         <div>Peça: ${formatPieceRep(defP)}</div>
         <div class="text-[10px] text-red-300">Escolha sua carta</div>
@@ -2190,6 +2191,9 @@
       const el = document.getElementById(id);
       if (el) el.classList.remove('open');
       armGhostClickGuard(240);
+      if (id === 'combat-modal') {
+        requestAnimationFrame(() => flushCaptureAnimations());
+      }
     }
 
     function closeAllModals() {
@@ -2742,7 +2746,7 @@
         }, { once: true });
         setTimeout(() => {
           if (ghost.parentNode) ghost.remove();
-        }, 450);
+        }, 600);
       }
     }
 
@@ -2860,9 +2864,11 @@
         net.lastSummary = null;
         if (summary.winnerSideEnd) {
           endMatch(summary.winnerSideEnd, 'O Rei adversário foi abatido!');
+          flushCaptureAnimations();
           return;
         }
         renderAll();
+        flushCaptureAnimations();
         if (isRankedMode() && net.role === 'host') {
           syncOnlineState();
         }
@@ -4033,7 +4039,10 @@
       }
 
       updateTurnBanner();
-      flushCaptureAnimations();
+      const combatModalIsOpen = document.getElementById('combat-modal').classList.contains('open');
+      if (!combatModalIsOpen) {
+        flushCaptureAnimations();
+      }
     }
 
     function renderRulebookPage() {
