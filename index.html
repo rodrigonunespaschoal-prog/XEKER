@@ -1078,7 +1078,7 @@
         black: '♞',
         reachLabel: 'Salto em L (2+1)',
         activeText: 'Move o alvo 1 casa em qualquer direção.',
-        passiveText: 'Ignora obstáculos ao mover-se, atacar ou usar habilidade ativa.'
+        passiveText: 'Ignora obstáculos ao mover-se, atacar ou usar ativa.'
       }
     };
 
@@ -1243,6 +1243,7 @@
       lastDefCardSeq: 0,
       lastSummaryAckSeq: 0,
       lastAnnouncedTurnKey: null,
+      lastAnimatedFxEventId: null,
       unratedMatch: false,
       usersUnsub: null,
       invitesUnsub: null,
@@ -1550,6 +1551,7 @@
         } : null,
         lastSummary: net.lastSummary,
         summaryClosed: net.summaryClosed ? { ...net.summaryClosed } : { white: false, black: false },
+        fxEvent: net.fxEvent || null,
         gameOver: state.gameOver,
         gameOverData: state.gameOverData || null
       };
@@ -2080,6 +2082,7 @@
       ranked.lastDefCardSeq = 0;
       ranked.lastSummaryAckSeq = 0;
       ranked.lastAnnouncedTurnKey = null;
+      ranked.lastAnimatedFxEventId = null;
 
       const matchRef = doc(db, 'matches', matchId);
       const initialSnap = await getDoc(matchRef);
@@ -2341,6 +2344,11 @@
 
       net.pendingCombat = view.pendingCombat || null;
       net.lastSummary = view.lastSummary || null;
+
+      if (view.fxEvent && view.fxEvent.id && view.fxEvent.id !== ranked.lastAnimatedFxEventId) {
+        ranked.lastAnimatedFxEventId = view.fxEvent.id;
+        queueGuestFxEvent(view.fxEvent);
+      }
 
       if (net.pendingCombat && net.pendingCombat.stage === 'awaiting_attacker' && net.pendingCombat.atkPiece && net.pendingCombat.atkPiece.color === 'black') {
         if (combatCardLocked && combatUI.mode === 'pick_atk') {
@@ -3043,6 +3051,7 @@
         combatCardLocked = false;
         net.pendingCombat = null;
         net.lastSummary = null;
+        net.fxEvent = null;
         ranked.lastAnnouncedTurnKey = null;
 
         state = {
@@ -3300,6 +3309,77 @@
     const pendingDamageAnims = [];
     const pendingMoveSteps = [];
     let captureDelayTimer = null;
+
+    function recordHostFxEvent(fxPayload) {
+      if (!isRankedMode() || net.role !== 'host') return;
+      net.fxEvent = {
+        id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        ...fxPayload
+      };
+    }
+
+    function queueGuestFxEvent(fxEvent) {
+      if (!fxEvent) return;
+      if (fxEvent.move) {
+        const fromRect = captureTileRect(fxEvent.move.fromR, fxEvent.move.fromC);
+        const toRect = captureTileRect(fxEvent.move.toR, fxEvent.move.toC);
+        if (fromRect && toRect) {
+          const dx = fromRect.left - toRect.left;
+          const dy = fromRect.top - toRect.top;
+          if (Math.abs(dx) >= 1 || Math.abs(dy) >= 1) {
+            pendingMoveAnim = { r: fxEvent.move.toR, c: fxEvent.move.toC, dx, dy };
+          }
+        }
+      }
+      if (Array.isArray(fxEvent.swapMoves)) {
+        for (const sm of fxEvent.swapMoves) {
+          const fromRect = captureTileRect(sm.fromR, sm.fromC);
+          const toRect = captureTileRect(sm.toR, sm.toC);
+          const pieceObj = state && state.board && state.board[sm.toR] ? state.board[sm.toR][sm.toC] : null;
+          if (fromRect && toRect && pieceObj) {
+            pendingMoveSteps.push({
+              toRect,
+              dx: fromRect.left - toRect.left,
+              dy: fromRect.top - toRect.top,
+              piece: { ...pieceObj }
+            });
+          }
+        }
+      }
+      if (Array.isArray(fxEvent.damages)) {
+        for (const d of fxEvent.damages) {
+          const rect = captureTileRect(d.r, d.c);
+          if (rect && d.amount > 0) {
+            pendingDamageAnims.push({ rect, amount: d.amount });
+          }
+        }
+      }
+      if (Array.isArray(fxEvent.captures)) {
+        for (const cap of fxEvent.captures) {
+          const rect = captureTileRect(cap.r, cap.c);
+          if (rect && cap.piece) {
+            pendingCaptureAnims.push({ rect, piece: { ...cap.piece } });
+          }
+        }
+      }
+      if (Array.isArray(fxEvent.moveSteps)) {
+        for (const ms of fxEvent.moveSteps) {
+          const fromRect = captureTileRect(ms.fromR, ms.fromC);
+          const toRect = captureTileRect(ms.toR, ms.toC);
+          if (fromRect && toRect && ms.piece) {
+            pendingMoveSteps.push({
+              toRect,
+              dx: fromRect.left - toRect.left,
+              dy: fromRect.top - toRect.top,
+              piece: { ...ms.piece }
+            });
+          }
+        }
+      }
+      if (fxEvent.immediateFlush) {
+        scheduleDamageAndCaptureSequence();
+      }
+    }
 
     function captureTileRect(r, c) {
       const boardEl = document.getElementById('board-grid');
@@ -3593,6 +3673,7 @@
       const piece = state.board[fromR][fromC];
       if (!piece) return;
       queueMoveAnimation(fromR, fromC, toR, toC);
+      recordHostFxEvent({ move: { fromR, fromC, toR, toC } });
       state.board[toR][toC] = piece;
       state.board[fromR][fromC] = null;
       finishPieceAction(piece);
@@ -4323,6 +4404,8 @@
         }
         player.gold -= 1;
         queueCaptureAnimation(userR, userC, userPiece);
+        const fxDamages = [];
+        const fxCaptures = [{ r: userR, c: userC, piece: { ...userPiece } }];
         state.board[userR][userC] = null;
 
         let hitCount = 0;
@@ -4332,10 +4415,12 @@
           if (!enemy) continue;
           const enemySnap = { ...enemy };
           queueDamageAnimation(item.r, item.c, 1);
+          fxDamages.push({ r: item.r, c: item.c, amount: 1 });
           enemy.hp -= 1;
           hitCount += 1;
           if (enemy.hp <= 0) {
             queueCaptureAnimation(item.r, item.c, enemySnap);
+            fxCaptures.push({ r: item.r, c: item.c, piece: enemySnap });
             state.board[item.r][item.c] = null;
             if (handleAbatement(state.turn, enemy)) {
               endNow = true;
@@ -4343,6 +4428,7 @@
             }
           }
         }
+        recordHostFxEvent({ damages: fxDamages, captures: fxCaptures, immediateFlush: true });
         finishPieceSkillAction(userPiece);
         if (!endNow) {
           setStatus(`♠ ${isCopied ? 'Rainha (Peão)' : 'Peão'} sacrificou-se causando 1♥ a ${hitCount} inimigo(s) (♦1 · 0♣).`);
@@ -4384,6 +4470,13 @@
         player.gold -= 1;
         queueMoveAnimation(userR, userC, targetR, targetC);
         queueMoveAnimation(targetR, targetC, userR, userC);
+        recordHostFxEvent({
+          swapMoves: [
+            { fromR: userR, fromC: userC, toR: targetR, toC: targetC },
+            { fromR: targetR, fromC: targetC, toR: userR, toC: userC }
+          ],
+          immediateFlush: true
+        });
         state.board[targetR][targetC] = userPiece;
         state.board[userR][userC] = targetPiece;
         finishPieceSkillAction(userPiece);
@@ -4407,6 +4500,7 @@
         }
         player.gold -= 1;
         queueMoveAnimation(targetR, targetC, dest.r, dest.c);
+        recordHostFxEvent({ move: { fromR: targetR, fromC: targetC, toR: dest.r, toC: dest.c } });
         state.board[dest.r][dest.c] = movedTarget;
         state.board[targetR][targetC] = null;
         promotePawnIfCrossed(movedTarget, dest.r, dest.c);
@@ -4428,6 +4522,7 @@
         const applied = Math.min(2, Math.max(0, enemy.hp - 1));
         if (applied > 0) {
           queueDamageAnimation(targetR, targetC, applied);
+          recordHostFxEvent({ damages: [{ r: targetR, c: targetC, amount: applied }], immediateFlush: true });
         }
         enemy.hp = Math.max(1, enemy.hp - 2);
         finishPieceSkillAction(userPiece);
@@ -4444,11 +4539,14 @@
       queueDamageAnimation(targetR, targetC, dmg);
       enemy.hp -= dmg;
       let ended = false;
+      const fxCaptures = [];
       if (enemy.hp <= 0) {
         queueCaptureAnimation(targetR, targetC, enemySnap);
+        fxCaptures.push({ r: targetR, c: targetC, piece: enemySnap });
         state.board[targetR][targetC] = null;
         ended = handleAbatement(state.turn, enemy);
       }
+      recordHostFxEvent({ damages: [{ r: targetR, c: targetC, amount: dmg }], captures: fxCaptures, immediateFlush: true });
       finishPieceSkillAction(userPiece);
       if (!ended) {
         setStatus(`♠ ${isCopied ? `Rainha (${PIECE_DATA[skillType].name})` : PIECE_DATA[userPiece.type].name} causou ${dmg}♥ em ${PIECE_DATA[enemy.type].name} (♦1 · 0♣).`);
@@ -5148,48 +5246,27 @@
       document.getElementById('btn-surrender-cancel').addEventListener('click', () => closeModal('surrender-modal'));
       document.getElementById('btn-surrender-confirm').addEventListener('click', confirmSurrender);
       document.getElementById('btn-end-turn').addEventListener('click', onEndTurn);
-      document.getElementById('btn-pass-ok').addEventListener('click', (ev) => {
-        ev.stopPropagation();
+
+      document.getElementById('btn-pass-ok').addEventListener('click', () => {
         closeModal('pass-modal');
         renderAll();
       });
-      document.getElementById('btn-combat-pass-ok').addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        closeModal('combat-pass-modal');
-        const fn = pendingCombatPassAction;
+
+      document.getElementById('btn-combat-pass-ok').addEventListener('click', () => {
+        const cb = pendingCombatPassAction;
         pendingCombatPassAction = null;
-        if (typeof fn === 'function') {
-          fn();
-        }
+        closeModal('combat-pass-modal');
+        if (typeof cb === 'function') cb();
       });
     }
 
-    function initApp() {
-      try {
-        bindEvents();
-        syncModeButtons();
-        startClock();
-        window.addEventListener('resize', () => {
-          if (state) renderAll();
-        });
-        window.addEventListener('beforeunload', () => {
-          if (ranked.user && ranked.user.uid) {
-            deleteDoc(doc(db, 'matchmaking_queue', ranked.user.uid)).catch(() => {});
-            setDoc(doc(db, 'users', ranked.user.uid), {
-              online: false,
-              lastSeen: serverTimestamp()
-            }, { merge: true }).catch(() => {});
-          }
-        });
-      } catch (err) {
-        reportError(err);
-      }
-    }
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initApp);
-    } else {
-      initApp();
+    try {
+      bindEvents();
+      syncModeButtons();
+      startClock();
+      renderAll();
+    } catch (err) {
+      reportError(err);
     }
   </script>
 </body>
