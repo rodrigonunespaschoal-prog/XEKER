@@ -2433,18 +2433,27 @@
           closeModal('combat-modal');
           const summaryToAnimate = net.lastSummary;
           net.lastSummary = null;
+          net.summaryClosed = { white: false, black: false };
           if (state && state.gameOver && state.gameOverData) {
             endMatch(state.gameOverData.winnerSide, state.gameOverData.reason);
           }
           renderAll();
-          scheduleDamageAndCaptureSequence(summaryToAnimate);
+          if (summaryToAnimate) {
+            runQueuedCaptureAnimationsNow();
+            const guestItems = buildDamageAndCaptureListFromSummary(summaryToAnimate);
+            for (const g of guestItems) {
+              if (g.amount > 0) runDamageNumberBadge(g.rect, g.amount);
+              if (g.captured && g.piece) runSingleCaptureGhost(g.rect, g.piece);
+            }
+          }
         } else if (remoteClosed.black) {
           stopCombatCountdown();
           closeModal('combat-modal');
           combatUI.waitingForOpponent = true;
           openModal('waiting-opponent-modal');
-        } else if (!combatUI.waitingForOpponent && (JSON.stringify(net.lastSummary) !== JSON.stringify(prevSummary) || combatUI.mode !== 'summary')) {
+        } else if (!combatUI.waitingForOpponent) {
           combatCardLocked = false;
+          stopCombatCountdown();
           const s = net.lastSummary;
           const flopEl = document.getElementById('combat-flop');
           flopEl.innerHTML = '';
@@ -2474,10 +2483,16 @@
           });
         }
       } else if (!net.pendingCombat && !net.lastSummary) {
-        combatCardLocked = false;
-        combatUI.waitingForOpponent = false;
-        closeModal('waiting-opponent-modal');
-        closeModal('combat-modal');
+        if (combatCardLocked && (combatUI.mode === 'pick_atk' || combatUI.mode === 'pick_def') && !view.gameOver) {
+          document.getElementById('combat-body').innerHTML = `<div class="text-xs text-amber-200 text-center py-2">Calculando resultado do combate...</div>`;
+          openModal('combat-modal');
+        } else {
+          stopCombatCountdown();
+          combatCardLocked = false;
+          combatUI.waitingForOpponent = false;
+          closeModal('waiting-opponent-modal');
+          closeModal('combat-modal');
+        }
       }
 
       if (state.gameOver && state.gameOverData) {
@@ -3474,6 +3489,9 @@
           document.getElementById('combat-modal').classList.contains('open') ||
           document.getElementById('waiting-opponent-modal').classList.contains('open')
         ) {
+          pendingDamageAnims.push(...dmgBatch);
+          pendingMoveSteps.push(...moveBatch);
+          pendingCaptureAnims.push(...capBatch);
           return;
         }
 
