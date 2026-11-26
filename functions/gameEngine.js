@@ -1,116 +1,204 @@
-// Módulo compartilhado de regras e estado do Xeker para o host autoritativo no Firebase
+// Módulo compartilhado de regras e estado do Xeker (100% alinhado com index_2.html)
 
-const PIECE_DATA = {
-  king:   { name: 'Rei',       maxHp: 6, symbol: '♔', move: 'king',   attack: 'king',   range: 1 },
-  queen:  { name: 'Rainha',    maxHp: 5, symbol: '♕', move: 'queen',  attack: 'queen',  range: 3 },
-  rook:   { name: 'Torre',     maxHp: 5, symbol: '♖', move: 'rook',   attack: 'rook',   range: 3 },
-  bishop: { name: 'Bispo',     maxHp: 4, symbol: '♗', move: 'bishop', attack: 'bishop', range: 3 },
-  knight: { name: 'Cavaleiro', maxHp: 4, symbol: '♘', move: 'knight', attack: 'knight', range: 2 },
-  pawn:   { name: 'Peão',      maxHp: 2, symbol: '♙', move: 'pawn',   attack: 'pawn',   range: 1 }
+const MAX_HAND_SIZE = 6;
+const TURN_CLOCK_SECONDS = 60;
+
+const RANK_TEXT = {
+  1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7',
+  8: '8', 9: '9', 10: '10', 11: 'J', 12: 'Q', 13: 'K'
 };
 
-const SUITS = ['♠', '♥', '♦', '♣'];
-const RANKS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+const PIECE_DATA = {
+  P: {
+    name: 'Peão',
+    hp: 1,
+    reward: 2,
+    cardVal: 2,
+    cardLabel: 'Coringa (2 a 9)',
+    white: '♙',
+    black: '♟'
+  },
+  R: {
+    name: 'Torre',
+    hp: 3,
+    reward: 4,
+    cardVal: 10,
+    cardLabel: '10',
+    white: '♖',
+    black: '♜'
+  },
+  B: {
+    name: 'Bispo',
+    hp: 3,
+    reward: 4,
+    cardVal: 11,
+    cardLabel: 'J',
+    white: '♗',
+    black: '♝'
+  },
+  Q: {
+    name: 'Rainha',
+    hp: 5,
+    reward: 6,
+    cardVal: 12,
+    cardLabel: 'Q',
+    white: '♕',
+    black: '♛'
+  },
+  K: {
+    name: 'Rei',
+    hp: 7,
+    reward: 0,
+    cardVal: 13,
+    cardLabel: 'K',
+    white: '♔',
+    black: '♚'
+  },
+  N: {
+    name: 'Cavalo',
+    hp: 3,
+    reward: 4,
+    cardVal: 1,
+    cardLabel: 'A',
+    white: '♘',
+    black: '♞'
+  }
+};
 
-function rankLabel(rank) {
-  if (rank === 14) return 'A';
-  if (rank === 13) return 'K';
-  if (rank === 12) return 'Q';
-  if (rank === 11) return 'J';
-  return String(rank);
+function insideBoard(r, c) {
+  return r >= 0 && r < 8 && c >= 0 && c < 8;
 }
 
 function createDeck() {
-  const deck = [];
-  let id = 1;
-  for (const suit of SUITS) {
-    for (const rank of RANKS) {
-      deck.push({
-        id: `c_${id++}`,
-        rank,
-        suit,
-        label: `${rankLabel(rank)}${suit}`
-      });
+  const arr = [];
+  for (let val = 1; val <= 13; val++) {
+    for (let copy = 0; copy < 3; copy++) {
+      arr.push(val);
     }
   }
-  for (let i = deck.length - 1; i > 0; i--) {
+  for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
+    const temp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = temp;
   }
-  return deck;
+  return arr;
 }
 
-function createInitialBoard() {
-  const backRow = ['rook', 'knight', 'bishop', 'queen', 'king', 'bishop', 'knight', 'rook'];
-  const board = Array.from({ length: 8 }, () => Array(8).fill(null));
-  let pid = 1;
+function drawCardFromState(state) {
+  if (!state) return null;
+  if ((!state.deck || state.deck.length === 0) && state.discard && state.discard.length > 0) {
+    state.deck = state.discard.splice(0, state.discard.length);
+    for (let i = state.deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const temp = state.deck[i];
+      state.deck[i] = state.deck[j];
+      state.deck[j] = temp;
+    }
+  }
+  return state.deck && state.deck.length > 0 ? state.deck.pop() : null;
+}
 
-  for (let c = 0; c < 8; c++) {
-    const bType = backRow[c];
-    board[0][c] = {
-      id: `p_${pid++}`,
-      side: 'black',
+function dealFlopInState(state) {
+  if (!state) return;
+  if (!Array.isArray(state.discard)) state.discard = [];
+  if (Array.isArray(state.flop) && state.flop.length > 0) {
+    state.discard.push(...state.flop);
+  }
+  state.flop = [];
+  for (let i = 0; i < 3; i++) {
+    const c = drawCardFromState(state);
+    if (c !== null) state.flop.push(c);
+  }
+}
+
+function maybeDrawEveryTwoOwnTurns(state, side) {
+  if (!state || !side) return null;
+  if (!state.ownTurns) state.ownTurns = { white: 1, black: 0 };
+  state.ownTurns[side] = (state.ownTurns[side] || 0) + 1;
+  if (state.ownTurns[side] % 2 !== 0) return null;
+
+  const hand = state.players[side].hand;
+  if (hand.length >= MAX_HAND_SIZE) return null;
+  const c = drawCardFromState(state);
+  if (c !== null) {
+    hand.push(c);
+    return c;
+  }
+  return null;
+}
+
+function buildInitialBoard() {
+  const grid = Array.from({ length: 8 }, () => Array(8).fill(null));
+  const backRank = ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'];
+
+  for (let col = 0; col < 8; col++) {
+    const bType = backRank[col];
+    grid[0][col] = {
+      id: `b_${bType}_${col}`,
+      color: 'black',
       type: bType,
-      hp: PIECE_DATA[bType].maxHp,
-      maxHp: PIECE_DATA[bType].maxHp,
-      moved: false,
-      skillCooldown: 0
+      hp: PIECE_DATA[bType].hp,
+      maxHp: PIECE_DATA[bType].hp,
+      cardVal: PIECE_DATA[bType].cardVal,
+      acted: false
     };
-    board[1][c] = {
-      id: `p_${pid++}`,
-      side: 'black',
-      type: 'pawn',
-      hp: PIECE_DATA.pawn.maxHp,
-      maxHp: PIECE_DATA.pawn.maxHp,
-      moved: false,
-      skillCooldown: 0
+    grid[1][col] = {
+      id: `b_P_${col}`,
+      color: 'black',
+      type: 'P',
+      hp: PIECE_DATA.P.hp,
+      maxHp: PIECE_DATA.P.hp,
+      cardVal: PIECE_DATA.P.cardVal,
+      acted: false
     };
-    board[6][c] = {
-      id: `p_${pid++}`,
-      side: 'white',
-      type: 'pawn',
-      hp: PIECE_DATA.pawn.maxHp,
-      maxHp: PIECE_DATA.pawn.maxHp,
-      moved: false,
-      skillCooldown: 0
-    };
-    const wType = backRow[c];
-    board[7][c] = {
-      id: `p_${pid++}`,
-      side: 'white',
+
+    const wType = backRank[col];
+    grid[7][col] = {
+      id: `w_${wType}_${col}`,
+      color: 'white',
       type: wType,
-      hp: PIECE_DATA[wType].maxHp,
-      maxHp: PIECE_DATA[wType].maxHp,
-      moved: false,
-      skillCooldown: 0
+      hp: PIECE_DATA[wType].hp,
+      maxHp: PIECE_DATA[wType].hp,
+      cardVal: PIECE_DATA[wType].cardVal,
+      acted: false
+    };
+    grid[6][col] = {
+      id: `w_P_${col}`,
+      color: 'white',
+      type: 'P',
+      hp: PIECE_DATA.P.hp,
+      maxHp: PIECE_DATA.P.hp,
+      cardVal: PIECE_DATA.P.cardVal,
+      acted: false
     };
   }
-  return board;
+  return grid;
 }
 
-function evaluateFiveCards(cards) {
-  if (!cards || cards.length === 0) {
-    return { score: 0, label: 'Sem cartas', power: 0 };
+function pokerRank(val) {
+  return val === 1 ? 14 : val;
+}
+
+function evaluateFixedRanks5(ranks) {
+  const counts = new Map();
+  for (const r of ranks) {
+    counts.set(r, (counts.get(r) || 0) + 1);
   }
-  const sorted = [...cards].sort((a, b) => b.rank - a.rank);
-  const ranks = sorted.map((c) => c.rank);
-  const suits = sorted.map((c) => c.suit);
 
-  const counts = {};
-  for (const r of ranks) counts[r] = (counts[r] || 0) + 1;
-  const groups = Object.entries(counts)
-    .map(([r, cnt]) => ({ rank: Number(r), count: cnt }))
-    .sort((a, b) => (b.count - a.count) || (b.rank - a.rank));
+  const sortedGroups = Array.from(counts.entries()).sort((a, b) => {
+    if (b[1] !== a[1]) return b[1] - a[1];
+    return b[0] - a[0];
+  });
 
-  const isFlush = cards.length === 5 && suits.every((s) => s === suits[0]);
-  const uniqueDesc = [...new Set(ranks)].sort((a, b) => b - a);
+  const uniqueDesc = Array.from(counts.keys()).sort((a, b) => b - a);
+  let straight = false;
+  let straightTop = 0;
 
-  let isStraight = false;
-  let straightHigh = 0;
-  if (cards.length === 5 && uniqueDesc.length === 5) {
+  if (uniqueDesc.length === 5) {
     if (uniqueDesc[0] - uniqueDesc[4] === 4) {
-      isStraight = true;
-      straightHigh = uniqueDesc[0];
+      straight = true;
+      straightTop = uniqueDesc[0];
     } else if (
       uniqueDesc[0] === 14 &&
       uniqueDesc[1] === 5 &&
@@ -118,393 +206,521 @@ function evaluateFiveCards(cards) {
       uniqueDesc[3] === 3 &&
       uniqueDesc[4] === 2
     ) {
-      isStraight = true;
-      straightHigh = 5;
+      straight = true;
+      straightTop = 5;
     }
   }
 
-  let category = 1;
-  let label = 'Carta Alta';
-  let tiebreakers = groups.map((g) => g.rank);
+  const fmt = (pr) => RANK_TEXT[pr === 14 ? 1 : pr];
 
-  if (isFlush && isStraight && straightHigh === 14) {
-    category = 9;
-    label = 'Royal Flush';
-    tiebreakers = [14];
-  } else if (isFlush && isStraight) {
-    category = 8;
-    label = 'Straight Flush';
-    tiebreakers = [straightHigh];
-  } else if (groups[0].count === 4) {
-    category = 7;
-    label = 'Quadra';
-    tiebreakers = [groups[0].rank, groups[1] ? groups[1].rank : 0];
-  } else if (groups[0].count === 3 && groups[1] && groups[1].count >= 2) {
-    category = 6;
-    label = 'Full House';
-    tiebreakers = [groups[0].rank, groups[1].rank];
-  } else if (isFlush) {
-    category = 5;
-    label = 'Flush';
-    tiebreakers = ranks;
-  } else if (isStraight) {
-    category = 4;
-    label = 'Sequência';
-    tiebreakers = [straightHigh];
-  } else if (groups[0].count === 3) {
-    category = 3;
-    label = 'Trinca';
-    tiebreakers = [groups[0].rank, ...ranks.filter((r) => r !== groups[0].rank)];
-  } else if (groups[0].count === 2 && groups[1] && groups[1].count === 2) {
-    category = 2;
-    label = 'Dois Pares';
-    tiebreakers = [
-      Math.max(groups[0].rank, groups[1].rank),
-      Math.min(groups[0].rank, groups[1].rank),
-      ...ranks.filter((r) => r !== groups[0].rank && r !== groups[1].rank)
-    ];
-  } else if (groups[0].count === 2) {
-    category = 1.5;
-    label = 'Um Par';
-    tiebreakers = [groups[0].rank, ...ranks.filter((r) => r !== groups[0].rank)];
-  } else {
-    category = 1;
-    label = 'Carta Alta';
-    tiebreakers = ranks;
+  if (sortedGroups[0][1] >= 4) {
+    const k = sortedGroups[1] ? fmt(sortedGroups[1][0]) : '';
+    return {
+      cat: 6,
+      name: `Quadra de ${fmt(sortedGroups[0][0])}${k ? ` (${k})` : ''}`,
+      tie: [sortedGroups[0][0], sortedGroups[1] ? sortedGroups[1][0] : 0]
+    };
   }
-
-  let score = category * 1000000;
-  let mult = 10000;
-  for (let i = 0; i < Math.min(tiebreakers.length, 4); i++) {
-    score += tiebreakers[i] * mult;
-    mult = Math.floor(mult / 20);
+  if (sortedGroups[0][1] === 3 && sortedGroups[1] && sortedGroups[1][1] === 2) {
+    return {
+      cat: 5,
+      name: `Full House (${fmt(sortedGroups[0][0])} e ${fmt(sortedGroups[1][0])})`,
+      tie: [sortedGroups[0][0], sortedGroups[1][0]]
+    };
   }
-
-  const power = Math.max(1, Math.round(category) + Math.floor((ranks[0] || 2) / 5));
-  return { score, label, power };
+  if (straight) {
+    return {
+      cat: 4,
+      name: `Sequência (maior ${fmt(straightTop)})`,
+      tie: [straightTop]
+    };
+  }
+  if (sortedGroups[0][1] === 3) {
+    const kickers = sortedGroups.slice(1).map((x) => x[0]).sort((a, b) => b - a);
+    return {
+      cat: 3,
+      name: `Trinca de ${fmt(sortedGroups[0][0])}`,
+      tie: [sortedGroups[0][0], ...kickers]
+    };
+  }
+  if (sortedGroups[0][1] === 2 && sortedGroups[1] && sortedGroups[1][1] === 2) {
+    const hi = Math.max(sortedGroups[0][0], sortedGroups[1][0]);
+    const lo = Math.min(sortedGroups[0][0], sortedGroups[1][0]);
+    const k = sortedGroups[2] ? sortedGroups[2][0] : 0;
+    return {
+      cat: 2,
+      name: `2 Pares (${fmt(hi)} e ${fmt(lo)})`,
+      tie: [hi, lo, k]
+    };
+  }
+  if (sortedGroups[0][1] === 2) {
+    const kickers = sortedGroups.slice(1).map((x) => x[0]).sort((a, b) => b - a);
+    return {
+      cat: 1,
+      name: `1 Par de ${fmt(sortedGroups[0][0])}`,
+      tie: [sortedGroups[0][0], ...kickers]
+    };
+  }
+  return {
+    cat: 0,
+    name: `Carta Alta (${fmt(uniqueDesc[0])})`,
+    tie: uniqueDesc
+  };
 }
 
-function bestHandFromPool(poolCards) {
-  if (!poolCards || poolCards.length === 0) {
-    return { score: 0, label: 'Sem cartas', power: 0, cards: [] };
+function comparePokerHands(h1, h2) {
+  if (h1.cat !== h2.cat) return h1.cat - h2.cat;
+  const len = Math.max(h1.tie.length, h2.tie.length);
+  for (let i = 0; i < len; i++) {
+    const v1 = h1.tie[i] || 0;
+    const v2 = h2.tie[i] || 0;
+    if (v1 !== v2) return v1 - v2;
   }
-  if (poolCards.length <= 5) {
-    const ev = evaluateFiveCards(poolCards);
-    return { ...ev, cards: poolCards };
+  return 0;
+}
+
+function evaluateCombatHand(cards4, piece) {
+  if (piece && piece.type === 'P') {
+    let best = null;
+    for (let wildVal = 2; wildVal <= 9; wildVal++) {
+      const ranks = [...cards4.map(pokerRank), wildVal];
+      const ev = evaluateFixedRanks5(ranks);
+      if (!best || comparePokerHands(ev, best) > 0) {
+        best = ev;
+      }
+    }
+    return best;
+  }
+  const ranks = [...cards4.map(pokerRank), pokerRank(piece ? piece.cardVal : 1)];
+  return evaluateFixedRanks5(ranks);
+}
+
+function getReachInfo(board, r, c) {
+  const piece = board[r][c];
+  const moves = [];
+  const attacks = [];
+  const allies = [];
+  const enemies = [];
+  const allPieces = [];
+
+  if (!piece) {
+    return { moves, attacks, allies, enemies, allPieces };
   }
 
-  let best = null;
-  const n = poolCards.length;
-  for (let a = 0; a < n - 4; a++) {
-    for (let b = a + 1; b < n - 3; b++) {
-      for (let c = b + 1; c < n - 2; c++) {
-        for (let d = c + 1; d < n - 1; d++) {
-          for (let e = d + 1; e < n; e++) {
-            const combo = [poolCards[a], poolCards[b], poolCards[c], poolCards[d], poolCards[e]];
-            const ev = evaluateFiveCards(combo);
-            if (!best || ev.score > best.score) {
-              best = { ...ev, cards: combo };
-            }
-          }
+  if (piece.type === 'N') {
+    const lOffsets = [
+      [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+      [1, -2], [1, 2], [2, -1], [2, 1]
+    ];
+    for (const [dr, dc] of lOffsets) {
+      const nr = r + dr;
+      const nc = c + dc;
+      if (!insideBoard(nr, nc)) continue;
+      const occ = board[nr][nc];
+      if (!occ) {
+        moves.push({ r: nr, c: nc });
+      } else {
+        allPieces.push({ r: nr, c: nc, piece: occ });
+        if (occ.color === piece.color) {
+          allies.push({ r: nr, c: nc, piece: occ });
+        } else {
+          attacks.push({ r: nr, c: nc });
+          enemies.push({ r: nr, c: nc, piece: occ });
         }
       }
     }
+    return { moves, attacks, allies, enemies, allPieces };
   }
-  return best;
+
+  let dirs = [];
+  let steps = 1;
+
+  if (piece.type === 'P') {
+    dirs = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
+    steps = 1;
+  } else if (piece.type === 'R') {
+    dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    steps = 3;
+  } else if (piece.type === 'B') {
+    dirs = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+    steps = 3;
+  } else if (piece.type === 'Q') {
+    dirs = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
+    steps = 3;
+  } else if (piece.type === 'K') {
+    dirs = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
+    steps = 2;
+  }
+
+  for (const [dr, dc] of dirs) {
+    for (let s = 1; s <= steps; s++) {
+      const nr = r + dr * s;
+      const nc = c + dc * s;
+      if (!insideBoard(nr, nc)) break;
+      const occ = board[nr][nc];
+      if (!occ) {
+        moves.push({ r: nr, c: nc });
+      } else {
+        allPieces.push({ r: nr, c: nc, piece: occ });
+        if (occ.color === piece.color) {
+          allies.push({ r: nr, c: nc, piece: occ });
+        } else {
+          attacks.push({ r: nr, c: nc });
+          enemies.push({ r: nr, c: nc, piece: occ });
+        }
+        break;
+      }
+    }
+  }
+
+  return { moves, attacks, allies, enemies, allPieces };
 }
 
-function isPathClear(board, r1, c1, r2, c2) {
-  const dr = Math.sign(r2 - r1);
-  const dc = Math.sign(c2 - c1);
-  let r = r1 + dr;
-  let c = c1 + dc;
-  while (r !== r2 || c !== c2) {
-    if (board[r][c] !== null) return false;
-    r += dr;
-    c += dc;
+function getKnightSkillDestinations(board, tr, tc) {
+  const dests = [];
+  for (let dr = -1; dr <= 1; dr++) {
+    for (let dc = -1; dc <= 1; dc++) {
+      if (dr === 0 && dc === 0) continue;
+      const nr = tr + dr;
+      const nc = tc + dc;
+      if (insideBoard(nr, nc) && !board[nr][nc]) {
+        dests.push({ r: nr, c: nc });
+      }
+    }
   }
+  return dests;
+}
+
+function applyQueenAbatePassive(state, side) {
+  if (!state || state.gameOver) return 0;
+  let healed = 0;
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const p = state.board[r][c];
+      if (p && p.color === side && p.type === 'Q' && p.hp > 0 && p.hp < p.maxHp) {
+        p.hp = Math.min(p.maxHp, p.hp + 1);
+        healed += 1;
+      }
+    }
+  }
+  return healed;
+}
+
+function promotePawnIfCrossed(piece, r) {
+  if (!piece || piece.type !== 'P') return false;
+  const crossed = (piece.color === 'white' && r === 0) || (piece.color === 'black' && r === 7);
+  if (!crossed) return false;
+  piece.type = 'Q';
+  piece.cardVal = PIECE_DATA.Q.cardVal;
+  piece.maxHp = PIECE_DATA.Q.hp;
+  piece.hp = Math.max(piece.hp, PIECE_DATA.Q.hp);
   return true;
 }
 
-function canPieceAct(board, side, r1, c1, r2, c2, mode) {
-  if (r1 === r2 && c1 === c2) return false;
-  if (r2 < 0 || r2 > 7 || c2 < 0 || c2 > 7) return false;
-  const piece = board[r1][c1];
-  if (!piece || piece.side !== side) return false;
-
-  const target = board[r2][c2];
-  if (mode === 'move' && target !== null) return false;
-  if (mode === 'attack' && (!target || target.side === side)) return false;
-
-  const dr = r2 - r1;
-  const dc = c2 - c1;
-  const adr = Math.abs(dr);
-  const adc = Math.abs(dc);
-  const dist = Math.max(adr, adc);
-  const info = PIECE_DATA[piece.type];
-
-  switch (piece.type) {
-    case 'king':
-      return dist === 1;
-    case 'queen':
-      return (adr === 0 || adc === 0 || adr === adc) && dist <= info.range && isPathClear(board, r1, c1, r2, c2);
-    case 'rook':
-      return (adr === 0 || adc === 0) && dist <= info.range && isPathClear(board, r1, c1, r2, c2);
-    case 'bishop':
-      return adr === adc && dist <= info.range && isPathClear(board, r1, c1, r2, c2);
-    case 'knight':
-      return (adr === 2 && adc === 1) || (adr === 1 && adc === 2);
-    case 'pawn': {
-      const dir = side === 'white' ? -1 : 1;
-      if (mode === 'move') {
-        if (dc === 0 && dr === dir) return true;
-        if (!piece.moved && dc === 0 && dr === dir * 2 && board[r1 + dir][c1] === null) return true;
-        return false;
-      }
-      return dr === dir && adc === 1;
-    }
-    default:
-      return false;
-  }
-}
-
-function hasAnyKing(board, side) {
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 8; c++) {
-      const p = board[r][c];
-      if (p && p.side === side && p.type === 'king') return true;
-    }
-  }
-  return false;
-}
-
-function createInitialMatchState({ whiteUid, blackUid, whiteName, blackName, timeControlSec = 300, unrated = false }) {
-  const deck = createDeck();
-  const whiteHand = deck.splice(0, 3);
-  const blackHand = deck.splice(0, 3);
-  const flop = deck.splice(0, 3);
-
-  return {
-    board: createInitialBoard(),
-    deck,
-    flop,
+function createInitialMatchState({ whiteUid, blackUid, whiteName, blackName, unrated = false } = {}) {
+  const state = {
+    mode: 'ranked',
     turn: 'white',
-    turnNumber: 1,
-    actionsLeft: 2,
-    players: {
-      white: {
-        uid: whiteUid,
-        name: whiteName || 'Brancas',
-        coins: 3,
-        hand: whiteHand,
-        boughtThisTurn: false
-      },
-      black: {
-        uid: blackUid,
-        name: blackName || 'Pretas',
-        coins: 3,
-        hand: blackHand,
-        boughtThisTurn: false
-      }
-    },
+    round: 1,
+    ownTurns: { white: 1, black: 0 },
+    actions: 2,
     clocks: {
-      whiteMs: timeControlSec * 1000,
-      blackMs: timeControlSec * 1000,
+      white: TURN_CLOCK_SECONDS,
+      black: TURN_CLOCK_SECONDS,
       lastTickAt: Date.now()
     },
+    board: buildInitialBoard(),
+    deck: createDeck(),
+    discard: [],
+    flop: [],
+    players: {
+      white: {
+        uid: whiteUid || 'white',
+        name: whiteName || 'Brancas',
+        gold: 0,
+        hand: []
+      },
+      black: {
+        uid: blackUid || 'black',
+        name: blackName || 'Pretas',
+        gold: 0,
+        hand: []
+      }
+    },
     pendingCombat: null,
+    lastSummary: null,
     gameOver: false,
     gameOverData: null,
     unrated: Boolean(unrated)
   };
+
+  for (let i = 0; i < 3; i++) {
+    const wc = drawCardFromState(state);
+    const bc = drawCardFromState(state);
+    if (wc !== null) state.players.white.hand.push(wc);
+    if (bc !== null) state.players.black.hand.push(bc);
+  }
+
+  dealFlopInState(state);
+  return state;
 }
 
 function advanceTurn(state) {
-  const nextTurn = state.turn === 'white' ? 'black' : 'white';
-  state.turn = nextTurn;
-  if (nextTurn === 'white') {
-    state.turnNumber += 1;
-  }
-  state.actionsLeft = 2;
-  state.players[nextTurn].boughtThisTurn = false;
-  state.players[nextTurn].coins = Math.min(10, state.players[nextTurn].coins + 1);
+  const currentTurnSide = state.turn;
+  state.clocks.white = TURN_CLOCK_SECONDS;
+  state.clocks.black = TURN_CLOCK_SECONDS;
+  state.clocks.lastTickAt = Date.now();
 
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
       const p = state.board[r][c];
-      if (p && p.side === nextTurn && p.skillCooldown > 0) {
-        p.skillCooldown -= 1;
-      }
+      if (p) p.acted = false;
     }
+  }
+
+  if (currentTurnSide === 'white') {
+    state.turn = 'black';
+    state.actions = 2;
+    maybeDrawEveryTwoOwnTurns(state, 'black');
+  } else {
+    state.turn = 'white';
+    state.round = (state.round || 1) + 1;
+    state.actions = 2;
+    maybeDrawEveryTwoOwnTurns(state, 'white');
   }
 }
 
-function finalizeCombatResolution(state, combat) {
-  const atkEval = bestHandFromPool([...combat.attackerPicked, ...state.flop]);
-  const defEval = bestHandFromPool([...combat.defenderPicked, ...state.flop]);
-
-  const atkSide = combat.attackerSide;
-  const defSide = combat.defenderSide;
-  const atkPlayer = state.players[atkSide];
-  const defPlayer = state.players[defSide];
-
-  // Remove cartas usadas da mão
-  const usedAtkIds = new Set(combat.attackerPicked.map((c) => c.id));
-  const usedDefIds = new Set(combat.defenderPicked.map((c) => c.id));
-  atkPlayer.hand = atkPlayer.hand.filter((c) => !usedAtkIds.has(c.id));
-  defPlayer.hand = defPlayer.hand.filter((c) => !usedDefIds.has(c.id));
-
-  // Repõe 1 carta se o baralho tiver cartas
-  if (state.deck.length > 0 && atkPlayer.hand.length < 5) {
-    atkPlayer.hand.push(state.deck.pop());
-  }
-  if (state.deck.length > 0 && defPlayer.hand.length < 5) {
-    defPlayer.hand.push(state.deck.pop());
+function resolveCombatInState(state, combat, atkCard, defCard) {
+  const atkPiece = state.board[combat.atkR][combat.atkC];
+  const defPiece = state.board[combat.defR][combat.defC];
+  if (!atkPiece || !defPiece) {
+    state.pendingCombat = null;
+    return null;
   }
 
-  // Avança flop se necessário a cada 2 combates
-  if (state.deck.length > 0 && state.flop.length < 5) {
-    state.flop.push(state.deck.pop());
-  }
+  const atkSnap = { ...atkPiece };
+  const defSnap = { ...defPiece };
+  const atkName = PIECE_DATA[atkPiece.type].name;
+  const defName = PIECE_DATA[defPiece.type].name;
 
-  const atkPiece = state.board[combat.from.r][combat.from.c];
-  const defPiece = state.board[combat.to.r][combat.to.c];
+  const atkHand = evaluateCombatHand([...state.flop, atkCard], atkPiece);
+  const defHand = defCard !== null && defCard !== undefined
+    ? evaluateCombatHand([...state.flop, defCard], defPiece)
+    : { cat: 0, name: 'Sem Cartas', tie: [0] };
 
-  let outcome = 'attacker_win';
-  let damageToDef = Math.max(1, atkEval.power);
-  let damageToAtk = 0;
+  const cmp = defCard !== null && defCard !== undefined ? comparePokerHands(atkHand, defHand) : 1;
+  const attackWon = cmp > 0;
+  const winSide = attackWon ? 'atk' : 'def';
+  const winHand = attackWon ? atkHand : defHand;
+  const winColor = attackWon ? atkPiece.color : defPiece.color;
+  const winPiece = attackWon ? atkPiece : defPiece;
 
-  if (atkEval.score > defEval.score) {
-    outcome = 'attacker_win';
-    damageToDef = Math.max(1, atkEval.power);
-    damageToAtk = 0;
-  } else if (defEval.score > atkEval.score) {
-    outcome = 'defender_win';
-    damageToDef = 0;
-    damageToAtk = Math.max(1, defEval.power);
+  let atkDmg = 0;
+  let defDmg = 0;
+  let extraActions = 0;
+  let healedHp = 0;
+  const extras = [];
+
+  if (attackWon) {
+    defDmg = 2;
+    if (winHand.cat === 3 || winHand.cat === 5) defDmg += 1;
   } else {
-    outcome = 'draw';
-    damageToDef = Math.max(1, Math.floor(atkEval.power / 2));
-    damageToAtk = Math.max(1, Math.floor(defEval.power / 2));
+    atkDmg = 1;
+    defDmg = defPiece.type === 'R' ? 0 : 1;
+    if (atkPiece.type === 'B') {
+      atkDmg = 0;
+      extras.push('Passiva do Bispo: sem dano se defenderem seu ataque');
+    }
+    if (defPiece.type === 'R') {
+      extras.push('Passiva da Torre: 0♥ ao defender');
+    }
+    if (winHand.cat === 3 || winHand.cat === 5) atkDmg += 1;
   }
 
-  if (defPiece && damageToDef > 0) {
-    defPiece.hp -= damageToDef;
-    if (defPiece.hp <= 0) {
-      state.board[combat.to.r][combat.to.c] = null;
-      if (outcome === 'attacker_win' && atkPiece && canPieceAct(state.board, atkSide, combat.from.r, combat.from.c, combat.to.r, combat.to.c, 'move')) {
-        state.board[combat.to.r][combat.to.c] = atkPiece;
-        state.board[combat.from.r][combat.from.c] = null;
-      }
+  if (winHand.cat === 1) {
+    const before = winPiece.hp;
+    winPiece.hp = Math.min(winPiece.maxHp, winPiece.hp + 2);
+    healedHp = winPiece.hp - before;
+  } else if (winHand.cat === 2) {
+    state.players[winColor].gold += 4;
+    extras.push('+♦4 (2 Pares)');
+  } else if (winHand.cat === 4) {
+    extraActions += 1;
+    if (state.players[winColor].hand.length < MAX_HAND_SIZE) {
+      const extraC = drawCardFromState(state);
+      if (extraC !== null) state.players[winColor].hand.push(extraC);
+    }
+    extras.push('+1♣ e +1 carta (Sequência)');
+  } else if (winHand.cat === 5) {
+    const before = winPiece.hp;
+    winPiece.hp = Math.min(winPiece.maxHp, winPiece.hp + 2);
+    healedHp = winPiece.hp - before;
+  } else if (winHand.cat === 6) {
+    if (winSide === 'atk') defDmg = defPiece.hp + 99;
+    else atkDmg = atkPiece.hp + 99;
+    state.players[winColor].gold += 8;
+    extras.push('Abate imediato + ♦8 (Quadra)');
+  }
+
+  const actualAtkDmg = Math.min(atkPiece.hp, Math.max(0, atkDmg));
+  const actualDefDmg = Math.min(defPiece.hp, Math.max(0, defDmg));
+
+  atkPiece.hp -= atkDmg;
+  defPiece.hp -= defDmg;
+
+  const atkDead = atkPiece.hp <= 0;
+  const defDead = defPiece.hp <= 0;
+  let winnerSideEnd = null;
+
+  if (defDead) {
+    state.board[combat.defR][combat.defC] = null;
+    const qHeal = applyQueenAbatePassive(state, atkPiece.color);
+    if (qHeal > 0) extras.push(`Passiva da Rainha: +${qHeal}♥`);
+    if (defPiece.type === 'K') {
+      winnerSideEnd = atkPiece.color;
+    } else {
+      const rwd = PIECE_DATA[defPiece.type].reward || 0;
+      state.players[atkPiece.color].gold += rwd;
+      extras.push(`Abate de ${defName}: +♦${rwd}`);
     }
   }
 
-  if (atkPiece && damageToAtk > 0) {
-    const curAtkPos = state.board[combat.from.r][combat.from.c] === atkPiece
-      ? combat.from
-      : (state.board[combat.to.r][combat.to.c] === atkPiece ? combat.to : null);
-    atkPiece.hp -= damageToAtk;
-    if (atkPiece.hp <= 0 && curAtkPos) {
-      state.board[curAtkPos.r][curAtkPos.c] = null;
+  if (!winnerSideEnd && atkDead) {
+    state.board[combat.atkR][combat.atkC] = null;
+    const qHeal = applyQueenAbatePassive(state, defPiece.color);
+    if (qHeal > 0) extras.push(`Passiva da Rainha: +${qHeal}♥`);
+    if (atkPiece.type === 'K') {
+      winnerSideEnd = defPiece.color;
+    } else {
+      const rwd = PIECE_DATA[atkPiece.type].reward || 0;
+      state.players[defPiece.color].gold += rwd;
+      extras.push(`Abate de ${atkName}: +♦${rwd}`);
     }
   }
 
+  if (!winnerSideEnd) {
+    if (defDead && !atkDead) {
+      state.board[combat.defR][combat.defC] = atkPiece;
+      state.board[combat.atkR][combat.atkC] = null;
+      promotePawnIfCrossed(atkPiece, combat.defR);
+    } else if (atkDead && !defDead) {
+      state.board[combat.atkR][combat.atkC] = defPiece;
+      state.board[combat.defR][combat.defC] = null;
+      promotePawnIfCrossed(defPiece, combat.atkR);
+    }
+  }
+
+  if (atkCard !== null && atkCard !== undefined) state.discard.push(atkCard);
+  if (defCard !== null && defCard !== undefined) state.discard.push(defCard);
+  dealFlopInState(state);
+
+  if (extraActions > 0 && state.turn === winColor) {
+    state.actions += extraActions;
+  }
+
+  state.actions = Math.max(0, state.actions - 1);
+  atkPiece.acted = true;
   state.pendingCombat = null;
 
-  const whiteAlive = hasAnyKing(state.board, 'white');
-  const blackAlive = hasAnyKing(state.board, 'black');
-  if (!whiteAlive || !blackAlive) {
-    const winnerSide = whiteAlive ? 'white' : 'black';
+  if (winnerSideEnd) {
+    const wLabel = winnerSideEnd === 'white' ? '♔ Brancas' : '♚ Pretas';
     state.gameOver = true;
     state.gameOverData = {
-      winnerSide,
-      reason: 'Rei abatido em combate'
+      title: `Vitória das ${wLabel}`,
+      desc: 'O Rei adversário foi abatido!',
+      winnerSide: winnerSideEnd,
+      reason: 'O Rei adversário foi abatido!'
     };
-  } else {
-    state.actionsLeft -= 1;
-    if (state.actionsLeft <= 0) {
-      advanceTurn(state);
-    }
   }
 
-  return {
-    type: 'combat_resolved',
-    outcome,
-    attackerSide: atkSide,
-    defenderSide: defSide,
-    atkHandLabel: atkEval.label,
-    defHandLabel: defEval.label,
-    damageToDef,
-    damageToAtk,
-    targetCell: combat.to
+  const summary = {
+    atkCard,
+    defCard,
+    atkPiece: atkSnap,
+    defPiece: defSnap,
+    atkPos: { r: combat.atkR, c: combat.atkC },
+    defPos: { r: combat.defR, c: combat.defC },
+    atkHand,
+    defHand,
+    winHand,
+    attackWon,
+    atkName,
+    defName,
+    atkDmg: actualAtkDmg,
+    defDmg: actualDefDmg,
+    healedHp,
+    extraInfo: extras.join(' · '),
+    winnerSideEnd
   };
+
+  state.lastSummary = summary;
+  return summary;
 }
 
 function buildViewForSide(state, viewerSide) {
-  const oppSide = viewerSide === 'white' ? 'black' : 'white';
   return {
+    mode: state.mode || 'ranked',
+    turn: state.turn,
+    round: state.round,
+    ownTurns: state.ownTurns,
+    actions: state.actions,
+    clocks: {
+      white: state.clocks.white,
+      black: state.clocks.black
+    },
     board: state.board,
     flop: state.flop,
-    deckCount: state.deck.length,
-    turn: state.turn,
-    turnNumber: state.turnNumber,
-    actionsLeft: state.actionsLeft,
-    mySide: viewerSide,
-    myCoins: state.players[viewerSide].coins,
-    oppCoins: state.players[oppSide].coins,
-    myHand: state.players[viewerSide].hand,
-    oppHandCount: state.players[oppSide].hand.length,
-    boughtThisTurn: state.players[viewerSide].boughtThisTurn,
-    clocks: state.clocks,
-    pendingCombat: state.pendingCombat,
+    players: {
+      white: {
+        gold: state.players.white.gold,
+        handCount: state.players.white.hand.length,
+        ...(viewerSide === 'white' ? { hand: state.players.white.hand.slice() } : {})
+      },
+      black: {
+        gold: state.players.black.gold,
+        handCount: state.players.black.hand.length,
+        ...(viewerSide === 'black' ? { hand: state.players.black.hand.slice() } : {})
+      }
+    },
+    pendingCombat: state.pendingCombat
+      ? {
+          atkR: state.pendingCombat.atkR,
+          atkC: state.pendingCombat.atkC,
+          defR: state.pendingCombat.defR,
+          defC: state.pendingCombat.defC,
+          atkPiece: state.pendingCombat.atkPiece,
+          defPiece: state.pendingCombat.defPiece,
+          atkHandCount: state.players[state.pendingCombat.atkPiece.color].hand.length,
+          defHandCount: state.players[state.pendingCombat.defPiece.color].hand.length,
+          stage: state.pendingCombat.stage
+        }
+      : null,
+    lastSummary: state.lastSummary,
     gameOver: state.gameOver,
     gameOverData: state.gameOverData
   };
 }
 
 function applyCommandToState(prevState, senderSide, cmd) {
-  if (!prevState || prevState.gameOver || !cmd || !cmd.type) {
+  if (!prevState || prevState.gameOver || !cmd) {
     return { valid: false };
   }
 
+  const kind = cmd.kind || cmd.type;
+  if (!kind) return { valid: false };
+
   const state = JSON.parse(JSON.stringify(prevState));
-  const now = Date.now();
 
-  // Atualiza relógio do jogador ativo antes de aplicar o comando
-  if (state.clocks && state.clocks.lastTickAt) {
-    const elapsed = Math.max(0, now - state.clocks.lastTickAt);
-    if (state.turn === 'white') {
-      state.clocks.whiteMs = Math.max(0, state.clocks.whiteMs - elapsed);
-    } else {
-      state.clocks.blackMs = Math.max(0, state.clocks.blackMs - elapsed);
-    }
-    state.clocks.lastTickAt = now;
-
-    if (state.clocks.whiteMs <= 0 || state.clocks.blackMs <= 0) {
-      const winnerSide = state.clocks.whiteMs <= 0 ? 'black' : 'white';
-      state.gameOver = true;
-      state.gameOverData = {
-        winnerSide,
-        reason: 'Tempo esgotado'
-      };
-      return {
-        valid: true,
-        nextState: state,
-        publicView: buildViewForSide(state, 'white'),
-        whiteView: buildViewForSide(state, 'white'),
-        blackView: buildViewForSide(state, 'black'),
-        fxEvent: { type: 'timeout', winnerSide },
-        summary: { winnerSide, reason: 'Tempo esgotado' }
-      };
-    }
-  }
-
-  if (cmd.type === 'surrender') {
+  if (kind === 'surrender') {
     const winnerSide = senderSide === 'white' ? 'black' : 'white';
+    const surrenderingLabel = senderSide === 'white' ? 'Brancas (♔)' : 'Pretas (♚)';
+    const winnerLabel = winnerSide === 'white' ? '♔ Brancas' : '♚ Pretas';
     state.gameOver = true;
     state.gameOverData = {
+      title: `Vitória das ${winnerLabel}`,
+      desc: `${surrenderingLabel} se rendeu.`,
       winnerSide,
-      reason: 'Oponente rendeu-se'
+      reason: `${surrenderingLabel} se rendeu.`
     };
     return {
       valid: true,
@@ -513,104 +729,230 @@ function applyCommandToState(prevState, senderSide, cmd) {
       whiteView: buildViewForSide(state, 'white'),
       blackView: buildViewForSide(state, 'black'),
       fxEvent: { type: 'surrender', loserSide: senderSide, winnerSide },
-      summary: { winnerSide, reason: 'Oponente rendeu-se' }
+      summary: state.gameOverData
     };
   }
 
-  // Se houver combate pendente, aceita apenas escolhas de cartas da fase atual
+  // Escolha de carta durante combate pendente
   if (state.pendingCombat) {
     const pc = state.pendingCombat;
-    if (pc.stage === 'pick_attacker' && senderSide === pc.attackerSide) {
-      const cardIds = Array.isArray(cmd.cardIds) ? cmd.cardIds : [];
-      const handMap = new Map(state.players[senderSide].hand.map((c) => [c.id, c]));
-      const chosen = cardIds.map((id) => handMap.get(id)).filter(Boolean);
-      pc.attackerPicked = chosen.slice(0, 2);
-      pc.stage = 'pick_defender';
-    } else if (pc.stage === 'pick_defender' && senderSide === pc.defenderSide) {
-      const cardIds = Array.isArray(cmd.cardIds) ? cmd.cardIds : [];
-      const handMap = new Map(state.players[senderSide].hand.map((c) => [c.id, c]));
-      const chosen = cardIds.map((id) => handMap.get(id)).filter(Boolean);
-      pc.defenderPicked = chosen.slice(0, 2);
-      const combatFx = finalizeCombatResolution(state, pc);
+    if (pc.stage === 'awaiting_attacker' && senderSide === pc.atkPiece.color) {
+      const idx = Number(cmd.cardIdx);
+      const hand = state.players[senderSide].hand;
+      if (!Number.isInteger(idx) || idx < 0 || idx >= hand.length) return { valid: false };
+      pc.atkCard = hand.splice(idx, 1)[0];
+
+      const defSide = pc.defPiece.color;
+      if (state.players[defSide].hand.length === 0) {
+        const summary = resolveCombatInState(state, pc, pc.atkCard, null);
+        return {
+          valid: true,
+          nextState: state,
+          publicView: buildViewForSide(state, 'white'),
+          whiteView: buildViewForSide(state, 'white'),
+          blackView: buildViewForSide(state, 'black'),
+          fxEvent: { type: 'combat_resolved', summary },
+          summary
+        };
+      }
+
+      pc.stage = 'awaiting_defender';
       return {
         valid: true,
         nextState: state,
         publicView: buildViewForSide(state, 'white'),
         whiteView: buildViewForSide(state, 'white'),
         blackView: buildViewForSide(state, 'black'),
-        fxEvent: combatFx,
+        fxEvent: { type: 'combat_stage', stage: 'awaiting_defender' },
         summary: null
       };
-    } else {
-      return { valid: false };
     }
 
-    return {
-      valid: true,
-      nextState: state,
-      publicView: buildViewForSide(state, 'white'),
-      whiteView: buildViewForSide(state, 'white'),
-      blackView: buildViewForSide(state, 'black'),
-      fxEvent: { type: 'combat_stage', stage: pc.stage },
-      summary: null
-    };
+    if (pc.stage === 'awaiting_defender' && senderSide === pc.defPiece.color) {
+      const idx = Number(cmd.cardIdx);
+      const hand = state.players[senderSide].hand;
+      if (!Number.isInteger(idx) || idx < 0 || idx >= hand.length) return { valid: false };
+      const defCard = hand.splice(idx, 1)[0];
+      const summary = resolveCombatInState(state, pc, pc.atkCard, defCard);
+      return {
+        valid: true,
+        nextState: state,
+        publicView: buildViewForSide(state, 'white'),
+        whiteView: buildViewForSide(state, 'white'),
+        blackView: buildViewForSide(state, 'black'),
+        fxEvent: { type: 'combat_resolved', summary },
+        summary
+      };
+    }
+
+    return { valid: false };
   }
 
-  if (state.turn !== senderSide || state.actionsLeft <= 0) {
+  if (state.turn !== senderSide) {
     return { valid: false };
   }
 
   let fxEvent = null;
 
-  if (cmd.type === 'move') {
-    const { from, to } = cmd;
-    if (!from || !to) return { valid: false };
-    if (!canPieceAct(state.board, senderSide, from.r, from.c, to.r, to.c, 'move')) {
+  if (kind === 'move') {
+    const fromR = cmd.from ? cmd.from.r : cmd.fromR;
+    const fromC = cmd.from ? cmd.from.c : cmd.fromC;
+    const toR = cmd.to ? cmd.to.r : cmd.toR;
+    const toC = cmd.to ? cmd.to.c : cmd.toC;
+    if (!insideBoard(fromR, fromC) || !insideBoard(toR, toC) || state.actions <= 0) {
       return { valid: false };
     }
-    const piece = state.board[from.r][from.c];
-    piece.moved = true;
-    state.board[to.r][to.c] = piece;
-    state.board[from.r][from.c] = null;
+    const piece = state.board[fromR][fromC];
+    if (!piece || piece.color !== senderSide || piece.acted) return { valid: false };
+    const reach = getReachInfo(state.board, fromR, fromC);
+    if (!reach.moves.some((m) => m.r === toR && m.c === toC)) return { valid: false };
 
-    state.actionsLeft -= 1;
-    if (state.actionsLeft <= 0) {
-      advanceTurn(state);
-    }
-    fxEvent = { type: 'move', side: senderSide, from, to, pieceType: piece.type };
-  } else if (cmd.type === 'attack') {
-    const { from, to } = cmd;
-    if (!from || !to) return { valid: false };
-    if (!canPieceAct(state.board, senderSide, from.r, from.c, to.r, to.c, 'attack')) {
+    state.board[toR][toC] = piece;
+    state.board[fromR][fromC] = null;
+    state.actions = Math.max(0, state.actions - 1);
+    piece.acted = true;
+    promotePawnIfCrossed(piece, toR);
+    fxEvent = { move: { fromR, fromC, toR, toC } };
+  } else if (kind === 'attack') {
+    const fromR = cmd.from ? cmd.from.r : cmd.fromR;
+    const fromC = cmd.from ? cmd.from.c : cmd.fromC;
+    const toR = cmd.to ? cmd.to.r : cmd.toR;
+    const toC = cmd.to ? cmd.to.c : cmd.toC;
+    if (!insideBoard(fromR, fromC) || !insideBoard(toR, toC) || state.actions <= 0) {
       return { valid: false };
     }
-    const defSide = senderSide === 'white' ? 'black' : 'white';
+    const atkPiece = state.board[fromR][fromC];
+    const defPiece = state.board[toR][toC];
+    if (!atkPiece || !defPiece || atkPiece.color !== senderSide || atkPiece.acted) {
+      return { valid: false };
+    }
+    if (state.players[senderSide].hand.length === 0) return { valid: false };
+    const reach = getReachInfo(state.board, fromR, fromC);
+    if (!reach.attacks.some((a) => a.r === toR && a.c === toC)) return { valid: false };
+
+    const defSide = defPiece.color;
+    if (state.players[defSide].hand.length === 0) {
+      const used = state.players[senderSide].hand.pop();
+      const summary = resolveCombatInState(
+        state,
+        { atkR: fromR, atkC: fromC, defR: toR, defC: toC, atkPiece: { ...atkPiece }, defPiece: { ...defPiece } },
+        used,
+        null
+      );
+      return {
+        valid: true,
+        nextState: state,
+        publicView: buildViewForSide(state, 'white'),
+        whiteView: buildViewForSide(state, 'white'),
+        blackView: buildViewForSide(state, 'black'),
+        fxEvent: { type: 'combat_resolved', summary },
+        summary
+      };
+    }
+
     state.pendingCombat = {
-      attackerSide: senderSide,
-      defenderSide: defSide,
-      from: { r: from.r, c: from.c },
-      to: { r: to.r, c: to.c },
-      stage: 'pick_attacker',
-      attackerPicked: [],
-      defenderPicked: []
+      atkR: fromR,
+      atkC: fromC,
+      defR: toR,
+      defC: toC,
+      atkPiece: { ...atkPiece },
+      defPiece: { ...defPiece },
+      atkCard: null,
+      stage: 'awaiting_attacker'
     };
-    fxEvent = { type: 'combat_start', attackerSide: senderSide, defenderSide: defSide, from, to };
-  } else if (cmd.type === 'buy') {
+    fxEvent = { type: 'combat_start', fromR, fromC, toR, toC };
+  } else if (kind === 'skill') {
+    const { fromR, fromC, effType, toR, toC } = cmd;
+    if (!insideBoard(fromR, fromC)) return { valid: false };
+    const userPiece = state.board[fromR][fromC];
     const player = state.players[senderSide];
-    if (player.boughtThisTurn || player.coins < 2 || state.deck.length === 0) {
+    if (!userPiece || userPiece.color !== senderSide || userPiece.acted || player.gold < 1) {
       return { valid: false };
     }
-    player.coins -= 2;
-    player.boughtThisTurn = true;
-    if (player.hand.length < 6) {
-      player.hand.push(state.deck.pop());
+    const skill = effType || userPiece.type;
+
+    if (skill === 'P') {
+      const reach = getReachInfo(state.board, fromR, fromC);
+      if (reach.enemies.length === 0) return { valid: false };
+      player.gold -= 1;
+      state.board[fromR][fromC] = null;
+      for (const item of reach.enemies) {
+        const enemy = state.board[item.r][item.c];
+        if (!enemy) continue;
+        enemy.hp -= 1;
+        if (enemy.hp <= 0) {
+          state.board[item.r][item.c] = null;
+          applyQueenAbatePassive(state, senderSide);
+          if (enemy.type === 'K') {
+            const wLabel = senderSide === 'white' ? '♔ Brancas' : '♚ Pretas';
+            state.gameOver = true;
+            state.gameOverData = { title: `Vitória das ${wLabel}`, desc: 'O Rei adversário foi abatido!', winnerSide: senderSide, reason: 'O Rei adversário foi abatido!' };
+            break;
+          } else {
+            player.gold += PIECE_DATA[enemy.type].reward || 0;
+          }
+        }
+      }
+      userPiece.acted = true;
+      fxEvent = { type: 'skill', skill: 'P', fromR, fromC };
+    } else if (skill === 'B') {
+      const reach = getReachInfo(state.board, fromR, fromC);
+      if (reach.allies.length === 0) return { valid: false };
+      player.gold -= 1;
+      for (const item of reach.allies) {
+        const ally = state.board[item.r][item.c];
+        if (ally) ally.hp = Math.min(ally.maxHp, ally.hp + 1);
+      }
+      userPiece.acted = true;
+      fxEvent = { type: 'skill', skill: 'B', fromR, fromC };
+    } else if (skill === 'R') {
+      if (!insideBoard(toR, toC) || (toR === fromR && toC === fromC)) return { valid: false };
+      const targetPiece = state.board[toR][toC];
+      if (!targetPiece) return { valid: false };
+      player.gold -= 1;
+      state.board[toR][toC] = userPiece;
+      state.board[fromR][fromC] = targetPiece;
+      userPiece.acted = true;
+      fxEvent = {
+        swapMoves: [
+          { fromR, fromC, toR, toC },
+          { fromR: toR, fromC: toC, toR: fromR, toC: fromC }
+        ]
+      };
+    } else if (skill === 'N') {
+      if (!insideBoard(toR, toC) || !state.board[toR][toC]) return { valid: false };
+      const dests = getKnightSkillDestinations(state.board, toR, toC);
+      if (dests.length === 0) return { valid: false };
+      const dest = dests[0];
+      const movedTarget = state.board[toR][toC];
+      player.gold -= 1;
+      state.board[dest.r][dest.c] = movedTarget;
+      state.board[toR][toC] = null;
+      promotePawnIfCrossed(movedTarget, dest.r);
+      userPiece.acted = true;
+      fxEvent = { move: { fromR: toR, fromC: toC, toR: dest.r, toC: dest.c } };
+    } else if (skill === 'K') {
+      if (!insideBoard(toR, toC)) return { valid: false };
+      const enemy = state.board[toR][toC];
+      if (!enemy || enemy.color === senderSide) return { valid: false };
+      player.gold -= 1;
+      enemy.hp = Math.max(1, enemy.hp - 2);
+      userPiece.acted = true;
+      fxEvent = { type: 'skill', skill: 'K', toR, toC };
+    } else {
+      return { valid: false };
     }
-    state.actionsLeft -= 1;
-    if (state.actionsLeft <= 0) {
-      advanceTurn(state);
+  } else if (kind === 'buy') {
+    const player = state.players[senderSide];
+    if (player.gold < 3 || player.hand.length >= MAX_HAND_SIZE) {
+      return { valid: false };
     }
+    const drawn = drawCardFromState(state);
+    if (drawn === null) return { valid: false };
+    player.gold -= 3;
+    player.hand.push(drawn);
     fxEvent = { type: 'buy', side: senderSide };
-  } else if (cmd.type === 'end_turn') {
+  } else if (kind === 'end_turn') {
     advanceTurn(state);
     fxEvent = { type: 'end_turn', side: senderSide, nextTurn: state.turn };
   } else {
@@ -624,23 +966,27 @@ function applyCommandToState(prevState, senderSide, cmd) {
     whiteView: buildViewForSide(state, 'white'),
     blackView: buildViewForSide(state, 'black'),
     fxEvent,
-    summary: null
+    summary: state.gameOverData
   };
 }
 
-function calculateEloDelta(whiteElo, blackElo, winnerSide, kFactor = 24) {
-  const expectedWhite = 1 / (1 + Math.pow(10, (blackElo - whiteElo) / 400));
-  const actualWhite = winnerSide === 'white' ? 1 : 0;
-  const whiteDelta = Math.round(kFactor * (actualWhite - expectedWhite));
-  const blackDelta = -whiteDelta;
-  return { whiteDelta, blackDelta };
+function calculateEloDelta(myElo, oppElo, score) {
+  const K = 32;
+  const expected = 1 / (1 + Math.pow(10, (oppElo - myElo) / 400));
+  return Math.round(K * (score - expected));
 }
 
 module.exports = {
+  MAX_HAND_SIZE,
+  TURN_CLOCK_SECONDS,
+  RANK_TEXT,
   PIECE_DATA,
   createDeck,
-  createInitialBoard,
+  buildInitialBoard,
   createInitialMatchState,
+  evaluateCombatHand,
+  comparePokerHands,
+  getReachInfo,
   applyCommandToState,
   calculateEloDelta
 };
