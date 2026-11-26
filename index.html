@@ -428,6 +428,24 @@
       font-size: 1.05rem;
     }
 
+    /* Caixa de informações abreviadas da peça selecionada */
+    .selected-piece-box {
+      width: 100%;
+      min-height: 30px;
+      padding: 4px 8px;
+      border-radius: 10px;
+      background: #161820;
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      font-size: 10.5px;
+      line-height: 1.2;
+      color: #e4e4e7;
+      overflow: hidden;
+    }
+
     /* Roda de mensagens e caixinha flutuante sobre o tabuleiro */
     .board-stage {
       position: relative;
@@ -591,6 +609,9 @@
         <button type="button" id="btn-open-msg-wheel" class="px-3 py-2 rounded-xl bg-[#d4af37]/15 border border-[#d4af37]/50 text-xl leading-none font-bold text-[#f3d678] active:scale-95 shrink-0" aria-label="Mensagens" title="Roda de Mensagens">
           💬
         </button>
+      </div>
+      <div id="selected-piece-info-box" class="selected-piece-box" aria-live="polite">
+        <span class="text-zinc-400 truncate">Nenhuma peça selecionada.</span>
       </div>
     </main>
 
@@ -1313,6 +1334,52 @@
 
     function getSideColorLabel(side) {
       return side === 'white' ? 'Brancas (♔)' : 'Pretas (♚)';
+    }
+
+    function updateSelectedPieceBox() {
+      const box = document.getElementById('selected-piece-info-box');
+      if (!box) return;
+
+      if (!state || !state.selected) {
+        box.innerHTML = '<span class="text-zinc-400 truncate">Nenhuma peça selecionada.</span>';
+        return;
+      }
+
+      const { r, c } = state.selected;
+      const piece = state.board && state.board[r] && state.board[r][c];
+      if (!piece || !PIECE_DATA[piece.type]) {
+        box.innerHTML = '<span class="text-zinc-400 truncate">Nenhuma peça selecionada.</span>';
+        return;
+      }
+
+      const info = PIECE_DATA[piece.type];
+      const glyph = piece.color === 'white' ? info.white : info.black;
+      const sideLabel = piece.color === 'white' ? 'B' : 'P';
+      const cardRank = piece.type === 'P' ? '2-9' : (RANK_TEXT[piece.cardVal] || info.cardLabel);
+      const statusTag = piece.acted ? ' · <span class="text-amber-300">Agiu</span>' : '';
+
+      const shortActive = {
+        P: '♠ Sacrifica: 1♥ em inimigos no alcance',
+        R: '♠ Troca lugar com peça no alcance',
+        B: '♠ Cura +1♥ aliados no alcance',
+        Q: '♠ Copia ativa de peça no alcance',
+        K: '♠ Até 2 dano não letal em inimigo',
+        N: '♠ Move alvo 1 casa adjacente'
+      }[piece.type] || '';
+
+      const shortPassive = {
+        P: 'Pass: Promove na última linha',
+        R: 'Pass: 0♥ ao defender',
+        B: 'Pass: 0♥ se defenderem ataque',
+        Q: 'Pass: +1♥ ao abater',
+        K: 'Pass: —',
+        N: 'Pass: Ignora obstáculos'
+      }[piece.type] || '';
+
+      box.innerHTML = `
+        <span class="font-bold text-[#fff1b8] shrink-0">${glyph} ${info.name} [${sideLabel}] ${piece.hp}/${piece.maxHp}♥ · Carta:${cardRank}${statusTag}</span>
+        <span class="text-zinc-300 truncate">${info.reachLabel} · ${shortActive} · ${shortPassive}</span>
+      `;
     }
 
     function updateTurnBanner() {
@@ -4869,6 +4936,7 @@
         }
       }
 
+      updateSelectedPieceBox();
       updateTurnBanner();
       const combatModalIsOpen = document.getElementById('combat-modal').classList.contains('open');
       const waitingOpen = document.getElementById('waiting-opponent-modal').classList.contains('open');
