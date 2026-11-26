@@ -307,7 +307,7 @@
     }
 
     .piece-anim-move {
-      animation: xekerPieceSlide 1300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+      animation: xekerPieceSlide 800ms cubic-bezier(0.22, 1, 0.36, 1) both;
       z-index: 25;
     }
 
@@ -319,24 +319,24 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      animation: xekerPieceSlide 1300ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation: xekerPieceSlide 800ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
-    @keyframes xekerPieceCaptureBurst {
+    @keyframes xekerPieceCutFade {
       0% {
-        transform: scale(1) rotate(0deg);
+        transform: translate(0px, 0px) scale(1);
         opacity: 1;
-        filter: brightness(1.4);
+        filter: brightness(1.35);
       }
-      45% {
-        transform: scale(1.22) rotate(-8deg);
-        opacity: 0.9;
-        filter: brightness(1.9) drop-shadow(0 0 10px rgba(248, 113, 113, 0.95));
+      40% {
+        transform: translate(var(--cut-dx, 0px), var(--cut-dy, 0px)) scale(1.04);
+        opacity: 0.85;
+        filter: brightness(1.65) drop-shadow(0 0 8px rgba(239, 68, 68, 0.85));
       }
       100% {
-        transform: scale(0.15) rotate(16deg);
+        transform: translate(var(--cut-dx, 0px), var(--cut-dy, 0px)) scale(0.92);
         opacity: 0;
-        filter: brightness(0.4);
+        filter: brightness(0.6);
       }
     }
 
@@ -348,7 +348,32 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      animation: xekerPieceCaptureBurst 1300ms cubic-bezier(0.32, 0, 0.67, 1) forwards;
+      overflow: hidden;
+      animation: xekerPieceCutFade 800ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .capture-fx-half-top {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      clip-path: polygon(0 0, 100% 0, 100% 50%, 0 50%);
+      --cut-dx: -4px;
+      --cut-dy: -5px;
+      animation: xekerPieceCutFade 800ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .capture-fx-half-bottom {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      clip-path: polygon(0 50%, 100% 50%, 100% 100%, 0 100%);
+      --cut-dx: 4px;
+      --cut-dy: 5px;
+      animation: xekerPieceCutFade 800ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
     @keyframes xekerDamageFloatNormal {
@@ -393,7 +418,7 @@
       text-shadow:
         0 2px 8px rgba(0, 0, 0, 0.95),
         0 0 12px rgba(239, 68, 68, 0.75);
-      animation: xekerDamageFloatNormal 1300ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation: xekerDamageFloatNormal 800ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
     .damage-fx-badge.heavy {
@@ -402,11 +427,26 @@
       text-shadow:
         0 2px 10px rgba(0, 0, 0, 0.98),
         0 0 16px rgba(248, 113, 113, 0.95);
-      animation: xekerDamageFloatTremble 1300ms linear forwards;
+      animation: xekerDamageFloatTremble 800ms linear forwards;
     }
 
     .damage-fx-badge:not(.heavy) {
       font-size: 1.05rem;
+    }
+
+    .heal-fx-badge {
+      position: fixed;
+      pointer-events: none;
+      z-index: 35;
+      color: #22c55e;
+      font-size: 1.05rem;
+      font-weight: 900;
+      line-height: 1;
+      white-space: nowrap;
+      text-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.95),
+        0 0 12px rgba(34, 197, 94, 0.75);
+      animation: xekerDamageFloatNormal 800ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
     .selected-piece-box {
@@ -1103,6 +1143,7 @@
     let pendingMoveAnim = null;
     const pendingCaptureAnims = [];
     const pendingDamageAnims = [];
+    const pendingHealAnims = [];
     const pendingMoveSteps = [];
     const hiddenBoardTokensUntilAnim = new Set();
     let captureDelayTimer = null;
@@ -2605,7 +2646,17 @@
       openModal('combat-pass-modal');
     }
 
+    function isAnimationActive() {
+      if (captureDelayTimer !== null) return true;
+      if (pendingMoveAnim !== null) return true;
+      if (pendingDamageAnims.length > 0 || pendingCaptureAnims.length > 0 || pendingMoveSteps.length > 0) return true;
+      if (hiddenBoardTokensUntilAnim.size > 0) return true;
+      if (document.querySelector('.piece-anim-move, .move-fx-ghost, .capture-fx-ghost, .damage-fx-badge, .heal-fx-badge')) return true;
+      return false;
+    }
+
     function isCombatPauseActive() {
+      if (isAnimationActive()) return true;
       if (combatUI.mode !== null || combatUI.waitingForOpponent) return true;
       if (document.getElementById('combat-modal').classList.contains('open')) return true;
       if (document.getElementById('combat-pass-modal').classList.contains('open')) return true;
@@ -2819,6 +2870,9 @@
         }
         pendingCaptureAnims.length = 0;
         pendingDamageAnims.length = 0;
+        pendingHealAnims.length = 0;
+        pendingMoveSteps.length = 0;
+        hiddenBoardTokensUntilAnim.clear();
         pendingMoveAnim = null;
         combatUI.offlineClosed = { white: false, black: false };
         combatUI.waitingForOpponent = false;
@@ -2982,7 +3036,7 @@
       openModal('gameover-modal');
     }
 
-    function applyQueenAbatePassive(side) {
+    function applyQueenAbatePassive(side, fxHeals = null) {
       if (!state || state.gameOver) return 0;
       let healed = 0;
       for (let r = 0; r < 8; r++) {
@@ -2991,6 +3045,8 @@
           if (p && p.color === side && p.type === 'Q' && p.hp > 0 && p.hp < p.maxHp) {
             p.hp = Math.min(p.maxHp, p.hp + 1);
             healed += 1;
+            queueHealAnimation(r, c, 1);
+            if (Array.isArray(fxHeals)) fxHeals.push({ r, c, amount: 1 });
           }
         }
       }
@@ -3116,6 +3172,12 @@
           if (rect && d.amount > 0) pendingDamageAnims.push({ rect, amount: d.amount });
         }
       }
+      if (Array.isArray(fxEvent.heals)) {
+        for (const h of fxEvent.heals) {
+          const rect = captureTileRect(h.r, h.c);
+          if (rect && h.amount > 0) pendingHealAnims.push({ rect, amount: h.amount });
+        }
+      }
       if (Array.isArray(fxEvent.captures)) {
         for (const cap of fxEvent.captures) {
           const rect = captureTileRect(cap.r, cap.c);
@@ -3161,6 +3223,13 @@
       if (rect) pendingDamageAnims.push({ rect, amount: dmg });
     }
 
+    function queueHealAnimation(r, c, amount) {
+      const heal = Math.max(0, Number(amount) || 0);
+      if (heal <= 0) return;
+      const rect = captureTileRect(r, c);
+      if (rect) pendingHealAnims.push({ rect, amount: heal });
+    }
+
     function queueCaptureAnimation(r, c, pieceObj) {
       if (!pieceObj || !pieceObj.type || !PIECE_DATA[pieceObj.type]) return;
       const rect = captureTileRect(r, c);
@@ -3193,7 +3262,18 @@
       badge.style.top = `${rect.top + rect.height / 2}px`;
       document.body.appendChild(badge);
       badge.addEventListener('animationend', () => badge.remove(), { once: true });
-      setTimeout(() => { if (badge.parentNode) badge.remove(); }, 1450);
+      setTimeout(() => { if (badge.parentNode) badge.remove(); }, 860);
+    }
+
+    function runHealNumberBadge(rect, amount) {
+      const badge = document.createElement('div');
+      badge.className = 'heal-fx-badge';
+      badge.textContent = `+${amount}♥`;
+      badge.style.left = `${rect.left + rect.width / 2}px`;
+      badge.style.top = `${rect.top + rect.height / 2}px`;
+      document.body.appendChild(badge);
+      badge.addEventListener('animationend', () => badge.remove(), { once: true });
+      setTimeout(() => { if (badge.parentNode) badge.remove(); }, 860);
     }
 
     function runSingleMoveGhost(step) {
@@ -3218,30 +3298,49 @@
 
       document.body.appendChild(ghost);
       ghost.addEventListener('animationend', () => ghost.remove(), { once: true });
-      setTimeout(() => { if (ghost.parentNode) ghost.remove(); }, 1450);
+      setTimeout(() => { if (ghost.parentNode) ghost.remove(); }, 860);
     }
 
     function runSingleCaptureGhost(rect, pieceObj) {
       const info = PIECE_DATA[pieceObj.type];
       if (!info) return;
       const pColor = pieceObj.color === 'black' ? 'black' : 'white';
-      const ghost = document.createElement('div');
       const sizeW = Math.max(20, rect.width * 0.86);
       const sizeH = Math.max(20, rect.height * 0.86);
-      ghost.className = `piece-token ${pColor} capture-fx-ghost`;
-      ghost.style.width = `${sizeW}px`;
-      ghost.style.height = `${sizeH}px`;
-      ghost.style.left = `${rect.left + (rect.width - sizeW) / 2}px`;
-      ghost.style.top = `${rect.top + (rect.height - sizeH) / 2}px`;
+      const leftPx = rect.left + (rect.width - sizeW) / 2;
+      const topPx = rect.top + (rect.height - sizeH) / 2;
+      const glyphChar = pColor === 'white' ? info.white : info.black;
 
-      const glyph = document.createElement('span');
-      glyph.className = 'piece-glyph';
-      glyph.textContent = pColor === 'white' ? info.white : info.black;
-      ghost.appendChild(glyph);
+      const topHalf = document.createElement('div');
+      topHalf.className = `piece-token ${pColor} capture-fx-half-top`;
+      topHalf.style.width = `${sizeW}px`;
+      topHalf.style.height = `${sizeH}px`;
+      topHalf.style.left = `${leftPx}px`;
+      topHalf.style.top = `${topPx}px`;
+      const topGlyph = document.createElement('span');
+      topGlyph.className = 'piece-glyph';
+      topGlyph.textContent = glyphChar;
+      topHalf.appendChild(topGlyph);
 
-      document.body.appendChild(ghost);
-      ghost.addEventListener('animationend', () => ghost.remove(), { once: true });
-      setTimeout(() => { if (ghost.parentNode) ghost.remove(); }, 1450);
+      const botHalf = document.createElement('div');
+      botHalf.className = `piece-token ${pColor} capture-fx-half-bottom`;
+      botHalf.style.width = `${sizeW}px`;
+      botHalf.style.height = `${sizeH}px`;
+      botHalf.style.left = `${leftPx}px`;
+      botHalf.style.top = `${topPx}px`;
+      const botGlyph = document.createElement('span');
+      botGlyph.className = 'piece-glyph';
+      botGlyph.textContent = glyphChar;
+      botHalf.appendChild(botGlyph);
+
+      document.body.appendChild(topHalf);
+      document.body.appendChild(botHalf);
+      topHalf.addEventListener('animationend', () => topHalf.remove(), { once: true });
+      botHalf.addEventListener('animationend', () => botHalf.remove(), { once: true });
+      setTimeout(() => {
+        if (topHalf.parentNode) topHalf.remove();
+        if (botHalf.parentNode) botHalf.remove();
+      }, 860);
     }
 
     function setPieceHiddenDuringCaptureMove(r, c, hidden) {
@@ -3259,12 +3358,14 @@
       const guestItems = buildDamageAndCaptureListFromSummary(summaryForGuest);
       if (
         pendingDamageAnims.length === 0 &&
+        pendingHealAnims.length === 0 &&
         pendingCaptureAnims.length === 0 &&
         pendingMoveSteps.length === 0 &&
         guestItems.length === 0
       ) return;
 
       const dmgBatch = pendingDamageAnims.splice(0, pendingDamageAnims.length);
+      const healBatch = pendingHealAnims.splice(0, pendingHealAnims.length);
       const moveBatch = pendingMoveSteps.splice(0, pendingMoveSteps.length);
       const capBatch = pendingCaptureAnims.splice(0, pendingCaptureAnims.length);
 
@@ -3285,6 +3386,7 @@
           document.getElementById('waiting-opponent-modal').classList.contains('open')
         ) {
           pendingDamageAnims.push(...dmgBatch);
+          pendingHealAnims.push(...healBatch);
           pendingMoveSteps.push(...moveBatch);
           pendingCaptureAnims.push(...capBatch);
           return;
@@ -3305,7 +3407,7 @@
             if (m.originPos) setPieceHiddenDuringCaptureMove(m.originPos.r, m.originPos.c, false);
             runSingleMoveGhost(m);
             if (m.destPos) {
-              setTimeout(() => setPieceHiddenDuringCaptureMove(m.destPos.r, m.destPos.c, false), 1300);
+              setTimeout(() => setPieceHiddenDuringCaptureMove(m.destPos.r, m.destPos.c, false), 800);
             }
           });
         };
@@ -3323,19 +3425,21 @@
           }
           if (capBatch.length > 0) {
             capBatch.forEach((c) => runSingleCaptureGhost(c.rect, c.piece));
-            if (moveBatch.length > 0) setTimeout(runMoveAfterCapture, 1300);
+            if (moveBatch.length > 0) setTimeout(runMoveAfterCapture, 800);
           } else {
             runMoveAfterCapture();
           }
         };
 
+        healBatch.forEach((h) => runHealNumberBadge(h.rect, h.amount));
+
         if (dmgBatch.length > 0) {
           dmgBatch.forEach((d) => runDamageNumberBadge(d.rect, d.amount));
-          if (capBatch.length > 0 || moveBatch.length > 0) setTimeout(runCaptureThenMove, 1300);
+          if (capBatch.length > 0 || moveBatch.length > 0) setTimeout(runCaptureThenMove, 800);
         } else {
           runCaptureThenMove();
         }
-      }, 1000);
+      }, 150);
     }
 
     function flushCaptureAnimations() {
@@ -3346,7 +3450,12 @@
         combatUI.mode === 'summary' ||
         net.lastSummary
       ) return;
-      if (pendingDamageAnims.length === 0 && pendingCaptureAnims.length === 0 && pendingMoveSteps.length === 0) return;
+      if (
+        pendingDamageAnims.length === 0 &&
+        pendingHealAnims.length === 0 &&
+        pendingCaptureAnims.length === 0 &&
+        pendingMoveSteps.length === 0
+      ) return;
       if (captureDelayTimer) return;
       scheduleDamageAndCaptureSequence();
     }
@@ -3587,6 +3696,10 @@
         const before = winPiece.hp;
         winPiece.hp = Math.min(winPiece.maxHp, winPiece.hp + 2);
         healedHp = winPiece.hp - before;
+        if (healedHp > 0) {
+          const winPos = winSide === 'atk' ? atkOriginPos : defOriginPos;
+          queueHealAnimation(winPos.r, winPos.c, healedHp);
+        }
       }
       if (winHand.cat === 2) {
         state.players[winColor].gold += 4;
@@ -4003,18 +4116,22 @@
           return;
         }
         player.gold -= 1;
-        queueCaptureAnimation(userR, userC, userPiece);
-        const fxDamages = [];
-        const fxCaptures = [{ r: userR, c: userC, piece: { ...userPiece } }];
+        const pawnRect = captureTileRect(userR, userC);
+        const pawnSnap = { ...userPiece };
         state.board[userR][userC] = null;
 
+        const fxDamages = [];
+        const fxCaptures = [];
+        const fxHeals = [];
+        const enemyDamageQueue = [];
         let hitCount = 0;
         let endNow = false;
+
         for (const item of reach.enemies) {
           const enemy = state.board[item.r][item.c];
           if (!enemy) continue;
           const enemySnap = { ...enemy };
-          queueDamageAnimation(item.r, item.c, 1);
+          enemyDamageQueue.push({ r: item.r, c: item.c, amount: 1 });
           fxDamages.push({ r: item.r, c: item.c, amount: 1 });
           enemy.hp -= 1;
           hitCount += 1;
@@ -4028,11 +4145,25 @@
             }
           }
         }
-        recordHostFxEvent({ damages: fxDamages, captures: fxCaptures, immediateFlush: true });
+
+        recordHostFxEvent({ damages: fxDamages, heals: fxHeals, captures: fxCaptures, immediateFlush: true });
         finishPieceSkillAction(userPiece);
         if (!endNow) setStatus(`♠ ${isCopied ? 'Rainha (Peão)' : 'Peão'} sacrificou-se causando 1♥ a ${hitCount} inimigo(s) (♦1 · 0♣).`);
         renderAll();
-        scheduleDamageAndCaptureSequence();
+
+        if (pawnRect) {
+          runSingleCaptureGhost(pawnRect, pawnSnap);
+          setTimeout(() => {
+            enemyDamageQueue.forEach((ed) => {
+              const eRect = captureTileRect(ed.r, ed.c);
+              if (eRect) runDamageNumberBadge(eRect, ed.amount);
+            });
+            scheduleDamageAndCaptureSequence();
+          }, 800);
+        } else {
+          enemyDamageQueue.forEach((ed) => queueDamageAnimation(ed.r, ed.c, ed.amount));
+          scheduleDamageAndCaptureSequence();
+        }
         if (isRankedMode() && net.role === 'host') syncOnlineState();
         return;
       }
@@ -4044,17 +4175,25 @@
           return;
         }
         player.gold -= 1;
+        const fxHeals = [];
         let healedCount = 0;
         for (const item of reach.allies) {
           const ally = state.board[item.r][item.c];
           if (!ally) continue;
           const prev = ally.hp;
           ally.hp = Math.min(ally.maxHp, ally.hp + 1);
-          if (ally.hp > prev) healedCount += 1;
+          const diff = ally.hp - prev;
+          if (diff > 0) {
+            healedCount += 1;
+            queueHealAnimation(item.r, item.c, diff);
+            fxHeals.push({ r: item.r, c: item.c, amount: diff });
+          }
         }
+        recordHostFxEvent({ heals: fxHeals, immediateFlush: true });
         finishPieceSkillAction(userPiece);
         setStatus(`♠ ${isCopied ? 'Rainha (Bispo)' : 'Bispo'} curou +1♥ em ${healedCount} aliado(s) no alcance (♦1 · 0♣).`);
         renderAll();
+        scheduleDamageAndCaptureSequence();
         if (isRankedMode() && net.role === 'host') syncOnlineState();
         return;
       }
