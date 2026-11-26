@@ -358,6 +358,65 @@
       animation: xekerPieceCaptureBurst 3000ms cubic-bezier(0.32, 0, 0.67, 1) forwards;
     }
 
+    /* Animação de dano vermelho com naipe de copas (3s) */
+    @keyframes xekerDamageFloatNormal {
+      0% {
+        transform: translate(-50%, -50%) translateX(0px) scale(0.85);
+        opacity: 1;
+      }
+      20% {
+        opacity: 1;
+        transform: translate(-50%, -62%) translateX(0px) scale(1.05);
+      }
+      100% {
+        transform: translate(-50%, -145%) translateX(0px) scale(0.96);
+        opacity: 0;
+      }
+    }
+
+    @keyframes xekerDamageFloatTremble {
+      0%   { transform: translate(-50%, -50%) translateX(0px) scale(1.15); opacity: 1; }
+      8%   { transform: translate(-50%, -58%) translateX(-9px) scale(1.22); opacity: 1; }
+      16%  { transform: translate(-50%, -66%) translateX(9px) scale(1.22); opacity: 1; }
+      24%  { transform: translate(-50%, -74%) translateX(-10px) scale(1.2); opacity: 1; }
+      32%  { transform: translate(-50%, -82%) translateX(10px) scale(1.2); opacity: 1; }
+      40%  { transform: translate(-50%, -90%) translateX(-8px) scale(1.18); opacity: 1; }
+      48%  { transform: translate(-50%, -98%) translateX(8px) scale(1.18); opacity: 1; }
+      56%  { transform: translate(-50%, -106%) translateX(-9px) scale(1.15); opacity: 0.92; }
+      64%  { transform: translate(-50%, -114%) translateX(9px) scale(1.15); opacity: 0.82; }
+      72%  { transform: translate(-50%, -122%) translateX(-7px) scale(1.12); opacity: 0.65; }
+      80%  { transform: translate(-50%, -130%) translateX(7px) scale(1.1); opacity: 0.45; }
+      90%  { transform: translate(-50%, -138%) translateX(-5px) scale(1.06); opacity: 0.22; }
+      100% { transform: translate(-50%, -146%) translateX(0px) scale(1.02); opacity: 0; }
+    }
+
+    .damage-fx-badge {
+      position: fixed;
+      pointer-events: none;
+      z-index: 35;
+      color: #ef4444;
+      font-weight: 900;
+      line-height: 1;
+      white-space: nowrap;
+      text-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.95),
+        0 0 12px rgba(239, 68, 68, 0.75);
+      animation: xekerDamageFloatNormal 3000ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .damage-fx-badge.heavy {
+      font-size: 1.55rem;
+      color: #f87171;
+      text-shadow:
+        0 2px 10px rgba(0, 0, 0, 0.98),
+        0 0 16px rgba(248, 113, 113, 0.95);
+      animation: xekerDamageFloatTremble 3000ms linear forwards;
+    }
+
+    .damage-fx-badge:not(.heavy) {
+      font-size: 1.05rem;
+    }
+
     /* Roda de mensagens e caixinha flutuante sobre o tabuleiro */
     .board-stage {
       position: relative;
@@ -2291,12 +2350,13 @@
           combatUI.waitingForOpponent = false;
           closeModal('waiting-opponent-modal');
           closeModal('combat-modal');
+          const summaryToAnimate = net.lastSummary;
           net.lastSummary = null;
           if (state && state.gameOver && state.gameOverData) {
             endMatch(state.gameOverData.winnerSide, state.gameOverData.reason);
           }
           renderAll();
-          scheduleCaptureAnimationsAfterBothClosed();
+          scheduleDamageAndCaptureSequence(summaryToAnimate);
         } else if (remoteClosed.black) {
           stopCombatCountdown();
           closeModal('combat-modal');
@@ -2875,6 +2935,7 @@
           captureDelayTimer = null;
         }
         pendingCaptureAnims.length = 0;
+        pendingDamageAnims.length = 0;
         pendingMoveAnim = null;
         combatUI.offlineClosed = { white: false, black: false };
         combatUI.waitingForOpponent = false;
@@ -3034,7 +3095,7 @@
       document.getElementById('gameover-title').textContent = title;
       document.getElementById('gameover-desc').textContent = reason;
       renderAll();
-      scheduleCaptureAnimationsAfterBothClosed();
+      scheduleDamageAndCaptureSequence();
       if (isRankedMode() && net.role === 'host') {
         syncOnlineState();
       }
@@ -3137,9 +3198,10 @@
       }, 1000);
     }
 
-    // --- Animações de Movimento e Captura (3s, iniciando 1s após ambos fecharem o resumo) ---
+    // --- Animações de Dano (♥), Movimento e Captura (3s) ---
     let pendingMoveAnim = null;
     const pendingCaptureAnims = [];
+    const pendingDamageAnims = [];
     let captureDelayTimer = null;
 
     function captureTileRect(r, c) {
@@ -3161,6 +3223,14 @@
       pendingMoveAnim = { r: toR, c: toC, dx, dy };
     }
 
+    function queueDamageAnimation(r, c, amount) {
+      const dmg = Math.max(0, Number(amount) || 0);
+      if (dmg <= 0) return;
+      const rect = captureTileRect(r, c);
+      if (!rect) return;
+      pendingDamageAnims.push({ rect, amount: dmg });
+    }
+
     function queueCaptureAnimation(r, c, pieceObj) {
       if (!pieceObj || !pieceObj.type || !PIECE_DATA[pieceObj.type]) return;
       const rect = captureTileRect(r, c);
@@ -3168,12 +3238,101 @@
       pendingCaptureAnims.push({ rect, piece: { ...pieceObj } });
     }
 
-    function scheduleCaptureAnimationsAfterBothClosed() {
-      if (pendingCaptureAnims.length === 0) return;
+    function buildDamageAndCaptureListFromSummary(summary) {
+      const items = [];
+      if (!summary) return items;
+      if (summary.atkDmg > 0 && summary.atkPos) {
+        const rect = captureTileRect(summary.atkPos.r, summary.atkPos.c);
+        if (rect) {
+          items.push({
+            kind: 'damage',
+            rect,
+            amount: summary.atkDmg,
+            captured: summary.atkDmg >= (summary.atkPiece ? summary.atkPiece.hp : 1),
+            piece: summary.atkPiece
+          });
+        }
+      }
+      if (summary.defDmg > 0 && summary.defPos) {
+        const rect = captureTileRect(summary.defPos.r, summary.defPos.c);
+        if (rect) {
+          items.push({
+            kind: 'damage',
+            rect,
+            amount: summary.defDmg,
+            captured: summary.defDmg >= (summary.defPiece ? summary.defPiece.hp : 1),
+            piece: summary.defPiece
+          });
+        }
+      }
+      return items;
+    }
+
+    function runDamageNumberBadge(rect, amount) {
+      const badge = document.createElement('div');
+      const isHeavy = amount > 2;
+      badge.className = `damage-fx-badge${isHeavy ? ' heavy' : ''}`;
+      badge.textContent = `${amount}♥`;
+      badge.style.left = `${rect.left + rect.width / 2}px`;
+      badge.style.top = `${rect.top + rect.height / 2}px`;
+
+      document.body.appendChild(badge);
+      badge.addEventListener('animationend', () => {
+        badge.remove();
+      }, { once: true });
+      setTimeout(() => {
+        if (badge.parentNode) badge.remove();
+      }, 3150);
+    }
+
+    function runSingleCaptureGhost(rect, pieceObj) {
+      const info = PIECE_DATA[pieceObj.type];
+      if (!info) return;
+      const pColor = pieceObj.color === 'black' ? 'black' : 'white';
+      const ghost = document.createElement('div');
+      const sizeW = Math.max(20, rect.width * 0.86);
+      const sizeH = Math.max(20, rect.height * 0.86);
+      ghost.className = `piece-token ${pColor} capture-fx-ghost`;
+      ghost.style.width = `${sizeW}px`;
+      ghost.style.height = `${sizeH}px`;
+      ghost.style.left = `${rect.left + (rect.width - sizeW) / 2}px`;
+      ghost.style.top = `${rect.top + (rect.height - sizeH) / 2}px`;
+
+      const glyph = document.createElement('span');
+      glyph.className = 'piece-glyph';
+      glyph.textContent = pColor === 'white' ? info.white : info.black;
+      ghost.appendChild(glyph);
+
+      document.body.appendChild(ghost);
+      ghost.addEventListener('animationend', () => {
+        ghost.remove();
+      }, { once: true });
+      setTimeout(() => {
+        if (ghost.parentNode) ghost.remove();
+      }, 3150);
+    }
+
+    function scheduleDamageAndCaptureSequence(summaryForGuest = null) {
+      const guestItems = buildDamageAndCaptureListFromSummary(summaryForGuest);
+      if (pendingDamageAnims.length === 0 && pendingCaptureAnims.length === 0 && guestItems.length === 0) return;
+
+      const dmgBatch = pendingDamageAnims.splice(0, pendingDamageAnims.length);
+      const capBatch = pendingCaptureAnims.splice(0, pendingCaptureAnims.length);
+
+      for (const g of guestItems) {
+        if (g.amount > 0) {
+          dmgBatch.push({ rect: g.rect, amount: g.amount });
+        }
+        if (g.captured && g.piece) {
+          capBatch.push({ rect: g.rect, piece: g.piece });
+        }
+      }
+
       if (captureDelayTimer) {
         clearTimeout(captureDelayTimer);
         captureDelayTimer = null;
       }
+
       captureDelayTimer = setTimeout(() => {
         captureDelayTimer = null;
         if (
@@ -3182,7 +3341,23 @@
         ) {
           return;
         }
-        runQueuedCaptureAnimationsNow();
+
+        if (dmgBatch.length > 0) {
+          dmgBatch.forEach((d) => runDamageNumberBadge(d.rect, d.amount));
+          if (capBatch.length > 0) {
+            setTimeout(() => {
+              if (
+                document.getElementById('combat-modal').classList.contains('open') ||
+                document.getElementById('waiting-opponent-modal').classList.contains('open')
+              ) {
+                return;
+              }
+              capBatch.forEach((c) => runSingleCaptureGhost(c.rect, c.piece));
+            }, 3000);
+          }
+        } else if (capBatch.length > 0) {
+          capBatch.forEach((c) => runSingleCaptureGhost(c.rect, c.piece));
+        }
       }, 1000);
     }
 
@@ -3196,46 +3371,19 @@
       ) {
         return;
       }
-      if (pendingCaptureAnims.length === 0) return;
+      if (pendingDamageAnims.length === 0 && pendingCaptureAnims.length === 0) return;
       if (captureDelayTimer) return;
-      captureDelayTimer = setTimeout(() => {
-        captureDelayTimer = null;
-        if (
-          document.getElementById('combat-modal').classList.contains('open') ||
-          document.getElementById('waiting-opponent-modal').classList.contains('open')
-        ) {
-          return;
-        }
-        runQueuedCaptureAnimationsNow();
-      }, 1000);
+      scheduleDamageAndCaptureSequence();
     }
 
     function runQueuedCaptureAnimationsNow() {
+      while (pendingDamageAnims.length > 0) {
+        const d = pendingDamageAnims.shift();
+        runDamageNumberBadge(d.rect, d.amount);
+      }
       while (pendingCaptureAnims.length > 0) {
         const item = pendingCaptureAnims.shift();
-        const info = PIECE_DATA[item.piece.type];
-        const pColor = item.piece.color === 'black' ? 'black' : 'white';
-        const ghost = document.createElement('div');
-        const sizeW = Math.max(20, item.rect.width * 0.86);
-        const sizeH = Math.max(20, item.rect.height * 0.86);
-        ghost.className = `piece-token ${pColor} capture-fx-ghost`;
-        ghost.style.width = `${sizeW}px`;
-        ghost.style.height = `${sizeH}px`;
-        ghost.style.left = `${item.rect.left + (item.rect.width - sizeW) / 2}px`;
-        ghost.style.top = `${item.rect.top + (item.rect.height - sizeH) / 2}px`;
-
-        const glyph = document.createElement('span');
-        glyph.className = 'piece-glyph';
-        glyph.textContent = pColor === 'white' ? info.white : info.black;
-        ghost.appendChild(glyph);
-
-        document.body.appendChild(ghost);
-        ghost.addEventListener('animationend', () => {
-          ghost.remove();
-        }, { once: true });
-        setTimeout(() => {
-          if (ghost.parentNode) ghost.remove();
-        }, 3150);
+        runSingleCaptureGhost(item.rect, item.piece);
       }
     }
 
@@ -3261,7 +3409,7 @@
       }
 
       renderAll();
-      scheduleCaptureAnimationsAfterBothClosed();
+      scheduleDamageAndCaptureSequence();
       if (isRankedMode() && net.role === 'host') {
         syncOnlineState();
       }
@@ -3450,6 +3598,8 @@
 
       const atkSnap = { ...atkPiece };
       const defSnap = { ...defPiece };
+      const atkOriginPos = { r: duelContext.atkR, c: duelContext.atkC };
+      const defOriginPos = { r: duelContext.defR, c: duelContext.defC };
       const atkName = PIECE_DATA[atkPiece.type].name;
       const defName = PIECE_DATA[defPiece.type].name;
       const cards4 = [...state.flop, atkCard];
@@ -3522,6 +3672,13 @@
 
       const actualAtkDmg = Math.min(atkPiece.hp, Math.max(0, atkDmg));
       const actualDefDmg = Math.min(defPiece.hp, Math.max(0, defDmg));
+
+      if (actualAtkDmg > 0) {
+        queueDamageAnimation(atkOriginPos.r, atkOriginPos.c, actualAtkDmg);
+      }
+      if (actualDefDmg > 0) {
+        queueDamageAnimation(defOriginPos.r, defOriginPos.c, actualDefDmg);
+      }
 
       atkPiece.hp -= atkDmg;
       defPiece.hp -= defDmg;
@@ -3602,6 +3759,8 @@
         defCard,
         atkPiece: atkSnap,
         defPiece: defSnap,
+        atkPos: atkOriginPos,
+        defPos: defOriginPos,
         atkHeaderInfo: `${atkName} (${atkSnap.hp}♥)`,
         defHeaderInfo: `${defName} (${defSnap.hp}♥)`,
         atkRep: formatPieceRep(atkPiece),
@@ -3828,6 +3987,9 @@
         duelContext = { atkR, atkC, defR, defC, atkCard: used };
         const dmg = 2;
         const actualDmg = Math.min(defPiece.hp, dmg);
+        if (actualDmg > 0) {
+          queueDamageAnimation(defR, defC, actualDmg);
+        }
         defPiece.hp -= dmg;
         const dead = defPiece.hp <= 0;
         const extras = ['Flop renovado'];
@@ -3859,6 +4021,8 @@
           defCard: null,
           atkPiece: { ...atkPiece },
           defPiece: { ...defPiece },
+          atkPos: { r: atkR, c: atkC },
+          defPos: { r: defR, c: defC },
           atkHeaderInfo: `${PIECE_DATA[atkPiece.type].name} (${atkPiece.hp}♥)`,
           defHeaderInfo: `${PIECE_DATA[defPiece.type].name} (${Math.max(0, defPiece.hp)}♥)`,
           atkRep: formatPieceRep(atkPiece),
@@ -3992,6 +4156,7 @@
           const enemy = state.board[item.r][item.c];
           if (!enemy) continue;
           const enemySnap = { ...enemy };
+          queueDamageAnimation(item.r, item.c, 1);
           enemy.hp -= 1;
           hitCount += 1;
           if (enemy.hp <= 0) {
@@ -4008,6 +4173,7 @@
           setStatus(`♠ ${isCopied ? 'Rainha (Peão)' : 'Peão'} sacrificou-se causando 1♥ a ${hitCount} inimigo(s) (♦1 · 0♣).`);
         }
         renderAll();
+        scheduleDamageAndCaptureSequence();
         if (isRankedMode() && net.role === 'host') syncOnlineState();
         return;
       }
@@ -4085,10 +4251,14 @@
       if (skillType === 'K') {
         player.gold -= 1;
         const applied = Math.min(2, Math.max(0, enemy.hp - 1));
+        if (applied > 0) {
+          queueDamageAnimation(targetR, targetC, applied);
+        }
         enemy.hp = Math.max(1, enemy.hp - 2);
         finishPieceSkillAction(userPiece);
         setStatus(`♠ ${isCopied ? 'Rainha (Rei)' : 'Rei'} causou ${applied} de dano não letal em ${PIECE_DATA[enemy.type].name} (restante ${enemy.hp}♥ · ♦1 · 0♣).`);
         renderAll();
+        scheduleDamageAndCaptureSequence();
         if (isRankedMode() && net.role === 'host') syncOnlineState();
         return;
       }
@@ -4096,6 +4266,7 @@
       const dmg = 1;
       player.gold -= 1;
       const enemySnap = { ...enemy };
+      queueDamageAnimation(targetR, targetC, dmg);
       enemy.hp -= dmg;
       let ended = false;
       if (enemy.hp <= 0) {
@@ -4108,6 +4279,7 @@
         setStatus(`♠ ${isCopied ? `Rainha (${PIECE_DATA[skillType].name})` : PIECE_DATA[userPiece.type].name} causou ${dmg}♥ em ${PIECE_DATA[enemy.type].name} (♦1 · 0♣).`);
       }
       renderAll();
+      scheduleDamageAndCaptureSequence();
       if (isRankedMode() && net.role === 'host') syncOnlineState();
     }
 
