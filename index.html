@@ -723,11 +723,8 @@
       <div id="ranked-turn-side-badge" class="inline-block px-3 py-1 rounded-full bg-[#d4af37]/15 border border-[#d4af37]/50 text-[11px] font-extrabold text-[#f3d678]">
         Você joga de Brancas (♔)
       </div>
-      <h2 id="ranked-turn-heading" class="font-display font-extrabold text-xl text-[#fff1b8] drop-shadow-[0_0_12px_rgba(243,214,120,0.45)]">Vez das Brancas</h2>
+      <h2 id="ranked-turn-heading" class="font-display font-extrabold text-xl text-[#fff1b8] drop-shadow-[0_0_12px_rgba(243,214,120,0.45)]">Sua Vez</h2>
       <p id="ranked-turn-desc" class="text-xs text-zinc-300 leading-relaxed"></p>
-      <button type="button" id="btn-ranked-turn-ok" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] font-extrabold text-sm active:scale-95">
-        Entendido
-      </button>
     </div>
   </div>
 
@@ -1341,25 +1338,34 @@
       if (el) el.classList.add('hidden');
     }
 
+    let rankedTurnBannerTimer = null;
+
     function showRankedTurnIndicator(turnSide, roundNum) {
       if (!isRankedMode() || !state || state.gameOver) return;
       const key = `${roundNum || 1}-${turnSide}`;
       if (ranked.lastAnnouncedTurnKey === key) return;
       ranked.lastAnnouncedTurnKey = key;
 
-      const turnText = getSideTurnText(turnSide);
       const mySide = myOnlineSide();
       const isMyTurn = turnSide === mySide;
       const myColorLabel = getSideColorLabel(mySide);
+      const mainMessage = isMyTurn ? 'Sua Vez' : 'Vez do Adversário';
 
       document.getElementById('ranked-turn-icon').textContent = turnSide === 'white' ? '♔' : '♚';
       document.getElementById('ranked-turn-side-badge').textContent = `Você joga de ${myColorLabel}`;
-      document.getElementById('ranked-turn-heading').textContent = turnText;
+      document.getElementById('ranked-turn-heading').textContent = mainMessage;
       document.getElementById('ranked-turn-desc').textContent = isMyTurn
-        ? `${turnText} (Rodada ${roundNum || 1}) · Você tem 01:00 para realizar sua jogada.`
-        : `${turnText} (Rodada ${roundNum || 1}) · Aguardando a jogada do adversário (01:00).`;
+        ? `Rodada ${roundNum || 1} · Você tem 01:00 para realizar sua jogada.`
+        : `Rodada ${roundNum || 1} · Aguardando a jogada do adversário (01:00).`;
 
       openModal('ranked-turn-modal');
+      if (rankedTurnBannerTimer) {
+        clearTimeout(rankedTurnBannerTimer);
+      }
+      rankedTurnBannerTimer = setTimeout(() => {
+        rankedTurnBannerTimer = null;
+        closeModal('ranked-turn-modal');
+      }, 3000);
     }
 
     function sendNet(payload) {
@@ -2164,6 +2170,10 @@
       net.lastSummary = view.lastSummary || null;
 
       if (net.pendingCombat && net.pendingCombat.stage === 'awaiting_attacker' && net.pendingCombat.atkPiece && net.pendingCombat.atkPiece.color === 'black') {
+        if (combatCardLocked && combatUI.mode === 'pick_atk') {
+          renderAll();
+          return;
+        }
         combatCardLocked = false;
         closeModal('combat-pass-modal');
         const flopEl = document.getElementById('combat-flop');
@@ -2194,11 +2204,21 @@
           state.players.black,
           state.players.white,
           (idx) => {
+            stopCombatCountdown();
             closeModal('combat-modal');
+            if (state && state.players && state.players.black && Array.isArray(state.players.black.hand) && idx >= 0 && idx < state.players.black.hand.length) {
+              state.players.black.hand.splice(idx, 1);
+            }
+            net.pendingCombat = null;
+            renderAll();
             sendNet({ type: 'online_atk_card', cardIdx: idx });
           }
         );
       } else if (net.pendingCombat && net.pendingCombat.stage === 'awaiting_defender' && net.pendingCombat.defPiece && net.pendingCombat.defPiece.color === 'black') {
+        if (combatCardLocked && combatUI.mode === 'pick_def') {
+          renderAll();
+          return;
+        }
         combatCardLocked = false;
         closeModal('combat-pass-modal');
         const flopEl = document.getElementById('combat-flop');
@@ -2220,7 +2240,6 @@
           <div class="text-[10px] text-red-300">Sua vez de defender</div>
         `;
         renderDefenderCardSelection(null, defP, state.players.black, (dIdx) => {
-          combatCardLocked = false;
           stopCombatCountdown();
           closeModal('combat-modal');
           if (state && state.players && state.players.black && Array.isArray(state.players.black.hand) && dIdx >= 0 && dIdx < state.players.black.hand.length) {
@@ -3601,11 +3620,15 @@
       atkCardsRow.className = 'flex justify-center gap-1.5 flex-wrap';
 
       const pickAttackerCardAtIndex = (idx) => {
-        stopCombatCountdown();
         if (combatCardLocked) return;
         combatCardLocked = true;
-        armGhostClickGuard(220);
-        atkCardsRow.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+        stopCombatCountdown();
+        armGhostClickGuard(350);
+        atkCardsRow.style.pointerEvents = 'none';
+        atkCardsRow.querySelectorAll('button').forEach((b) => {
+          b.disabled = true;
+          b.style.pointerEvents = 'none';
+        });
         if (typeof onSelectOverride === 'function') {
           onSelectOverride(idx);
           return;
@@ -3681,11 +3704,15 @@
       defCardsRow.className = 'flex justify-center gap-1.5 flex-wrap';
 
       const pickDefenderCardAtIndex = (dIdx) => {
-        stopCombatCountdown();
         if (combatCardLocked) return;
         combatCardLocked = true;
-        armGhostClickGuard(220);
-        defCardsRow.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+        stopCombatCountdown();
+        armGhostClickGuard(350);
+        defCardsRow.style.pointerEvents = 'none';
+        defCardsRow.querySelectorAll('button').forEach((b) => {
+          b.disabled = true;
+          b.style.pointerEvents = 'none';
+        });
         if (typeof onSelectOverride === 'function') {
           onSelectOverride(dIdx);
           return;
@@ -4733,10 +4760,7 @@
       document.getElementById('btn-find-ranked').addEventListener('click', enterRankedQueue);
       document.getElementById('btn-cancel-ranked').addEventListener('click', leaveRankedQueue);
 
-      document.getElementById('btn-ranked-turn-ok').addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        closeModal('ranked-turn-modal');
-      });
+
 
       document.getElementById('btn-top-menu').addEventListener('click', () => openModal('menu-modal'));
       document.getElementById('btn-back-menu').addEventListener('click', () => {
