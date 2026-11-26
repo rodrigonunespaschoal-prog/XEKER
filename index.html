@@ -581,36 +581,28 @@
         <div id="board-grid" class="xeker-board"></div>
         <div id="floating-msg-layer" class="pointer-events-none"></div>
       </div>
-      <div class="w-full max-w-[380px] flex items-center justify-center gap-2">
-        <div id="turn-banner" class="flex-1 px-3 py-1 rounded-xl bg-gradient-to-r from-[#f3d678]/35 via-[#d4af37]/30 to-[#f3d678]/35 border-2 border-[#fff1b8] text-center text-xs sm:text-sm font-black tracking-wide text-[#fff1b8] shadow-[0_0_20px_rgba(243,214,120,0.45)]">
+      <div class="w-full max-w-[380px] flex items-center justify-between gap-1.5">
+        <button type="button" id="btn-board-active" disabled class="px-2.5 py-2 rounded-xl text-xs font-bold border bg-blue-500/10 border-blue-400/40 text-blue-200 disabled:opacity-35 active:scale-95 shrink-0" title="Habilidade Ativa (♠)">
+          <span class="sym-spade">♠</span> Ativa
+        </button>
+        <div id="turn-banner" class="flex-1 px-2.5 py-1 rounded-xl bg-gradient-to-r from-[#f3d678]/35 via-[#d4af37]/30 to-[#f3d678]/35 border-2 border-[#fff1b8] text-center text-xs sm:text-sm font-black tracking-wide text-[#fff1b8] shadow-[0_0_20px_rgba(243,214,120,0.45)] truncate">
           Vez das Brancas
         </div>
-        <button type="button" id="btn-open-msg-wheel" class="px-4 py-2 rounded-xl bg-[#d4af37]/15 border border-[#d4af37]/50 text-2xl leading-none font-bold text-[#f3d678] active:scale-95 shrink-0" aria-label="Mensagens" title="Roda de Mensagens">
+        <button type="button" id="btn-open-msg-wheel" class="px-3 py-2 rounded-xl bg-[#d4af37]/15 border border-[#d4af37]/50 text-xl leading-none font-bold text-[#f3d678] active:scale-95 shrink-0" aria-label="Mensagens" title="Roda de Mensagens">
           💬
         </button>
       </div>
     </main>
 
-    <!-- Inferior: Habilidades da Peça Selecionada, Menu de 3 Opções, Fim de Turno, Mão e Mensagens -->
+    <!-- Inferior: Render-se, Passar Vez, Mão e Status -->
     <section class="shrink-0 flex flex-col gap-1 px-2 pt-1 pb-1.5 bg-[#111217] border-t border-[#d4af37]/25">
-      <!-- Info de habilidades da peça selecionada -->
-      <div id="piece-info-card" class="px-2 py-1 rounded-xl bg-[#161820]/95 border border-[#d4af37]/30 text-[10px] leading-tight text-zinc-300 min-h-[38px] flex flex-col justify-center">
-        <span class="text-zinc-400">Toque em uma peça para ver suas habilidades.</span>
-      </div>
-
-      <div class="flex items-center justify-between gap-1.5 min-h-[36px]">
-        <div id="piece-menu" class="flex-1 flex items-center justify-between gap-1 px-2 py-1 rounded-xl bg-[#161820] border border-white/10 min-h-[36px]">
-          <span class="text-[11px] text-zinc-400">Toque em uma peça aliada</span>
-        </div>
-
-        <div class="flex items-center gap-1 shrink-0">
-          <button type="button" id="btn-surrender" class="px-2.5 py-2 rounded-xl bg-red-950/80 border border-red-400/50 text-red-200 text-[11px] font-extrabold shadow active:scale-95" title="Render-se na partida">
-            🏳️ Render
-          </button>
-          <button type="button" id="btn-end-turn" class="px-3 py-2 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] text-xs font-extrabold shadow active:scale-95">
-            Fim Turno
-          </button>
-        </div>
+      <div class="flex items-center justify-center gap-2 min-h-[36px]">
+        <button type="button" id="btn-surrender" class="px-3 py-2 rounded-xl bg-red-950/80 border border-red-400/50 text-red-200 text-xs font-extrabold shadow active:scale-95" title="Render-se na partida">
+          🏳️ Render-se
+        </button>
+        <button type="button" id="btn-end-turn" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#f3d678] to-[#b58922] text-[#09090b] text-xs font-extrabold shadow active:scale-95">
+          Passar Vez
+        </button>
       </div>
 
       <!-- Mão do jogador -->
@@ -4497,7 +4489,7 @@
         const sel = state.board[sr][sc];
         if (sel && sel.color === state.turn && !sel.acted && state.actions > 0) {
           const reach = getReachInfo(sr, sc);
-          if (state.actionMode === 'move' && reach.moves.some((m) => m.r === r && m.c === c)) {
+          if ((state.actionMode === 'move' || state.actionMode === 'move_attack') && reach.moves.some((m) => m.r === r && m.c === c)) {
             if (isRankedMode() && net.role === 'guest') {
               state.selected = null;
               state.actionMode = null;
@@ -4511,7 +4503,7 @@
             doMove(sr, sc, r, c);
             return;
           }
-          if (state.actionMode === 'attack' && reach.attacks.some((a) => a.r === r && a.c === c)) {
+          if ((state.actionMode === 'attack' || state.actionMode === 'move_attack') && reach.attacks.some((a) => a.r === r && a.c === c)) {
             if (isRankedMode() && net.role === 'guest') {
               state.selected = null;
               state.actionMode = null;
@@ -4544,13 +4536,13 @@
           return;
         }
         state.selected = { r, c };
-        state.actionMode = state.actions > 0 ? 'move' : null;
+        state.actionMode = state.actions > 0 ? 'move_attack' : null;
         state.skillPhase = null;
         state.copiedSkill = null;
         setStatus(
           state.actions > 0
-            ? `${PIECE_DATA[tappedPiece.type].name} selecionado: toque em uma casa livre para mover ou escolha Atacar / Ativa.`
-            : `${PIECE_DATA[tappedPiece.type].name} selecionado (sem ações ♣): escolha Ativa ou Fim Turno.`
+            ? `${PIECE_DATA[tappedPiece.type].name} selecionado: toque em casa livre para mover ou em inimigo vermelho para atacar.`
+            : `${PIECE_DATA[tappedPiece.type].name} selecionado (sem ações ♣): escolha Ativa ou Passar Vez.`
         );
         renderAll();
         return;
@@ -4750,6 +4742,9 @@
         const reach = getReachInfo(state.selected.r, state.selected.c);
         if (state.skillPhase && selPiece) {
           skillList = getValidSkillTargets(state.selected.r, state.selected.c, selPiece.type, state.copiedSkill).map((x) => ({ r: x.r, c: x.c }));
+        } else if (state.actionMode === 'move_attack') {
+          moveList = reach.moves;
+          attackList = reach.attacks;
         } else if (state.actionMode === 'move') {
           moveList = reach.moves;
         } else if (state.actionMode === 'attack') {
@@ -4815,54 +4810,22 @@
         }
       }
 
-      const menuBox = document.getElementById('piece-menu');
-      const infoCard = document.getElementById('piece-info-card');
-      if (!state.selected) {
-        menuBox.innerHTML = '<span class="text-[11px] text-zinc-400">Toque em uma peça aliada</span>';
-        if (infoCard) {
-          infoCard.innerHTML = '<span class="text-zinc-400">Selecione uma peça no tabuleiro para ver <strong class="text-[#f3d678]">♠ Ativa</strong>, <strong class="text-amber-200">Passiva</strong> e <strong class="text-zinc-200">Alcance</strong>.</span>';
-        }
-      } else {
-        const piece = state.board[state.selected.r][state.selected.c];
-        if (!piece) {
-          menuBox.innerHTML = '<span class="text-[11px] text-zinc-400">Toque em uma peça aliada</span>';
-          if (infoCard) {
-            infoCard.innerHTML = '<span class="text-zinc-400">Selecione uma peça no tabuleiro para ver <strong class="text-[#f3d678]">♠ Ativa</strong>, <strong class="text-amber-200">Passiva</strong> e <strong class="text-zinc-200">Alcance</strong>.</span>';
-          }
+      const activeBtn = document.getElementById('btn-board-active');
+      if (activeBtn) {
+        if (!state.selected) {
+          activeBtn.disabled = true;
+          activeBtn.className = 'px-2.5 py-2 rounded-xl text-xs font-bold border bg-blue-500/10 border-blue-400/40 text-blue-200 disabled:opacity-35 active:scale-95 shrink-0';
         } else {
-          const pInfo = PIECE_DATA[piece.type];
-          if (infoCard) {
-            const copiedTag = state.copiedSkill ? ` [${PIECE_DATA[state.copiedSkill].name}]` : '';
-            infoCard.innerHTML = `
-              <div class="flex items-center justify-between gap-2 text-[10px]">
-                <span class="font-bold text-[#f3d678] shrink-0">${pInfo.name} · ${piece.hp}/${pInfo.hp}♥ · ${pInfo.cardLabel}</span>
-                <span class="text-zinc-400 truncate">${pInfo.reachLabel}</span>
-              </div>
-              <div class="truncate text-[10px] text-zinc-200"><span class="sym-spade">♠</span> ${pInfo.activeText}${copiedTag}</div>
-              <div class="truncate text-[10px] text-amber-200/90">Passiva: ${pInfo.passiveText}</div>
-            `;
+          const piece = state.board[state.selected.r] && state.board[state.selected.r][state.selected.c];
+          if (!piece) {
+            activeBtn.disabled = true;
+            activeBtn.className = 'px-2.5 py-2 rounded-xl text-xs font-bold border bg-blue-500/10 border-blue-400/40 text-blue-200 disabled:opacity-35 active:scale-95 shrink-0';
+          } else {
+            const hasSkill = getValidSkillTargets(state.selected.r, state.selected.c, piece.type, null).length > 0;
+            const canSkill = Boolean(state.skillPhase) || (canActOnMyTurn && piece.color === state.turn && !piece.acted && activePlayer.gold >= 1 && hasSkill);
+            activeBtn.disabled = !canSkill;
+            activeBtn.className = `px-2.5 py-2 rounded-xl text-xs font-bold border ${state.skillPhase ? 'bg-blue-500/25 border-blue-400 text-blue-200' : 'bg-blue-500/10 border-blue-400/40 text-blue-200'} disabled:opacity-35 active:scale-95 shrink-0`;
           }
-          const info = PIECE_DATA[piece.type];
-          const reach = getReachInfo(state.selected.r, state.selected.c);
-          const canDo = canActOnMyTurn && state.actions > 0 && piece.color === state.turn && !piece.acted;
-          const canAttack = canDo && reach.attacks.length > 0 && activePlayer.hand.length > 0;
-          const hasSkill = getValidSkillTargets(state.selected.r, state.selected.c, piece.type, null).length > 0;
-          const canSkill = Boolean(state.skillPhase) || (canActOnMyTurn && piece.color === state.turn && !piece.acted && activePlayer.gold >= 1 && hasSkill);
-
-          menuBox.innerHTML = `
-            <span class="text-xs font-bold text-[#f3d678] truncate pr-1">${info.name} <span class="text-[10px] font-normal text-emerald-300/90">(Mover padrão)</span></span>
-            <div class="flex items-center gap-1">
-              <button type="button" id="act-attack" class="px-3 py-1.5 rounded-lg text-xs font-bold border ${state.actionMode === 'attack' ? 'bg-red-500/25 border-red-400 text-red-200' : 'bg-[#111217] border-white/15 text-zinc-200'} disabled:opacity-35" ${canAttack ? '' : 'disabled'}>
-                <span class="sym-heart">♥</span> Atacar
-              </button>
-              <button type="button" id="act-skill" class="px-2 py-1 rounded-lg text-[11px] font-bold border ${state.skillPhase ? 'bg-blue-500/25 border-blue-400 text-blue-200' : 'bg-blue-500/10 border-blue-400/40 text-blue-200'} disabled:opacity-35" ${canSkill ? '' : 'disabled'}>
-                <span class="sym-spade">♠</span> Ativa
-              </button>
-            </div>
-          `;
-
-          document.getElementById('act-attack').addEventListener('click', () => onSelectActionMode('attack'));
-          document.getElementById('act-skill').addEventListener('click', onActiveSkillClick);
         }
       }
 
@@ -5092,6 +5055,7 @@
       });
 
       document.getElementById('btn-draw-card').addEventListener('click', onBuyCard);
+      document.getElementById('btn-board-active').addEventListener('click', onActiveSkillClick);
       document.getElementById('btn-surrender').addEventListener('click', openSurrenderModal);
       document.getElementById('btn-surrender-cancel').addEventListener('click', () => closeModal('surrender-modal'));
       document.getElementById('btn-surrender-confirm').addEventListener('click', confirmSurrender);
