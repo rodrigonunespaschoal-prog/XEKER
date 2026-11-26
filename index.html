@@ -276,6 +276,9 @@
     #ranked-modal {
       z-index: 70;
     }
+    #waiting-opponent-modal {
+      z-index: 75;
+    }
     .menu-btn-lit {
       background-color: rgba(212, 175, 55, 0.25);
       border-color: #f3d678;
@@ -293,6 +296,20 @@
       border-color: rgba(255, 255, 255, 0.15);
       color: #d4d4d8;
       box-shadow: none;
+    }
+
+    .combat-timer-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      background: rgba(212, 175, 55, 0.14);
+      border: 1px solid rgba(243, 214, 120, 0.55);
+      color: #fff1b8;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11px;
+      font-weight: 800;
     }
 
     /* Animações suaves de movimento e captura das peças (3s) */
@@ -598,7 +615,11 @@
   <!-- MODAL COMBATE & RESUMO PÓS-COMBATE -->
   <div id="combat-modal" class="xeker-modal">
     <div class="w-full max-w-[400px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl max-h-[92dvh] overflow-y-auto">
-      <h2 id="combat-heading" class="font-display font-bold text-base text-center text-[#f3d678] mb-2">⚔️ Combate de Pôquer</h2>
+      <div class="flex items-center justify-between gap-2 mb-2">
+        <span class="w-16"></span>
+        <h2 id="combat-heading" class="font-display font-bold text-base text-center text-[#f3d678] flex-1">⚔️ Combate de Pôquer</h2>
+        <span id="combat-countdown" class="combat-timer-pill shrink-0">⏱ 00:15</span>
+      </div>
 
       <div class="text-[10px] uppercase tracking-wider text-center text-zinc-400 mb-1">Flop (3 Cartas)</div>
       <div id="combat-flop" class="flex justify-center gap-1.5 mb-3"></div>
@@ -691,6 +712,17 @@
     </div>
   </div>
 
+  <!-- MODAL AGUARDANDO OPONENTE NO RESUMO DE COMBATE -->
+  <div id="waiting-opponent-modal" class="xeker-modal">
+    <div class="w-full max-w-[350px] rounded-2xl bg-[#111217] border border-[#d4af37]/70 p-5 text-center shadow-2xl space-y-3">
+      <div class="text-3xl">⏳</div>
+      <h2 class="font-display font-extrabold text-lg text-[#fff1b8]">Aguardando Oponente</h2>
+      <p class="text-xs text-zinc-300 leading-relaxed">
+        Você já fechou o resumo do combate. Aguardando o oponente encerrar o resumo para prosseguir.
+      </p>
+    </div>
+  </div>
+
   <!-- MODAL FIM DE PARTIDA -->
   <div id="gameover-modal" class="xeker-modal">
     <div class="w-full max-w-[370px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-5 text-center shadow-2xl">
@@ -757,6 +789,7 @@
 
     const MAX_HAND_SIZE = 6;
     const TURN_CLOCK_SECONDS = 60;
+    const COMBAT_STEP_SECONDS = 15;
 
     const RANK_TEXT = {
       1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7',
@@ -974,7 +1007,8 @@
       role: null,
       connected: false,
       pendingCombat: null,
-      lastSummary: null
+      lastSummary: null,
+      summaryClosed: { white: false, black: false }
     };
 
     const ranked = {
@@ -1002,6 +1036,15 @@
       presenceTimer: null,
       isManualOffline: false,
       isSearching: false
+    };
+
+    const combatUI = {
+      intervalId: null,
+      remaining: COMBAT_STEP_SECONDS,
+      mode: null,
+      onTimeout: null,
+      offlineClosed: { white: false, black: false },
+      waitingForOpponent: false
     };
 
     function getSideTurnText(side) {
@@ -1168,6 +1211,7 @@
           stage: net.pendingCombat.stage
         } : null,
         lastSummary: net.lastSummary,
+        summaryClosed: net.summaryClosed ? { ...net.summaryClosed } : { white: false, black: false },
         gameOver: state.gameOver,
         gameOverData: state.gameOverData || null
       };
@@ -1774,13 +1818,12 @@
           }
           if (d.guestSummaryAckSeq && d.guestSummaryAckSeq !== ranked.lastSummaryAckSeq) {
             ranked.lastSummaryAckSeq = d.guestSummaryAckSeq;
-            net.lastSummary = null;
-            if (state && state.gameOver && state.gameOverData) {
-              endMatch(state.gameOverData.winnerSide, state.gameOverData.reason);
+            net.summaryClosed.black = true;
+            if (net.summaryClosed.white && net.summaryClosed.black) {
+              finalizeBothClosedCombatSummary();
+            } else {
+              syncOnlineState();
             }
-            renderAll();
-            flushCaptureAnimations();
-            syncOnlineState();
           }
         }
 
@@ -1976,27 +2019,50 @@
         renderDefenderCardSelection(null, defP, state.players.black, (dIdx) => {
           sendNet({ type: 'online_def_card', cardIdx: dIdx });
         });
-      } else if (net.lastSummary && JSON.stringify(net.lastSummary) !== JSON.stringify(prevSummary)) {
-        combatCardLocked = false;
-        const s = net.lastSummary;
-        const flopEl = document.getElementById('combat-flop');
-        flopEl.innerHTML = '';
-        state.flop.forEach((v) => flopEl.appendChild(renderCard(v, 'w-9 h-12 rounded-md text-sm')));
-        const atkP = s.atkPiece;
-        const defP = s.defPiece;
-        document.getElementById('combat-atk-glyph').textContent = atkP ? (atkP.color === 'white' ? PIECE_DATA[atkP.type].white : PIECE_DATA[atkP.type].black) : '⚔️';
-        document.getElementById('combat-atk-info').textContent = s.atkHeaderInfo || s.atkName;
-        document.getElementById('combat-def-glyph').textContent = defP ? (defP.color === 'white' ? PIECE_DATA[defP.type].white : PIECE_DATA[defP.type].black) : '🛡️';
-        document.getElementById('combat-def-info').textContent = s.defHeaderInfo || s.defName;
-        openModal('combat-modal');
-        showPostCombatSummary(s, () => {
+      } else if (net.lastSummary) {
+        const remoteClosed = view.summaryClosed || { white: false, black: false };
+        net.summaryClosed = { ...remoteClosed };
+        if (remoteClosed.white && remoteClosed.black) {
+          stopCombatCountdown();
+          combatUI.waitingForOpponent = false;
+          closeModal('waiting-opponent-modal');
           closeModal('combat-modal');
-          sendNet({ type: 'online_summary_ack' });
+          net.lastSummary = null;
+          if (state && state.gameOver && state.gameOverData) {
+            endMatch(state.gameOverData.winnerSide, state.gameOverData.reason);
+          }
           renderAll();
-          flushCaptureAnimations();
-        });
+          scheduleCaptureAnimationsAfterBothClosed();
+        } else if (remoteClosed.black) {
+          stopCombatCountdown();
+          closeModal('combat-modal');
+          combatUI.waitingForOpponent = true;
+          openModal('waiting-opponent-modal');
+        } else if (!combatUI.waitingForOpponent && (JSON.stringify(net.lastSummary) !== JSON.stringify(prevSummary) || combatUI.mode !== 'summary')) {
+          combatCardLocked = false;
+          const s = net.lastSummary;
+          const flopEl = document.getElementById('combat-flop');
+          flopEl.innerHTML = '';
+          state.flop.forEach((v) => flopEl.appendChild(renderCard(v, 'w-9 h-12 rounded-md text-sm')));
+          const atkP = s.atkPiece;
+          const defP = s.defPiece;
+          document.getElementById('combat-atk-glyph').textContent = atkP ? (atkP.color === 'white' ? PIECE_DATA[atkP.type].white : PIECE_DATA[atkP.type].black) : '⚔️';
+          document.getElementById('combat-atk-info').textContent = s.atkHeaderInfo || s.atkName;
+          document.getElementById('combat-def-glyph').textContent = defP ? (defP.color === 'white' ? PIECE_DATA[defP.type].white : PIECE_DATA[defP.type].black) : '🛡️';
+          document.getElementById('combat-def-info').textContent = s.defHeaderInfo || s.defName;
+          openModal('combat-modal');
+          showPostCombatSummary(s, () => {
+            stopCombatCountdown();
+            closeModal('combat-modal');
+            combatUI.waitingForOpponent = true;
+            openModal('waiting-opponent-modal');
+            sendNet({ type: 'online_summary_ack' });
+          });
+        }
       } else if (!net.pendingCombat && !net.lastSummary) {
         combatCardLocked = false;
+        combatUI.waitingForOpponent = false;
+        closeModal('waiting-opponent-modal');
         closeModal('combat-modal');
       }
 
@@ -2150,7 +2216,7 @@
       document.getElementById('combat-def-glyph').textContent = PIECE_DATA[defPiece.type].white;
       document.getElementById('combat-def-info').textContent = `${PIECE_DATA[defPiece.type].name} (${defPiece.hp}♥)`;
       document.getElementById('combat-def-sub').innerHTML = `
-        <div>Peça: ${formatPieceRep(defPiece)}</div>
+        <div>Peça: ${formatPieceRep(defP)}</div>
         <div class="text-[10px] text-red-300">Escolha sua carta</div>
       `;
       renderDefenderCardSelection(chosenAtk, defPiece, defPlayer);
@@ -2228,11 +2294,21 @@
       openModal('combat-pass-modal');
     }
 
+    function isCombatPauseActive() {
+      if (combatUI.mode !== null || combatUI.waitingForOpponent) return true;
+      if (document.getElementById('combat-modal').classList.contains('open')) return true;
+      if (document.getElementById('combat-pass-modal').classList.contains('open')) return true;
+      if (document.getElementById('waiting-opponent-modal').classList.contains('open')) return true;
+      if (net.pendingCombat || net.lastSummary) return true;
+      return false;
+    }
+
     function startClock() {
       if (timerId) clearInterval(timerId);
       timerId = setInterval(() => {
         try {
           if (!state || state.gameOver) return;
+          if (isCombatPauseActive()) return;
           if (hasOpenModal() && !(state.mode === 'offline' && document.getElementById('pass-modal').classList.contains('open') && document.querySelectorAll('.xeker-modal.open').length === 1)) return;
           if (isRankedMode() && !net.connected) return;
           if (isRankedMode() && net.role === 'guest') return;
@@ -2491,6 +2567,17 @@
           return;
         }
 
+        stopCombatCountdown();
+        if (captureDelayTimer) {
+          clearTimeout(captureDelayTimer);
+          captureDelayTimer = null;
+        }
+        pendingCaptureAnims.length = 0;
+        pendingMoveAnim = null;
+        combatUI.offlineClosed = { white: false, black: false };
+        combatUI.waitingForOpponent = false;
+        net.summaryClosed = { white: false, black: false };
+
         closeAllModals();
         duelContext = null;
         pendingCombatPassAction = null;
@@ -2645,7 +2732,7 @@
       document.getElementById('gameover-title').textContent = title;
       document.getElementById('gameover-desc').textContent = reason;
       renderAll();
-      flushCaptureAnimations();
+      scheduleCaptureAnimationsAfterBothClosed();
       if (isRankedMode() && net.role === 'host') {
         syncOnlineState();
       }
@@ -2711,7 +2798,44 @@
       state.copiedSkill = null;
     }
 
-    // --- Animações de Movimento e Captura (3s) ---
+    // --- Cronômetro de Combate (15s) ---
+    function updateCombatCountdownDisplay() {
+      const el = document.getElementById('combat-countdown');
+      if (!el) return;
+      const sec = Math.max(0, Math.ceil(combatUI.remaining));
+      el.textContent = `⏱ 00:${String(sec).padStart(2, '0')}`;
+    }
+
+    function stopCombatCountdown() {
+      if (combatUI.intervalId) {
+        clearInterval(combatUI.intervalId);
+        combatUI.intervalId = null;
+      }
+      combatUI.mode = null;
+      combatUI.onTimeout = null;
+    }
+
+    function startCombatCountdown(mode, onTimeoutFn) {
+      stopCombatCountdown();
+      combatUI.mode = mode;
+      combatUI.remaining = COMBAT_STEP_SECONDS;
+      combatUI.onTimeout = onTimeoutFn;
+      updateCombatCountdownDisplay();
+
+      combatUI.intervalId = setInterval(() => {
+        combatUI.remaining = Math.max(0, combatUI.remaining - 1);
+        updateCombatCountdownDisplay();
+        if (combatUI.remaining <= 0) {
+          const cb = combatUI.onTimeout;
+          stopCombatCountdown();
+          if (typeof cb === 'function') {
+            cb();
+          }
+        }
+      }, 1000);
+    }
+
+    // --- Animações de Movimento e Captura (3s, iniciando 1s após ambos fecharem o resumo) ---
     let pendingMoveAnim = null;
     const pendingCaptureAnims = [];
     let captureDelayTimer = null;
@@ -2742,15 +2866,46 @@
       pendingCaptureAnims.push({ rect, piece: { ...pieceObj } });
     }
 
+    function scheduleCaptureAnimationsAfterBothClosed() {
+      if (pendingCaptureAnims.length === 0) return;
+      if (captureDelayTimer) {
+        clearTimeout(captureDelayTimer);
+        captureDelayTimer = null;
+      }
+      captureDelayTimer = setTimeout(() => {
+        captureDelayTimer = null;
+        if (
+          document.getElementById('combat-modal').classList.contains('open') ||
+          document.getElementById('waiting-opponent-modal').classList.contains('open')
+        ) {
+          return;
+        }
+        runQueuedCaptureAnimationsNow();
+      }, 1000);
+    }
+
     function flushCaptureAnimations() {
-      if (document.getElementById('combat-modal').classList.contains('open')) return;
+      if (
+        document.getElementById('combat-modal').classList.contains('open') ||
+        document.getElementById('waiting-opponent-modal').classList.contains('open') ||
+        combatUI.waitingForOpponent ||
+        combatUI.mode === 'summary' ||
+        net.lastSummary
+      ) {
+        return;
+      }
       if (pendingCaptureAnims.length === 0) return;
       if (captureDelayTimer) return;
       captureDelayTimer = setTimeout(() => {
         captureDelayTimer = null;
-        if (document.getElementById('combat-modal').classList.contains('open')) return;
+        if (
+          document.getElementById('combat-modal').classList.contains('open') ||
+          document.getElementById('waiting-opponent-modal').classList.contains('open')
+        ) {
+          return;
+        }
         runQueuedCaptureAnimationsNow();
-      }, 2000);
+      }, 1000);
     }
 
     function runQueuedCaptureAnimationsNow() {
@@ -2779,6 +2934,34 @@
         setTimeout(() => {
           if (ghost.parentNode) ghost.remove();
         }, 3150);
+      }
+    }
+
+    function finalizeBothClosedCombatSummary() {
+      stopCombatCountdown();
+      combatUI.waitingForOpponent = false;
+      closeModal('waiting-opponent-modal');
+      closeModal('combat-modal');
+      net.lastSummary = null;
+      net.summaryClosed = { white: false, black: false };
+      combatUI.offlineClosed = { white: false, black: false };
+
+      const summary = duelContext && duelContext.lastSummaryData ? duelContext.lastSummaryData : null;
+      duelContext = null;
+
+      if (summary && summary.winnerSideEnd) {
+        endMatch(summary.winnerSideEnd, 'O Rei adversário foi abatido!');
+        return;
+      }
+      if (state && state.gameOver && state.gameOverData) {
+        endMatch(state.gameOverData.winnerSide, state.gameOverData.reason);
+        return;
+      }
+
+      renderAll();
+      scheduleCaptureAnimationsAfterBothClosed();
+      if (isRankedMode() && net.role === 'host') {
+        syncOnlineState();
       }
     }
 
@@ -2845,9 +3028,43 @@
       return RANK_TEXT[piece.cardVal];
     }
 
+    function handleOfflineSummaryClose(sideWhoClosed, onDoneOverride) {
+      stopCombatCountdown();
+      closeModal('combat-modal');
+      combatUI.offlineClosed[sideWhoClosed] = true;
+
+      const otherSide = sideWhoClosed === 'white' ? 'black' : 'white';
+      if (combatUI.offlineClosed[otherSide]) {
+        finalizeBothClosedCombatSummary();
+        return;
+      }
+
+      combatUI.waitingForOpponent = true;
+      openModal('waiting-opponent-modal');
+
+      setTimeout(() => {
+        if (!combatUI.waitingForOpponent) return;
+        combatUI.offlineClosed[otherSide] = true;
+        if (typeof onDoneOverride === 'function') {
+          combatUI.waitingForOpponent = false;
+          closeModal('waiting-opponent-modal');
+          combatUI.offlineClosed = { white: false, black: false };
+          onDoneOverride();
+          return;
+        }
+        finalizeBothClosedCombatSummary();
+      }, 1500);
+    }
+
     function showPostCombatSummary(summary, onDoneOverride = null) {
       combatCardLocked = false;
       armGhostClickGuard(240);
+      if (duelContext) {
+        duelContext.lastSummaryData = summary;
+      }
+      combatUI.offlineClosed = { white: false, black: false };
+      combatUI.waitingForOpponent = false;
+
       document.getElementById('combat-heading').textContent = '📋 Resumo do Combate';
       document.getElementById('combat-atk-sub').innerHTML = `
         <div>Carta usada: <strong>${summary.atkCard !== null && summary.atkCard !== undefined ? RANK_TEXT[summary.atkCard] : 'Oculta'}</strong> · Peça: <strong>${summary.atkRep}</strong></div>
@@ -2881,32 +3098,42 @@
         </button>
       `;
 
+      const triggerSummaryClose = () => {
+        stopCombatCountdown();
+        if (typeof onDoneOverride === 'function') {
+          onDoneOverride();
+          return;
+        }
+        if (isRankedMode() && net.role === 'host') {
+          closeModal('combat-modal');
+          net.summaryClosed.white = true;
+          if (net.summaryClosed.white && net.summaryClosed.black) {
+            finalizeBothClosedCombatSummary();
+          } else {
+            combatUI.waitingForOpponent = true;
+            openModal('waiting-opponent-modal');
+            syncOnlineState();
+          }
+          return;
+        }
+        const localSide = isRankedMode() ? myOnlineSide() : state.turn;
+        handleOfflineSummaryClose(localSide, null);
+      };
+
+      startCombatCountdown('summary', triggerSummaryClose);
+
       const rawDoneBtn = document.getElementById('btn-combat-done');
       const doneBtn = rawDoneBtn.cloneNode(true);
       rawDoneBtn.parentNode.replaceChild(doneBtn, rawDoneBtn);
       doneBtn.addEventListener('click', (ev) => {
         ev.stopPropagation();
         if (isGhostClickBlocked()) return;
-        if (typeof onDoneOverride === 'function') {
-          onDoneOverride();
-          return;
-        }
-        closeModal('combat-modal');
-        duelContext = null;
-        net.lastSummary = null;
-        if (summary.winnerSideEnd) {
-          endMatch(summary.winnerSideEnd, 'O Rei adversário foi abatido!');
-          return;
-        }
-        renderAll();
-        flushCaptureAnimations();
-        if (isRankedMode() && net.role === 'host') {
-          syncOnlineState();
-        }
+        triggerSummaryClose();
       });
     }
 
     function settleCombat(atkCard, defCard) {
+      stopCombatCountdown();
       if (!duelContext) return;
       combatCardLocked = false;
       armGhostClickGuard(240);
@@ -3091,6 +3318,9 @@
         winnerSideEnd
       };
 
+      net.summaryClosed = { white: false, black: false };
+      duelContext.lastSummaryData = summaryData;
+
       renderAll();
 
       if (isRankedMode() && net.role === 'host') {
@@ -3120,6 +3350,48 @@
       const atkCardsRow = document.createElement('div');
       atkCardsRow.className = 'flex justify-center gap-1.5 flex-wrap';
 
+      const pickAttackerCardAtIndex = (idx) => {
+        stopCombatCountdown();
+        if (combatCardLocked) return;
+        combatCardLocked = true;
+        armGhostClickGuard(220);
+        atkCardsRow.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+        if (typeof onSelectOverride === 'function') {
+          onSelectOverride(idx);
+          return;
+        }
+        const chosenAtk = atkPlayer.hand.splice(idx, 1)[0];
+        duelContext.atkCard = chosenAtk;
+        document.getElementById('combat-atk-sub').innerHTML = `
+          <div>Carta jogada: <strong>oculta</strong></div>
+          <div class="text-[10px] text-amber-200">Peça: ${formatPieceRep(atkPiece)}</div>
+        `;
+
+        if (isRankedMode() && net.role === 'host' && defPiece.color === 'black') {
+          net.pendingCombat = {
+            atkR, atkC, defR, defC,
+            atkPiece: { ...atkPiece },
+            defPiece: { ...defPiece },
+            atkHandCount: atkPlayer.hand.length,
+            defHandCount: defPlayer.hand.length,
+            stage: 'awaiting_defender'
+          };
+          syncOnlineState();
+          body.innerHTML = `<div class="text-xs text-amber-200 text-center py-2">Aguardando defensor (Pretas) escolher sua carta...</div>`;
+        } else if (state.mode === 'offline') {
+          body.innerHTML = `<div class="text-xs text-zinc-400 text-center py-2">Passe o aparelho para o defensor antes de revelar as cartas...</div>`;
+          openCombatPrivacyPass(
+            defPiece.color,
+            'Passe o aparelho para o defensor escolher sua carta de defesa sem ver a mão do atacante.',
+            () => {
+              renderDefenderCardSelection(chosenAtk, defPiece, defPlayer);
+            }
+          );
+        } else {
+          renderDefenderCardSelection(chosenAtk, defPiece, defPlayer);
+        }
+      };
+
       atkPlayer.hand.forEach((cVal, idx) => {
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -3135,49 +3407,19 @@
         btn.addEventListener('click', (ev) => {
           ev.stopPropagation();
           if (isGhostClickBlocked() || combatCardLocked) return;
-          combatCardLocked = true;
-          armGhostClickGuard(220);
-          atkCardsRow.querySelectorAll('button').forEach((b) => { b.disabled = true; });
-          if (typeof onSelectOverride === 'function') {
-            onSelectOverride(idx);
-            return;
-          }
-          const chosenAtk = atkPlayer.hand.splice(idx, 1)[0];
-          duelContext.atkCard = chosenAtk;
-          document.getElementById('combat-atk-sub').innerHTML = `
-            <div>Carta jogada: <strong>oculta</strong></div>
-            <div class="text-[10px] text-amber-200">Peça: ${formatPieceRep(atkPiece)}</div>
-          `;
-
-          if (isRankedMode() && net.role === 'host' && defPiece.color === 'black') {
-            net.pendingCombat = {
-              atkR, atkC, defR, defC,
-              atkPiece: { ...atkPiece },
-              defPiece: { ...defPiece },
-              atkHandCount: atkPlayer.hand.length,
-              defHandCount: defPlayer.hand.length,
-              stage: 'awaiting_defender'
-            };
-            syncOnlineState();
-            body.innerHTML = `<div class="text-xs text-amber-200 text-center py-2">Aguardando defensor (Pretas) escolher sua carta...</div>`;
-          } else if (state.mode === 'offline') {
-            body.innerHTML = `<div class="text-xs text-zinc-400 text-center py-2">Passe o aparelho para o defensor antes de revelar as cartas...</div>`;
-            openCombatPrivacyPass(
-              defPiece.color,
-              'Passe o aparelho para o defensor escolher sua carta de defesa sem ver a mão do atacante.',
-              () => {
-                renderDefenderCardSelection(chosenAtk, defPiece, defPlayer);
-              }
-            );
-          } else {
-            renderDefenderCardSelection(chosenAtk, defPiece, defPlayer);
-          }
+          pickAttackerCardAtIndex(idx);
         });
         atkCardsRow.appendChild(btn);
       });
 
       body.appendChild(atkCardsRow);
       openModal('combat-modal');
+
+      startCombatCountdown('pick_atk', () => {
+        if (combatCardLocked || atkPlayer.hand.length === 0) return;
+        const randIdx = Math.floor(Math.random() * atkPlayer.hand.length);
+        pickAttackerCardAtIndex(randIdx);
+      });
     }
 
     function renderDefenderCardSelection(chosenAtk, defPiece, defPlayer, onSelectOverride = null) {
@@ -3187,6 +3429,21 @@
       body.innerHTML = `<div class="text-xs font-bold text-red-300 text-center">Defensor (${defPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'}): escolha 1 carta para defender</div>`;
       const defCardsRow = document.createElement('div');
       defCardsRow.className = 'flex justify-center gap-1.5 flex-wrap';
+
+      const pickDefenderCardAtIndex = (dIdx) => {
+        stopCombatCountdown();
+        if (combatCardLocked) return;
+        combatCardLocked = true;
+        armGhostClickGuard(220);
+        defCardsRow.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+        if (typeof onSelectOverride === 'function') {
+          onSelectOverride(dIdx);
+          return;
+        }
+        const chosenDef = defPlayer.hand.splice(dIdx, 1)[0];
+        settleCombat(chosenAtk, chosenDef);
+      };
+
       defPlayer.hand.forEach((dVal, dIdx) => {
         const dBtn = document.createElement('button');
         dBtn.type = 'button';
@@ -3202,20 +3459,18 @@
         dBtn.addEventListener('click', (ev) => {
           ev.stopPropagation();
           if (isGhostClickBlocked() || combatCardLocked) return;
-          combatCardLocked = true;
-          armGhostClickGuard(220);
-          defCardsRow.querySelectorAll('button').forEach((b) => { b.disabled = true; });
-          if (typeof onSelectOverride === 'function') {
-            onSelectOverride(dIdx);
-            return;
-          }
-          const chosenDef = defPlayer.hand.splice(dIdx, 1)[0];
-          settleCombat(chosenAtk, chosenDef);
+          pickDefenderCardAtIndex(dIdx);
         });
         defCardsRow.appendChild(dBtn);
       });
       body.appendChild(defCardsRow);
       openModal('combat-modal');
+
+      startCombatCountdown('pick_def', () => {
+        if (combatCardLocked || defPlayer.hand.length === 0) return;
+        const randIdx = Math.floor(Math.random() * defPlayer.hand.length);
+        pickDefenderCardAtIndex(randIdx);
+      });
     }
 
     function startCombat(atkR, atkC, defR, defC) {
@@ -3337,6 +3592,7 @@
           syncOnlineState();
           document.getElementById('combat-body').innerHTML = `<div class="text-xs text-amber-200 text-center py-2">Aguardando atacante (Pretas) escolher sua carta...</div>`;
           openModal('combat-modal');
+          startCombatCountdown('pick_atk', null);
         }
         return;
       }
@@ -4071,7 +4327,8 @@
 
       updateTurnBanner();
       const combatModalIsOpen = document.getElementById('combat-modal').classList.contains('open');
-      if (!combatModalIsOpen) {
+      const waitingOpen = document.getElementById('waiting-opponent-modal').classList.contains('open');
+      if (!combatModalIsOpen && !waitingOpen && !combatUI.waitingForOpponent && combatUI.mode !== 'summary' && !net.lastSummary) {
         flushCaptureAnimations();
       }
     }
