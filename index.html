@@ -312,7 +312,7 @@
       font-weight: 800;
     }
 
-    /* Animações suaves de movimento e captura das peças (3s) */
+    /* Animações suaves de movimento e captura das peças (1.3s) */
     @keyframes xekerPieceSlide {
       0% {
         transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(1.08);
@@ -325,7 +325,7 @@
     }
 
     .piece-anim-move {
-      animation: xekerPieceSlide 3000ms cubic-bezier(0.22, 1, 0.36, 1) both;
+      animation: xekerPieceSlide 1300ms cubic-bezier(0.22, 1, 0.36, 1) both;
       z-index: 25;
     }
 
@@ -337,7 +337,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      animation: xekerPieceSlide 3000ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation: xekerPieceSlide 1300ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
     @keyframes xekerPieceCaptureBurst {
@@ -366,10 +366,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      animation: xekerPieceCaptureBurst 3000ms cubic-bezier(0.32, 0, 0.67, 1) forwards;
+      animation: xekerPieceCaptureBurst 1300ms cubic-bezier(0.32, 0, 0.67, 1) forwards;
     }
 
-    /* Animação de dano vermelho com naipe de copas (3s) */
+    /* Animação de dano vermelho com naipe de copas (1.3s) */
     @keyframes xekerDamageFloatNormal {
       0% {
         transform: translate(-50%, -50%) translateX(0px) scale(0.85);
@@ -412,7 +412,7 @@
       text-shadow:
         0 2px 8px rgba(0, 0, 0, 0.95),
         0 0 12px rgba(239, 68, 68, 0.75);
-      animation: xekerDamageFloatNormal 3000ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation: xekerDamageFloatNormal 1300ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
     .damage-fx-badge.heavy {
@@ -421,7 +421,7 @@
       text-shadow:
         0 2px 10px rgba(0, 0, 0, 0.98),
         0 0 16px rgba(248, 113, 113, 0.95);
-      animation: xekerDamageFloatTremble 3000ms linear forwards;
+      animation: xekerDamageFloatTremble 1300ms linear forwards;
     }
 
     .damage-fx-badge:not(.heavy) {
@@ -2481,12 +2481,17 @@
           }
           renderAll();
           if (summaryToAnimate) {
-            runQueuedCaptureAnimationsNow();
-            const guestItems = buildDamageAndCaptureListFromSummary(summaryToAnimate);
-            for (const g of guestItems) {
-              if (g.amount > 0) runDamageNumberBadge(g.rect, g.amount);
-              if (g.captured && g.piece) runSingleCaptureGhost(g.rect, g.piece);
+            const s = summaryToAnimate;
+            const atkKilled = s.atkDmg >= (s.atkPiece ? s.atkPiece.hp : 1);
+            const defKilled = s.defDmg >= (s.defPiece ? s.defPiece.hp : 1);
+            if (defKilled && !atkKilled && s.atkPos && s.defPos && s.atkPiece) {
+              queueMoveStepAfterDamage(s.atkPos.r, s.atkPos.c, s.defPos.r, s.defPos.c, s.atkPiece);
+              renderAll();
+            } else if (atkKilled && !defKilled && s.defPos && s.atkPos && s.defPiece) {
+              queueMoveStepAfterDamage(s.defPos.r, s.defPos.c, s.atkPos.r, s.atkPos.c, s.defPiece);
+              renderAll();
             }
+            scheduleDamageAndCaptureSequence(summaryToAnimate);
           }
         } else if (remoteClosed.black) {
           stopCombatCountdown();
@@ -3450,7 +3455,10 @@
       const dx = fromRect.left - toRect.left;
       const dy = fromRect.top - toRect.top;
       if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+      hiddenBoardTokensUntilAnim.add(`${toR},${toC}`);
       pendingMoveSteps.push({
+        originPos: { r: fromR, c: fromC },
+        destPos: { r: toR, c: toC },
         toRect,
         dx,
         dy,
@@ -3517,7 +3525,7 @@
       }, { once: true });
       setTimeout(() => {
         if (badge.parentNode) badge.remove();
-      }, 3150);
+      }, 1450);
     }
 
     function runSingleMoveGhost(step) {
@@ -3546,7 +3554,7 @@
       }, { once: true });
       setTimeout(() => {
         if (ghost.parentNode) ghost.remove();
-      }, 3150);
+      }, 1450);
     }
 
     function runSingleCaptureGhost(rect, pieceObj) {
@@ -3573,7 +3581,26 @@
       }, { once: true });
       setTimeout(() => {
         if (ghost.parentNode) ghost.remove();
-      }, 3150);
+      }, 1450);
+    }
+
+    const hiddenBoardTokensUntilAnim = new Set();
+
+    function setPieceHiddenDuringCaptureMove(r, c, hidden) {
+      const key = `${r},${c}`;
+      if (hidden) {
+        hiddenBoardTokensUntilAnim.add(key);
+      } else {
+        hiddenBoardTokensUntilAnim.delete(key);
+      }
+      const boardEl = document.getElementById('board-grid');
+      if (!boardEl || !boardEl.children) return;
+      const tile = boardEl.children[r * 8 + c];
+      if (!tile) return;
+      const tok = tile.querySelector('.piece-token');
+      if (tok) {
+        tok.style.visibility = hidden ? 'hidden' : '';
+      }
     }
 
     function scheduleDamageAndCaptureSequence(summaryForGuest = null) {
@@ -3617,38 +3644,56 @@
           return;
         }
 
-        const runMoveThenCapture = () => {
+        const runMoveAfterCapture = () => {
+          if (moveBatch.length === 0) return;
           if (
             document.getElementById('combat-modal').classList.contains('open') ||
             document.getElementById('waiting-opponent-modal').classList.contains('open')
           ) {
+            moveBatch.forEach((m) => {
+              if (m.destPos) setPieceHiddenDuringCaptureMove(m.destPos.r, m.destPos.c, false);
+            });
             return;
           }
-          if (moveBatch.length > 0) {
-            moveBatch.forEach((m) => runSingleMoveGhost(m));
-            if (capBatch.length > 0) {
+          moveBatch.forEach((m) => {
+            if (m.originPos) setPieceHiddenDuringCaptureMove(m.originPos.r, m.originPos.c, false);
+            runSingleMoveGhost(m);
+            if (m.destPos) {
               setTimeout(() => {
-                if (
-                  document.getElementById('combat-modal').classList.contains('open') ||
-                  document.getElementById('waiting-opponent-modal').classList.contains('open')
-                ) {
-                  return;
-                }
-                capBatch.forEach((c) => runSingleCaptureGhost(c.rect, c.piece));
-              }, 3000);
+                setPieceHiddenDuringCaptureMove(m.destPos.r, m.destPos.c, false);
+              }, 1300);
             }
-          } else if (capBatch.length > 0) {
+          });
+        };
+
+        const runCaptureThenMove = () => {
+          if (
+            document.getElementById('combat-modal').classList.contains('open') ||
+            document.getElementById('waiting-opponent-modal').classList.contains('open')
+          ) {
+            moveBatch.forEach((m) => {
+              if (m.originPos) setPieceHiddenDuringCaptureMove(m.originPos.r, m.originPos.c, false);
+              if (m.destPos) setPieceHiddenDuringCaptureMove(m.destPos.r, m.destPos.c, false);
+            });
+            return;
+          }
+          if (capBatch.length > 0) {
             capBatch.forEach((c) => runSingleCaptureGhost(c.rect, c.piece));
+            if (moveBatch.length > 0) {
+              setTimeout(runMoveAfterCapture, 1300);
+            }
+          } else {
+            runMoveAfterCapture();
           }
         };
 
         if (dmgBatch.length > 0) {
           dmgBatch.forEach((d) => runDamageNumberBadge(d.rect, d.amount));
-          if (moveBatch.length > 0 || capBatch.length > 0) {
-            setTimeout(runMoveThenCapture, 3000);
+          if (capBatch.length > 0 || moveBatch.length > 0) {
+            setTimeout(runCaptureThenMove, 1300);
           }
         } else {
-          runMoveThenCapture();
+          runCaptureThenMove();
         }
       }, 1000);
     }
@@ -5044,6 +5089,10 @@
                 token.style.removeProperty('--dy');
               }, { once: true });
               pendingMoveAnim = null;
+            }
+
+            if (hiddenBoardTokensUntilAnim.has(`${r},${c}`)) {
+              token.style.visibility = 'hidden';
             }
 
             token.appendChild(rankBadge);
