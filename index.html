@@ -11,8 +11,6 @@
   <style>
     :root {
       --bg-obsidian: #09090b;
-      --bg-card: #111217;
-      --bg-panel: #161820;
       --gold: #d4af37;
       --gold-light: #f3d678;
       --parchment-top: #f7f0da;
@@ -43,13 +41,10 @@
       font-family: 'Cinzel', serif;
     }
 
-    /* Símbolos temáticos do XEKER */
     .sym-club { color: #34d399; font-weight: 800; }
     .sym-spade { color: #60a5fa; font-weight: 800; }
     .sym-diamond { color: #fbbf24; font-weight: 800; }
-    .sym-heart { color: #f87171; font-weight: 800; }
 
-    /* Carta com valor no canto superior esquerdo e 1 ícone grande centralizado da peça */
     .xeker-card {
       background: linear-gradient(155deg, var(--parchment-top) 0%, var(--parchment-bot) 100%);
       border: 1.5px solid #9e7923;
@@ -60,7 +55,7 @@
       align-items: center;
       justify-content: center;
       box-shadow: 0 3px 8px rgba(0, 0, 0, 0.55);
-      transition: transform 0.12s ease, border-color 0.12s ease;
+      transition: transform 0.12s ease;
       overflow: hidden;
     }
     .xeker-card::after {
@@ -93,7 +88,6 @@
       transform: translateY(-2px) scale(0.97);
     }
 
-    /* Verso de carta oculta (mão oculta em Off-line / Ranked) */
     .xeker-card-back {
       background: linear-gradient(145deg, #1d2233 0%, #0f111a 100%);
       border: 1.5px solid rgba(212, 175, 55, 0.55);
@@ -105,7 +99,6 @@
       box-shadow: 0 3px 8px rgba(0, 0, 0, 0.55);
     }
 
-    /* Visual Dark Luxury dourado do menu inicial */
     .luxury-menu-canvas {
       position: relative;
       background:
@@ -137,7 +130,6 @@
       animation: starTwinkle 3.2s ease-in-out infinite;
     }
 
-    /* Tabuleiro 8x8 responsivo */
     .xeker-board {
       width: min(100%, 47dvh);
       max-width: 100%;
@@ -185,7 +177,6 @@
       box-shadow: inset 0 0 0 2px #60a5fa;
     }
 
-    /* Peças */
     .piece-token {
       width: 86%;
       height: 86%;
@@ -252,7 +243,6 @@
       justify-content: center;
     }
 
-    /* Modais */
     .xeker-modal {
       position: fixed;
       inset: 0;
@@ -267,18 +257,11 @@
     .xeker-modal.open {
       display: flex;
     }
-    #combat-pass-modal {
-      z-index: 65;
-    }
-    #ranked-turn-modal {
-      z-index: 68;
-    }
-    #ranked-modal {
-      z-index: 70;
-    }
-    #waiting-opponent-modal {
-      z-index: 75;
-    }
+    #combat-pass-modal { z-index: 65; }
+    #ranked-turn-modal { z-index: 68; }
+    #ranked-modal { z-index: 70; }
+    #waiting-opponent-modal { z-index: 75; }
+
     .menu-btn-lit {
       background-color: rgba(212, 175, 55, 0.25);
       border-color: #f3d678;
@@ -312,7 +295,6 @@
       font-weight: 800;
     }
 
-    /* Animações suaves de movimento e captura das peças (1.3s) */
     @keyframes xekerPieceSlide {
       0% {
         transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(1.08);
@@ -369,7 +351,6 @@
       animation: xekerPieceCaptureBurst 1300ms cubic-bezier(0.32, 0, 0.67, 1) forwards;
     }
 
-    /* Animação de dano vermelho com naipe de copas (1.3s) */
     @keyframes xekerDamageFloatNormal {
       0% {
         transform: translate(-50%, -50%) translateX(0px) scale(0.85);
@@ -428,7 +409,6 @@
       font-size: 1.05rem;
     }
 
-    /* Caixa de informações abreviadas da peça selecionada */
     .selected-piece-box {
       width: 100%;
       min-height: 54px;
@@ -447,7 +427,6 @@
       overflow: hidden;
     }
 
-    /* Roda de mensagens e caixinha flutuante sobre o tabuleiro */
     .board-stage {
       position: relative;
       display: flex;
@@ -539,13 +518,9 @@
   </style>
 </head>
 <body>
-  <!-- Banner de erro caso ocorra exceção inesperada -->
   <div id="error-toast" class="hidden fixed top-2 left-2 right-2 z-[100] rounded-xl bg-red-950 border border-red-400 text-red-100 px-3 py-2 text-xs font-semibold shadow-xl"></div>
 
-  <!-- Tela Principal do Jogo -->
   <div id="game-shell" class="w-full max-w-[460px] mx-auto h-[100dvh] flex flex-col justify-between bg-[#09090b] border-x border-[#d4af37]/25 overflow-hidden">
-
-    <!-- Topo: Título, Ouro (♦), Cartas, Relógios de Jogada (01:00), Regras e Menu -->
     <header class="shrink-0 flex items-center justify-between gap-1 px-2 py-1 bg-[#111217] border-b border-[#d4af37]/25">
       <span class="font-display font-extrabold text-sm tracking-widest text-[#f3d678]">XEKER</span>
 
@@ -566,16 +541,11 @@
       </div>
 
       <div class="flex items-center gap-1">
-        <button type="button" id="btn-top-rules" class="px-2 py-1 rounded-lg bg-[#161820] border border-white/15 text-xs font-bold text-zinc-200 active:scale-95" aria-label="Regras">
-          ?
-        </button>
-        <button type="button" id="btn-top-menu" class="px-2 py-1 rounded-lg bg-[#161820] border border-[#d4af37]/40 text-xs font-bold text-[#f3d678] active:scale-95" aria-label="Menu">
-          ☰
-        </button>
+        <button type="button" id="btn-top-rules" class="px-2 py-1 rounded-lg bg-[#161820] border border-white/15 text-xs font-bold text-zinc-200 active:scale-95" aria-label="Regras">?</button>
+        <button type="button" id="btn-top-menu" class="px-2 py-1 rounded-lg bg-[#161820] border border-[#d4af37]/40 text-xs font-bold text-[#f3d678] active:scale-95" aria-label="Menu">☰</button>
       </div>
     </header>
 
-    <!-- Faixa Superior: Flop de 3 Cartas + Ações (♣) + Comprar Carta (3♦ / 0♣) -->
     <section class="shrink-0 flex items-center justify-between gap-1.5 px-2 py-1 bg-[#111217]/90 border-b border-white/10">
       <div class="flex items-center gap-1">
         <span class="text-[10px] font-bold uppercase tracking-wider text-[#d4af37] mr-0.5">Flop</span>
@@ -594,7 +564,6 @@
       </div>
     </section>
 
-    <!-- Centro: Tabuleiro 8x8 + Indicador de Vez Abaixo do Tabuleiro -->
     <main class="flex-1 min-h-0 px-1.5 py-0.5 flex flex-col items-center justify-center gap-1">
       <div class="board-stage">
         <div id="board-grid" class="xeker-board"></div>
@@ -616,7 +585,6 @@
       </div>
     </main>
 
-    <!-- Inferior: Render-se, Passar Vez, Mão e Status -->
     <section class="shrink-0 flex flex-col gap-1 px-2 pt-1 pb-1.5 bg-[#111217] border-t border-[#d4af37]/25">
       <div class="flex items-center justify-center gap-2 min-h-[36px]">
         <button type="button" id="btn-surrender" class="px-3 py-2 rounded-xl bg-red-950/80 border border-red-400/50 text-red-200 text-xs font-extrabold shadow active:scale-95" title="Render-se na partida">
@@ -627,38 +595,23 @@
         </button>
       </div>
 
-      <!-- Mão do jogador -->
       <div id="hand-container" class="flex items-center gap-1.5 overflow-x-auto py-0.5 min-h-[48px]"></div>
 
-      <!-- Barra de status/eventos -->
       <div id="status-bar" class="px-2.5 py-1 rounded-lg bg-black/50 border border-white/10 text-[11px] text-zinc-200 truncate">
         Bem-vindo ao XEKER.
       </div>
     </section>
   </div>
 
-  <!-- RODA DE MENSAGENS -->
   <div id="msg-wheel-modal" class="msg-wheel-overlay">
     <div class="flex flex-col items-center gap-3">
       <div class="msg-wheel-ring">
-        <button type="button" data-msg="Boa Jogada" class="msg-wheel-option" style="top: 13%; left: 50%;">
-          Boa Jogada
-        </button>
-        <button type="button" data-msg="Se Lascou" class="msg-wheel-option" style="top: 32%; left: 84%;">
-          Se Lascou
-        </button>
-        <button type="button" data-msg="ZzZz" class="msg-wheel-option" style="top: 74%; left: 82%;">
-          ZzZz
-        </button>
-        <button type="button" data-msg="Essa Doeu" class="msg-wheel-option" style="top: 89%; left: 50%;">
-          Essa Doeu
-        </button>
-        <button type="button" data-msg="Cagão" class="msg-wheel-option" style="top: 74%; left: 18%;">
-          Cagão
-        </button>
-        <button type="button" data-msg="Abocanha Garoto" class="msg-wheel-option" style="top: 32%; left: 16%;">
-          Abocanha Garoto
-        </button>
+        <button type="button" data-msg="Boa Jogada" class="msg-wheel-option" style="top: 13%; left: 50%;">Boa Jogada</button>
+        <button type="button" data-msg="Se Lascou" class="msg-wheel-option" style="top: 32%; left: 84%;">Se Lascou</button>
+        <button type="button" data-msg="ZzZz" class="msg-wheel-option" style="top: 74%; left: 82%;">ZzZz</button>
+        <button type="button" data-msg="Essa Doeu" class="msg-wheel-option" style="top: 89%; left: 50%;">Essa Doeu</button>
+        <button type="button" data-msg="Cagão" class="msg-wheel-option" style="top: 74%; left: 18%;">Cagão</button>
+        <button type="button" data-msg="Abocanha Garoto" class="msg-wheel-option" style="top: 32%; left: 16%;">Abocanha Garoto</button>
         <button type="button" id="btn-close-msg-wheel" class="w-16 h-16 rounded-full bg-[#111217] border border-[#d4af37]/60 text-[10px] font-bold text-zinc-300 flex flex-col items-center justify-center shadow-lg active:scale-95" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
           <span>Fechar</span>
           <span id="msg-cooldown-label" class="text-[9px] font-mono text-amber-300 mt-0.5">Pronto</span>
@@ -667,11 +620,8 @@
     </div>
   </div>
 
-  <!-- MODAL MENU PRINCIPAL (ESTILO DARK LUXURY DOURADO) -->
   <div id="menu-modal" class="xeker-modal open">
     <div class="luxury-menu-canvas w-full max-w-[392px] max-h-[95dvh] rounded-3xl px-5 py-4 flex flex-col items-center justify-between text-center">
-
-      <!-- Arco superior de estrelas e constelações douradas -->
       <svg viewBox="0 0 340 56" class="w-full max-w-[330px] h-11 shrink-0 overflow-visible" aria-hidden="true">
         <g fill="#f3d678" class="star-twinkle">
           <path d="M170 4 L172 10 L178 12 L172 14 L170 20 L168 14 L162 12 L168 10 Z" />
@@ -690,14 +640,12 @@
         </g>
       </svg>
 
-      <!-- Título Metálico Dourado XEKER em destaque -->
       <div class="my-4 py-3 px-4 rounded-2xl bg-[#d4af37]/[0.05] border border-[#d4af37]/30 shadow-[0_0_32px_rgba(212,175,55,0.16)] shrink-0">
         <h1 class="font-display font-black text-4xl sm:text-5xl tracking-[0.26em] metallic-gold-title">
           XEKER
         </h1>
       </div>
 
-      <!-- Seletor de Modo & Botões Principais -->
       <div class="w-full space-y-2 my-1.5 shrink-0">
         <div class="grid grid-cols-2 gap-1.5">
           <button type="button" id="btn-select-offline" class="py-2.5 px-2 rounded-xl text-xs font-bold border menu-btn-lit active:scale-95">
@@ -713,7 +661,6 @@
         </button>
       </div>
 
-      <!-- Guirlanda de Estrelas Douradas + Silhuetas + assinatura -->
       <div class="w-full pt-1 shrink-0">
         <svg viewBox="0 0 340 52" class="w-full max-w-[330px] h-11 mx-auto overflow-visible" aria-hidden="true">
           <path d="M18 32 Q 88 8, 170 36 Q 252 8, 322 32" fill="none" stroke="rgba(243,214,120,0.35)" stroke-width="1" stroke-dasharray="2 3" />
@@ -745,17 +692,13 @@
     </div>
   </div>
 
-  <!-- MODAL MODO RANKEADO (FIREBASE AUTH + LOBBY + MATCHMAKING POR ELO) -->
   <div id="ranked-modal" class="xeker-modal">
     <div class="w-full max-w-[380px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl space-y-3 text-xs">
       <div class="flex items-center justify-between gap-2 pb-2 border-b border-white/10">
-        <div class="flex items-center gap-2 min-w-0">
-          <h2 class="font-display font-bold text-sm text-[#f3d678] truncate">🏆 Modo Rankeado</h2>
-        </div>
+        <h2 class="font-display font-bold text-sm text-[#f3d678] truncate">🏆 Modo Rankeado</h2>
         <button type="button" id="btn-close-ranked" class="px-2.5 py-1 rounded-lg bg-[#161820] border border-white/15 font-bold text-zinc-200 active:scale-95 shrink-0">✕</button>
       </div>
 
-      <!-- Desconectado (Tela de Login) -->
       <div id="ranked-logged-out" class="space-y-3">
         <p class="text-zinc-300 leading-relaxed">
           Entre com sua conta Google para acessar o lobby, salvar sua pontuação, histórico de vitórias e buscar oponentes ranqueados em tempo real.
@@ -765,7 +708,6 @@
         </button>
       </div>
 
-      <!-- Conectado / Lobby -->
       <div id="ranked-logged-in" class="hidden space-y-2.5">
         <button type="button" id="btn-switch-google-account" class="w-full py-2 px-3 rounded-xl bg-[#161820] border border-[#d4af37]/50 text-[#f3d678] font-bold text-xs active:scale-95 flex items-center justify-center gap-1.5 transition-all">
           <span>🔄 Trocar conta Google</span>
@@ -809,7 +751,6 @@
     </div>
   </div>
 
-  <!-- MODAL INDICADOR DE TURNO E COR NA RANKED -->
   <div id="ranked-turn-modal" class="xeker-modal">
     <div class="w-full max-w-[360px] rounded-2xl bg-[#111217] border border-[#d4af37]/70 p-5 text-center shadow-2xl space-y-3">
       <div id="ranked-turn-icon" class="text-4xl">♔</div>
@@ -821,7 +762,6 @@
     </div>
   </div>
 
-  <!-- MODAL COMBATE & RESUMO PÓS-COMBATE -->
   <div id="combat-modal" class="xeker-modal">
     <div class="w-full max-w-[400px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl max-h-[92dvh] overflow-y-auto">
       <div class="flex items-center justify-between gap-2 mb-2">
@@ -851,7 +791,6 @@
     </div>
   </div>
 
-  <!-- MODAL DE PASSAGEM DE APARELHO NO COMBATE -->
   <div id="combat-pass-modal" class="xeker-modal">
     <div class="w-full max-w-[360px] rounded-2xl bg-[#111217] border border-[#d4af37]/70 p-5 text-center shadow-2xl">
       <div class="text-3xl mb-2">📱</div>
@@ -865,7 +804,6 @@
     </div>
   </div>
 
-  <!-- MODAL PASSAGEM DE APARELHO ENTRE TURNOS (OFF-LINE) -->
   <div id="pass-modal" class="xeker-modal">
     <div class="w-full max-w-[360px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-5 text-center shadow-2xl">
       <div class="text-3xl mb-2">📱</div>
@@ -877,7 +815,6 @@
     </div>
   </div>
 
-  <!-- MODAL LIVRO DE REGRAS PAGINADO -->
   <div id="rules-modal" class="xeker-modal">
     <div class="w-full max-w-[410px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-4 shadow-2xl text-xs flex flex-col">
       <div class="flex items-center justify-between pb-2 mb-2 border-b border-white/10">
@@ -902,7 +839,6 @@
     </div>
   </div>
 
-  <!-- MODAL CONFIRMAÇÃO DE SURRENDER -->
   <div id="surrender-modal" class="xeker-modal">
     <div class="w-full max-w-[360px] rounded-2xl bg-[#111217] border border-red-400/60 p-5 text-center shadow-2xl space-y-3">
       <div class="text-3xl">🏳️</div>
@@ -921,7 +857,6 @@
     </div>
   </div>
 
-  <!-- MODAL AGUARDANDO OPONENTE NO RESUMO DE COMBATE -->
   <div id="waiting-opponent-modal" class="xeker-modal">
     <div class="w-full max-w-[350px] rounded-2xl bg-[#111217] border border-[#d4af37]/70 p-5 text-center shadow-2xl space-y-3">
       <div class="text-3xl">⏳</div>
@@ -932,7 +867,6 @@
     </div>
   </div>
 
-  <!-- MODAL FIM DE PARTIDA -->
   <div id="gameover-modal" class="xeker-modal">
     <div class="w-full max-w-[370px] rounded-2xl bg-[#111217] border border-[#d4af37]/60 p-5 text-center shadow-2xl">
       <div class="text-4xl mb-2">👑</div>
@@ -964,7 +898,6 @@
       query,
       where,
       getDocs,
-      getCountFromServer,
       onSnapshot,
       runTransaction,
       serverTimestamp
@@ -985,22 +918,15 @@
     const db = getFirestore(fbApp);
     const googleProvider = new GoogleAuthProvider();
 
-
     const API_BASE = "https://xeker.vercel.app/api";
-    let apiOnline = false;
 
     async function checkApiHealth() {
       try {
         const res = await fetch(`${API_BASE}/health`, { method: "GET" });
-        if (!res.ok) {
-          apiOnline = false;
-          return false;
-        }
+        if (!res.ok) return false;
         const data = await res.json();
-        apiOnline = Boolean(data && data.ok);
-        return apiOnline;
+        return Boolean(data && data.ok);
       } catch (_) {
-        apiOnline = false;
         return false;
       }
     }
@@ -1042,78 +968,12 @@
     };
 
     const PIECE_DATA = {
-      P: {
-        name: 'Peão',
-        hp: 1,
-        reward: 2,
-        cardVal: 2,
-        cardLabel: 'Coringa (2 a 9)',
-        white: '♙',
-        black: '♟',
-        reachLabel: '1 casa em todas as 8 direções',
-        activeText: 'Sacrifica-se causando 1♥ a todos os inimigos no alcance (1 casa em 8 direções).',
-        passiveText: 'Promovido a Rainha ao cruzar o tabuleiro (linha 0 para Brancas, linha 7 para Pretas).'
-      },
-      R: {
-        name: 'Torre',
-        hp: 3,
-        reward: 4,
-        cardVal: 10,
-        cardLabel: '10',
-        white: '♖',
-        black: '♜',
-        reachLabel: 'Até 3 casas ortogonais',
-        activeText: 'Troca de posição com outra peça (aliada ou inimiga) no alcance (até 3 ortogonal).',
-        passiveText: 'Sofre 0♥ de dano ao defender com sucesso (em vez de 1♥).'
-      },
-      B: {
-        name: 'Bispo',
-        hp: 3,
-        reward: 4,
-        cardVal: 11,
-        cardLabel: 'J',
-        white: '♗',
-        black: '♝',
-        reachLabel: 'Até 3 casas diagonais',
-        activeText: 'Cura todas as peças aliadas no alcance (até 3 diagonal) em +1♥ (até o máx.).',
-        passiveText: 'Não recebe dano caso defendam seus ataques.'
-      },
-      Q: {
-        name: 'Rainha',
-        hp: 5,
-        reward: 6,
-        cardVal: 12,
-        cardLabel: 'Q',
-        white: '♕',
-        black: '♛',
-        reachLabel: 'Até 3 casas em todas as 8 direções',
-        activeText: 'Copia e executa a ativa de outra peça (aliada ou inimiga) no alcance da Rainha.',
-        passiveText: 'Cura-se em +1♥ ao abater peças (até o HP máximo).'
-      },
-      K: {
-        name: 'Rei',
-        hp: 7,
-        reward: 0,
-        cardVal: 13,
-        cardLabel: 'K',
-        white: '♔',
-        black: '♚',
-        reachLabel: 'Até 2 casas em todas as 8 direções',
-        activeText: 'Causa 2 de dano não letal a uma peça inimiga.',
-        passiveText: 'Não possui habilidade passiva.'
-      },
-      N: {
-        name: 'Cavalo',
-        hp: 3,
-        reward: 4,
-        cardVal: 1,
-        cardLabel: 'A',
-        white: '♘',
-        black: '♞',
-        reachLabel: 'Salto em L (2+1)',
-        activeText: 'Move o alvo 1 casa em qualquer direção.',
-        passiveText: 'Ignora obstáculos ao mover-se, atacar ou usar ativa.'
-      }
+      P: { name: 'Peão', hp: 1, reward: 2, cardVal: 2, cardLabel: 'Coringa (2 a 9)', white: '♙', black: '♟', reachLabel: '1 casa em todas as 8 direções' },
+      R: { name: 'Torre', hp: 3, reward: 4, cardVal: 10, cardLabel: '10', white: '♖', black: '♜', reachLabel: 'Até 3 casas ortogonais' },
+      B: { name: 'Bispo', hp: 3, reward: 4, cardVal: 11, cardLabel: 'J', white: '♗', black: '♝', reachLabel: 'Até 3 casas diagonais' },
+      Q: { name: 'Rainha', hp: 5, reward: 6, cardVal: 12, cardLabel: 'Q', white: '♕', black: '♛', reachLabel: 'Até 3 casas em todas as 8 direções' },
+      K: { name: 'Rei', hp: 7, reward: 0, cardVal: 13, cardLabel: 'K', white: '♔', black: '♚', reachLabel: 'Até 2 casas em todas as 8 direções' },
+      N: { name: 'Cavalo', hp: 3, reward: 4, cardVal: 1, cardLabel: 'A', white: '♘', black: '♞', reachLabel: 'Salto em L (2+1)' }
     };
 
     const COMBO_EFFECTS = {
@@ -1179,24 +1039,12 @@
         title: '3. Habilidades Passivas das Peças',
         html: `
           <div class="space-y-1.5 text-[11px]">
-            <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-              <strong class="text-[#f3d678]">♟ Peão:</strong> Promovido a Rainha ao cruzar para a última linha oposta.
-            </div>
-            <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-              <strong class="text-[#f3d678]">♜ Torre:</strong> Sofre 0♥ de dano ao defender com sucesso.
-            </div>
-            <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-              <strong class="text-[#f3d678]">♝ Bispo:</strong> Não recebe dano caso defendam seus ataques.
-            </div>
-            <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-              <strong class="text-[#f3d678]">♛ Rainha:</strong> Cura-se em +1♥ ao abater peças (até o HP máximo).
-            </div>
-            <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-              <strong class="text-[#f3d678]">♚ Rei:</strong> Não possui habilidade passiva.
-            </div>
-            <div class="p-2 rounded-xl bg-[#161820] border border-white/10">
-              <strong class="text-[#f3d678]">♞ Cavalo:</strong> Ignora obstáculos ao mover-se, atacar ou usar ativa.
-            </div>
+            <div class="p-2 rounded-xl bg-[#161820] border border-white/10"><strong class="text-[#f3d678]">♟ Peão:</strong> Promovido a Rainha ao cruzar para a última linha oposta.</div>
+            <div class="p-2 rounded-xl bg-[#161820] border border-white/10"><strong class="text-[#f3d678]">♜ Torre:</strong> Sofre 0♥ de dano ao defender com sucesso.</div>
+            <div class="p-2 rounded-xl bg-[#161820] border border-white/10"><strong class="text-[#f3d678]">♝ Bispo:</strong> Não recebe dano caso defendam seus ataques.</div>
+            <div class="p-2 rounded-xl bg-[#161820] border border-white/10"><strong class="text-[#f3d678]">♛ Rainha:</strong> Cura-se em +1♥ ao abater peças (até o HP máximo).</div>
+            <div class="p-2 rounded-xl bg-[#161820] border border-white/10"><strong class="text-[#f3d678]">♚ Rei:</strong> Não possui habilidade passiva.</div>
+            <div class="p-2 rounded-xl bg-[#161820] border border-white/10"><strong class="text-[#f3d678]">♞ Cavalo:</strong> Ignora obstáculos ao mover-se, atacar ou usar ativa.</div>
           </div>
         `
       },
@@ -1249,13 +1097,23 @@
     let actionSeqCounter = 0;
     let lastSentMessageAt = 0;
     let msgCooldownInterval = null;
+    let lastSeenOpponentMsgId = null;
+    let rankedTurnBannerTimer = null;
+
+    let pendingMoveAnim = null;
+    const pendingCaptureAnims = [];
+    const pendingDamageAnims = [];
+    const pendingMoveSteps = [];
+    const hiddenBoardTokensUntilAnim = new Set();
+    let captureDelayTimer = null;
 
     const net = {
       role: null,
       connected: false,
       pendingCombat: null,
       lastSummary: null,
-      summaryClosed: { white: false, black: false }
+      summaryClosed: { white: false, black: false },
+      fxEvent: null
     };
 
     const ranked = {
@@ -1263,8 +1121,6 @@
       profile: null,
       matchId: null,
       mySide: null,
-      oppProfile: null,
-      matchNames: { white: null, black: null },
       matchUnsub: null,
       queueUnsub: null,
       searchInterval: null,
@@ -1297,8 +1153,7 @@
 
     function getRemainingMsgCooldownSec() {
       if (!lastSentMessageAt) return 0;
-      const elapsed = Date.now() - lastSentMessageAt;
-      const remMs = MSG_COOLDOWN_MS - elapsed;
+      const remMs = MSG_COOLDOWN_MS - (Date.now() - lastSentMessageAt);
       return remMs > 0 ? Math.ceil(remMs / 1000) : 0;
     }
 
@@ -1314,8 +1169,6 @@
         optionBtns.forEach((b) => { b.disabled = false; });
       }
     }
-
-    let lastSeenOpponentMsgId = null;
 
     function showFloatingBoardMessage(text) {
       const layer = document.getElementById('floating-msg-layer');
@@ -1514,8 +1367,6 @@
       if (el) el.classList.add('hidden');
     }
 
-    let rankedTurnBannerTimer = null;
-
     function showRankedTurnIndicator(turnSide, roundNum) {
       if (!isRankedMode() || !state || state.gameOver) return;
       const key = `${roundNum || 1}-${turnSide}`;
@@ -1525,19 +1376,16 @@
       const mySide = myOnlineSide();
       const isMyTurn = turnSide === mySide;
       const myColorLabel = getSideColorLabel(mySide);
-      const mainMessage = isMyTurn ? 'Sua Vez' : 'Vez do Adversário';
 
       document.getElementById('ranked-turn-icon').textContent = turnSide === 'white' ? '♔' : '♚';
       document.getElementById('ranked-turn-side-badge').textContent = `Você joga de ${myColorLabel}`;
-      document.getElementById('ranked-turn-heading').textContent = mainMessage;
+      document.getElementById('ranked-turn-heading').textContent = isMyTurn ? 'Sua Vez' : 'Vez do Adversário';
       document.getElementById('ranked-turn-desc').textContent = isMyTurn
         ? `Rodada ${roundNum || 1} · Você tem 01:00 para realizar sua jogada.`
         : `Rodada ${roundNum || 1} · Aguardando a jogada do adversário (01:00).`;
 
       openModal('ranked-turn-modal');
-      if (rankedTurnBannerTimer) {
-        clearTimeout(rankedTurnBannerTimer);
-      }
+      if (rankedTurnBannerTimer) clearTimeout(rankedTurnBannerTimer);
       rankedTurnBannerTimer = setTimeout(() => {
         rankedTurnBannerTimer = null;
         closeModal('ranked-turn-modal');
@@ -1682,11 +1530,7 @@
       }
       setRankedBtnLit(cancelBtn, searching);
       if (clockEl) {
-        if (searching) {
-          clockEl.classList.remove('hidden');
-        } else {
-          clockEl.classList.add('hidden');
-        }
+        clockEl.classList.toggle('hidden', !searching);
       }
     }
 
@@ -1694,8 +1538,7 @@
       if (!ranked.user || !ranked.user.uid) return;
       ranked.isManualOffline = !Boolean(isOnline);
       updateStatusBulbs();
-      const userRef = doc(db, 'users', ranked.user.uid);
-      await setDoc(userRef, {
+      await setDoc(doc(db, 'users', ranked.user.uid), {
         uid: ranked.user.uid,
         name: (ranked.profile && ranked.profile.name) || ranked.user.displayName || 'Jogador Xeker',
         online: Boolean(isOnline),
@@ -1735,9 +1578,7 @@
         const aOn = isUserOnline(a) ? 1 : 0;
         const bOn = isUserOnline(b) ? 1 : 0;
         if (aOn !== bOn) return bOn - aOn;
-        const aElo = Number(a.elo) || 1200;
-        const bElo = Number(b.elo) || 1200;
-        return bElo - aElo;
+        return (Number(b.elo) || 1200) - (Number(a.elo) || 1200);
       });
 
       if (sorted.length === 0) {
@@ -1770,7 +1611,6 @@
           </div>
           <div class="text-[10px] text-zinc-300">Elo: <strong class="text-[#f3d678]">${elo}</strong> · Vitória: <strong>${winRate}%</strong> (${wins}V/${losses}D)</div>
         `;
-
         row.appendChild(left);
 
         if (!isSelf && online) {
@@ -1791,9 +1631,7 @@
       if (!ranked.usersUnsub) {
         ranked.usersUnsub = onSnapshot(collection(db, 'users'), (snap) => {
           const list = [];
-          snap.forEach((docSnap) => {
-            list.push({ uid: docSnap.id, ...docSnap.data() });
-          });
+          snap.forEach((docSnap) => list.push({ uid: docSnap.id, ...docSnap.data() }));
           renderLobbyList(list);
         }, () => {});
       }
@@ -1840,8 +1678,7 @@
       if (!ranked.user || !ranked.profile || !targetUser || !targetUser.uid) return;
       try {
         const newMatchId = `am_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-        const matchRef = doc(db, 'matches', newMatchId);
-        await setDoc(matchRef, {
+        await setDoc(doc(db, 'matches', newMatchId), {
           matchId: newMatchId,
           unrated: true,
           whiteUid: ranked.user.uid,
@@ -1999,16 +1836,9 @@
 
         const tryPairOpponent = async () => {
           if (!ranked.isSearching) return;
+          await updateDoc(myQueueRef, { status: 'searching', updatedAt: serverTimestamp() }).catch(() => {});
 
-          await updateDoc(myQueueRef, {
-            status: 'searching',
-            updatedAt: serverTimestamp()
-          }).catch(() => {});
-
-          const q = query(
-            collection(db, 'matchmaking_queue'),
-            where('status', '==', 'searching')
-          );
+          const q = query(collection(db, 'matchmaking_queue'), where('status', '==', 'searching'));
           const snap = await getDocs(q);
           let bestOpp = null;
           let minDiff = Infinity;
@@ -2025,7 +1855,6 @@
                 deleteDoc(doc(db, 'matchmaking_queue', cand.uid)).catch(() => {});
                 return;
               }
-
               if (myUid > cand.uid) return;
 
               const diff = Math.abs((cand.elo || 1200) - (ranked.profile.elo || 1200));
@@ -2076,11 +1905,7 @@
                 createdAt: serverTimestamp()
               });
 
-              tx.update(oppQueueRef, {
-                status: 'matched',
-                matchId: newMatchId
-              });
-
+              tx.update(oppQueueRef, { status: 'matched', matchId: newMatchId });
               tx.delete(myQueueRef);
               return true;
             });
@@ -2126,13 +1951,6 @@
       if (mData.unrated) ranked.unratedMatch = true;
       const amWhite = mData.whiteUid === ranked.user.uid;
       ranked.mySide = amWhite ? 'white' : 'black';
-      ranked.matchNames = {
-        white: mData.whiteName || 'Brancas',
-        black: mData.blackName || 'Pretas'
-      };
-      ranked.oppProfile = amWhite
-        ? { name: mData.blackName, elo: mData.blackEloBefore }
-        : { name: mData.whiteName, elo: mData.whiteEloBefore };
 
       selectedMode = 'ranked';
       syncModeButtons();
@@ -2185,8 +2003,7 @@
         if (net.role === 'guest') {
           if (d.viewJson) {
             try {
-              const parsedView = JSON.parse(d.viewJson);
-              applyGuestView(parsedView);
+              applyGuestView(JSON.parse(d.viewJson));
             } catch (_) {}
           }
           if (d.clocksJson && state) {
@@ -2253,9 +2070,8 @@
     }
 
     function calculateEloDelta(myElo, oppElo, score) {
-      const K = 32;
       const expected = 1 / (1 + Math.pow(10, (oppElo - myElo) / 400));
-      return Math.round(K * (score - expected));
+      return Math.round(32 * (score - expected));
     }
 
     async function applyRankedEloUpdate(matchData) {
@@ -2266,9 +2082,8 @@
       const myBefore = amWhite ? matchData.whiteEloBefore : matchData.blackEloBefore;
       const oppBefore = amWhite ? matchData.blackEloBefore : matchData.whiteEloBefore;
       const won = matchData.winnerSide === ranked.mySide;
-      const score = won ? 1 : 0;
 
-      const delta = calculateEloDelta(myBefore, oppBefore, score);
+      const delta = calculateEloDelta(myBefore, oppBefore, won ? 1 : 0);
       const newElo = Math.max(100, myBefore + delta);
       const sign = delta >= 0 ? `+${delta}` : `${delta}`;
 
@@ -2300,7 +2115,6 @@
       if (!view) return;
       closeModal('menu-modal');
       closeModal('ranked-modal');
-      const prevSummary = net.lastSummary;
       const prevSelected = state ? state.selected : null;
       const prevActionMode = state ? state.actionMode : null;
       const prevSkillPhase = state ? state.skillPhase : null;
@@ -2372,9 +2186,7 @@
         gameOverData: view.gameOverData || null
       };
 
-      if (view.status) {
-        setStatus(view.status);
-      }
+      if (view.status) setStatus(view.status);
 
       net.pendingCombat = view.pendingCombat || null;
       net.lastSummary = view.lastSummary || null;
@@ -2410,18 +2222,12 @@
           <div class="text-[10px] text-zinc-400">Mão: ${net.pendingCombat.defHandCount} oculta(s)</div>
         `;
         renderAttackerCardSelection(
-          net.pendingCombat.atkR,
-          net.pendingCombat.atkC,
-          net.pendingCombat.defR,
-          net.pendingCombat.defC,
-          atkP,
-          defP,
-          state.players.black,
-          state.players.white,
+          net.pendingCombat.atkR, net.pendingCombat.atkC, net.pendingCombat.defR, net.pendingCombat.defC,
+          atkP, defP, state.players.black, state.players.white,
           (idx) => {
             stopCombatCountdown();
             closeModal('combat-modal');
-            if (state && state.players && state.players.black && Array.isArray(state.players.black.hand) && idx >= 0 && idx < state.players.black.hand.length) {
+            if (state.players.black.hand && idx >= 0 && idx < state.players.black.hand.length) {
               state.players.black.hand.splice(idx, 1);
             }
             net.pendingCombat = null;
@@ -2457,7 +2263,7 @@
         renderDefenderCardSelection(null, defP, state.players.black, (dIdx) => {
           stopCombatCountdown();
           closeModal('combat-modal');
-          if (state && state.players && state.players.black && Array.isArray(state.players.black.hand) && dIdx >= 0 && dIdx < state.players.black.hand.length) {
+          if (state.players.black.hand && dIdx >= 0 && dIdx < state.players.black.hand.length) {
             state.players.black.hand.splice(dIdx, 1);
           }
           net.pendingCombat = null;
@@ -2476,7 +2282,7 @@
           const summaryToAnimate = net.lastSummary;
           net.lastSummary = null;
           net.summaryClosed = { white: false, black: false };
-          if (state && state.gameOver && state.gameOverData) {
+          if (state.gameOver && state.gameOverData) {
             endMatch(state.gameOverData.winnerSide, state.gameOverData.reason);
           }
           renderAll();
@@ -2520,7 +2326,7 @@
             net.summaryClosed.black = true;
             combatUI.waitingForOpponent = false;
             closeModal('waiting-opponent-modal');
-            if (state && state.gameOver && state.gameOverData) {
+            if (state.gameOver && state.gameOverData) {
               document.getElementById('gameover-title').textContent = state.gameOverData.title;
               document.getElementById('gameover-desc').textContent = state.gameOverData.desc;
               openModal('gameover-modal');
@@ -2841,6 +2647,16 @@
       }, 1000);
     }
 
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
+      }
+      return arr;
+    }
+
     function createDeck() {
       const arr = [];
       for (let val = 1; val <= 13; val++) {
@@ -2848,25 +2664,13 @@
           arr.push(val);
         }
       }
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        const temp = arr[i];
-        arr[i] = arr[j];
-        arr[j] = temp;
-      }
-      return arr;
+      return shuffleArray(arr);
     }
 
     function drawCard() {
       if (!state) return null;
       if (state.deck.length === 0 && state.discard.length > 0) {
-        state.deck = state.discard.splice(0, state.discard.length);
-        for (let i = state.deck.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          const temp = state.deck[i];
-          state.deck[i] = state.deck[j];
-          state.deck[j] = temp;
-        }
+        state.deck = shuffleArray(state.discard.splice(0, state.discard.length));
       }
       return state.deck.length > 0 ? state.deck.pop() : null;
     }
@@ -2937,57 +2741,29 @@
 
       if (sortedGroups[0][1] >= 4) {
         const k = sortedGroups[1] ? fmt(sortedGroups[1][0]) : '';
-        return {
-          cat: 6,
-          name: `Quadra de ${fmt(sortedGroups[0][0])}${k ? ` (${k})` : ''}`,
-          tie: [sortedGroups[0][0], sortedGroups[1] ? sortedGroups[1][0] : 0]
-        };
+        return { cat: 6, name: `Quadra de ${fmt(sortedGroups[0][0])}${k ? ` (${k})` : ''}`, tie: [sortedGroups[0][0], sortedGroups[1] ? sortedGroups[1][0] : 0] };
       }
       if (sortedGroups[0][1] === 3 && sortedGroups[1] && sortedGroups[1][1] === 2) {
-        return {
-          cat: 5,
-          name: `Full House (${fmt(sortedGroups[0][0])} e ${fmt(sortedGroups[1][0])})`,
-          tie: [sortedGroups[0][0], sortedGroups[1][0]]
-        };
+        return { cat: 5, name: `Full House (${fmt(sortedGroups[0][0])} e ${fmt(sortedGroups[1][0])})`, tie: [sortedGroups[0][0], sortedGroups[1][0]] };
       }
       if (straight) {
-        return {
-          cat: 4,
-          name: `Sequência (maior ${fmt(straightTop)})`,
-          tie: [straightTop]
-        };
+        return { cat: 4, name: `Sequência (maior ${fmt(straightTop)})`, tie: [straightTop] };
       }
       if (sortedGroups[0][1] === 3) {
         const kickers = sortedGroups.slice(1).map((x) => x[0]).sort((a, b) => b - a);
-        return {
-          cat: 3,
-          name: `Trinca de ${fmt(sortedGroups[0][0])}`,
-          tie: [sortedGroups[0][0], ...kickers]
-        };
+        return { cat: 3, name: `Trinca de ${fmt(sortedGroups[0][0])}`, tie: [sortedGroups[0][0], ...kickers] };
       }
       if (sortedGroups[0][1] === 2 && sortedGroups[1] && sortedGroups[1][1] === 2) {
         const hi = Math.max(sortedGroups[0][0], sortedGroups[1][0]);
         const lo = Math.min(sortedGroups[0][0], sortedGroups[1][0]);
         const k = sortedGroups[2] ? sortedGroups[2][0] : 0;
-        return {
-          cat: 2,
-          name: `2 Pares (${fmt(hi)} e ${fmt(lo)})`,
-          tie: [hi, lo, k]
-        };
+        return { cat: 2, name: `2 Pares (${fmt(hi)} e ${fmt(lo)})`, tie: [hi, lo, k] };
       }
       if (sortedGroups[0][1] === 2) {
         const kickers = sortedGroups.slice(1).map((x) => x[0]).sort((a, b) => b - a);
-        return {
-          cat: 1,
-          name: `1 Par de ${fmt(sortedGroups[0][0])}`,
-          tie: [sortedGroups[0][0], ...kickers]
-        };
+        return { cat: 1, name: `1 Par de ${fmt(sortedGroups[0][0])}`, tie: [sortedGroups[0][0], ...kickers] };
       }
-      return {
-        cat: 0,
-        name: `Carta Alta (${fmt(uniqueDesc[0])})`,
-        tie: uniqueDesc
-      };
+      return { cat: 0, name: `Carta Alta (${fmt(uniqueDesc[0])})`, tie: uniqueDesc };
     }
 
     function comparePokerHands(h1, h2) {
@@ -3005,16 +2781,12 @@
       if (piece && piece.type === 'P') {
         let best = null;
         for (let wildVal = 2; wildVal <= 9; wildVal++) {
-          const ranks = [...cards4.map(pokerRank), wildVal];
-          const ev = evaluateFixedRanks5(ranks);
-          if (!best || comparePokerHands(ev, best) > 0) {
-            best = ev;
-          }
+          const ev = evaluateFixedRanks5([...cards4.map(pokerRank), wildVal]);
+          if (!best || comparePokerHands(ev, best) > 0) best = ev;
         }
         return best;
       }
-      const ranks = [...cards4.map(pokerRank), pokerRank(piece ? piece.cardVal : 1)];
-      return evaluateFixedRanks5(ranks);
+      return evaluateFixedRanks5([...cards4.map(pokerRank), pokerRank(piece ? piece.cardVal : 1)]);
     }
 
     function buildInitialBoard() {
@@ -3023,44 +2795,12 @@
 
       for (let col = 0; col < 8; col++) {
         const bType = backRank[col];
-        grid[0][col] = {
-          id: `b_${bType}_${col}`,
-          color: 'black',
-          type: bType,
-          hp: PIECE_DATA[bType].hp,
-          maxHp: PIECE_DATA[bType].hp,
-          cardVal: PIECE_DATA[bType].cardVal,
-          acted: false
-        };
-        grid[1][col] = {
-          id: `b_P_${col}`,
-          color: 'black',
-          type: 'P',
-          hp: PIECE_DATA.P.hp,
-          maxHp: PIECE_DATA.P.hp,
-          cardVal: PIECE_DATA.P.cardVal,
-          acted: false
-        };
+        grid[0][col] = { id: `b_${bType}_${col}`, color: 'black', type: bType, hp: PIECE_DATA[bType].hp, maxHp: PIECE_DATA[bType].hp, cardVal: PIECE_DATA[bType].cardVal, acted: false };
+        grid[1][col] = { id: `b_P_${col}`, color: 'black', type: 'P', hp: PIECE_DATA.P.hp, maxHp: PIECE_DATA.P.hp, cardVal: PIECE_DATA.P.cardVal, acted: false };
 
         const wType = backRank[col];
-        grid[7][col] = {
-          id: `w_${wType}_${col}`,
-          color: 'white',
-          type: wType,
-          hp: PIECE_DATA[wType].hp,
-          maxHp: PIECE_DATA[wType].hp,
-          cardVal: PIECE_DATA[wType].cardVal,
-          acted: false
-        };
-        grid[6][col] = {
-          id: `w_P_${col}`,
-          color: 'white',
-          type: 'P',
-          hp: PIECE_DATA.P.hp,
-          maxHp: PIECE_DATA.P.hp,
-          cardVal: PIECE_DATA.P.cardVal,
-          acted: false
-        };
+        grid[7][col] = { id: `w_${wType}_${col}`, color: 'white', type: wType, hp: PIECE_DATA[wType].hp, maxHp: PIECE_DATA[wType].hp, cardVal: PIECE_DATA[wType].cardVal, acted: false };
+        grid[6][col] = { id: `w_P_${col}`, color: 'white', type: 'P', hp: PIECE_DATA.P.hp, maxHp: PIECE_DATA.P.hp, cardVal: PIECE_DATA.P.cardVal, acted: false };
       }
       return grid;
     }
@@ -3099,10 +2839,7 @@
           round: 1,
           ownTurns: { white: 1, black: 0 },
           actions: 2,
-          clocks: {
-            white: TURN_CLOCK_SECONDS,
-            black: TURN_CLOCK_SECONDS
-          },
+          clocks: { white: TURN_CLOCK_SECONDS, black: TURN_CLOCK_SECONDS },
           board: buildInitialBoard(),
           deck: createDeck(),
           discard: [],
@@ -3140,9 +2877,7 @@
         if (state.mode === 'ranked') {
           setStatus('Partida Ranked iniciada · Vez das Brancas (01:00 por jogada).');
           renderAll();
-          if (net.role === 'host') {
-            syncOnlineState();
-          }
+          if (net.role === 'host') syncOnlineState();
           showRankedTurnIndicator('white', 1);
         } else {
           setStatus('Partida Off-line iniciada · Vez das Brancas (01:00 por jogada).');
@@ -3165,9 +2900,7 @@
       const enemies = [];
       const allPieces = [];
 
-      if (!piece) {
-        return { moves, attacks, allies, enemies, allPieces };
-      }
+      if (!piece) return { moves, attacks, allies, enemies, allPieces };
 
       if (piece.type === 'N') {
         const lOffsets = [
@@ -3183,9 +2916,8 @@
             moves.push({ r: nr, c: nc });
           } else {
             allPieces.push({ r: nr, c: nc, piece: occ });
-            if (occ.color === piece.color) {
-              allies.push({ r: nr, c: nc, piece: occ });
-            } else {
+            if (occ.color === piece.color) allies.push({ r: nr, c: nc, piece: occ });
+            else {
               attacks.push({ r: nr, c: nc });
               enemies.push({ r: nr, c: nc, piece: occ });
             }
@@ -3196,7 +2928,6 @@
 
       let dirs = [];
       let steps = 1;
-
       if (piece.type === 'P') {
         dirs = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
         steps = 1;
@@ -3224,9 +2955,8 @@
             moves.push({ r: nr, c: nc });
           } else {
             allPieces.push({ r: nr, c: nc, piece: occ });
-            if (occ.color === piece.color) {
-              allies.push({ r: nr, c: nc, piece: occ });
-            } else {
+            if (occ.color === piece.color) allies.push({ r: nr, c: nc, piece: occ });
+            else {
               attacks.push({ r: nr, c: nc });
               enemies.push({ r: nr, c: nc, piece: occ });
             }
@@ -3248,9 +2978,7 @@
       document.getElementById('gameover-desc').textContent = reason;
       renderAll();
       scheduleDamageAndCaptureSequence();
-      if (isRankedMode() && net.role === 'host') {
-        syncOnlineState();
-      }
+      if (isRankedMode() && net.role === 'host') syncOnlineState();
       openModal('gameover-modal');
     }
 
@@ -3277,17 +3005,14 @@
         return true;
       }
       const goldReward = PIECE_DATA[victimPiece.type].reward || 0;
-      if (goldReward > 0) {
-        state.players[killerSide].gold += goldReward;
-      }
+      if (goldReward > 0) state.players[killerSide].gold += goldReward;
       return false;
     }
 
-    function promotePawnIfCrossed(piece, r, c) {
+    function promotePawnIfCrossed(piece, r) {
       if (!piece || piece.type !== 'P') return false;
       const crossed = (piece.color === 'white' && r === 0) || (piece.color === 'black' && r === 7);
       if (!crossed) return false;
-
       piece.type = 'Q';
       piece.cardVal = PIECE_DATA.Q.cardVal;
       piece.maxHp = PIECE_DATA.Q.hp;
@@ -3313,7 +3038,6 @@
       state.copiedSkill = null;
     }
 
-    // --- Cronômetro de Combate (15s) ---
     function updateCombatCountdownDisplay() {
       const el = document.getElementById('combat-countdown');
       if (!el) return;
@@ -3343,19 +3067,10 @@
         if (combatUI.remaining <= 0) {
           const cb = combatUI.onTimeout;
           stopCombatCountdown();
-          if (typeof cb === 'function') {
-            cb();
-          }
+          if (typeof cb === 'function') cb();
         }
       }, 1000);
     }
-
-    // --- Animações de Dano (♥), Movimento e Captura (3s) ---
-    let pendingMoveAnim = null;
-    const pendingCaptureAnims = [];
-    const pendingDamageAnims = [];
-    const pendingMoveSteps = [];
-    let captureDelayTimer = null;
 
     function recordHostFxEvent(fxPayload) {
       if (!isRankedMode() || net.role !== 'host') return;
@@ -3363,6 +3078,13 @@
         id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         ...fxPayload
       };
+    }
+
+    function captureTileRect(r, c) {
+      const boardEl = document.getElementById('board-grid');
+      if (!boardEl || !boardEl.children || r < 0 || r >= 8 || c < 0 || c >= 8) return null;
+      const tile = boardEl.children[r * 8 + c];
+      return tile ? tile.getBoundingClientRect() : null;
     }
 
     function queueGuestFxEvent(fxEvent) {
@@ -3384,57 +3106,23 @@
           const toRect = captureTileRect(sm.toR, sm.toC);
           const pieceObj = state && state.board && state.board[sm.toR] ? state.board[sm.toR][sm.toC] : null;
           if (fromRect && toRect && pieceObj) {
-            pendingMoveSteps.push({
-              toRect,
-              dx: fromRect.left - toRect.left,
-              dy: fromRect.top - toRect.top,
-              piece: { ...pieceObj }
-            });
+            pendingMoveSteps.push({ toRect, dx: fromRect.left - toRect.left, dy: fromRect.top - toRect.top, piece: { ...pieceObj } });
           }
         }
       }
       if (Array.isArray(fxEvent.damages)) {
         for (const d of fxEvent.damages) {
           const rect = captureTileRect(d.r, d.c);
-          if (rect && d.amount > 0) {
-            pendingDamageAnims.push({ rect, amount: d.amount });
-          }
+          if (rect && d.amount > 0) pendingDamageAnims.push({ rect, amount: d.amount });
         }
       }
       if (Array.isArray(fxEvent.captures)) {
         for (const cap of fxEvent.captures) {
           const rect = captureTileRect(cap.r, cap.c);
-          if (rect && cap.piece) {
-            pendingCaptureAnims.push({ rect, piece: { ...cap.piece } });
-          }
+          if (rect && cap.piece) pendingCaptureAnims.push({ rect, piece: { ...cap.piece } });
         }
       }
-      if (Array.isArray(fxEvent.moveSteps)) {
-        for (const ms of fxEvent.moveSteps) {
-          const fromRect = captureTileRect(ms.fromR, ms.fromC);
-          const toRect = captureTileRect(ms.toR, ms.toC);
-          if (fromRect && toRect && ms.piece) {
-            pendingMoveSteps.push({
-              toRect,
-              dx: fromRect.left - toRect.left,
-              dy: fromRect.top - toRect.top,
-              piece: { ...ms.piece }
-            });
-          }
-        }
-      }
-      if (fxEvent.immediateFlush) {
-        scheduleDamageAndCaptureSequence();
-      }
-    }
-
-    function captureTileRect(r, c) {
-      const boardEl = document.getElementById('board-grid');
-      if (!boardEl || !boardEl.children || r < 0 || r >= 8 || c < 0 || c >= 8) return null;
-      const idx = r * 8 + c;
-      const tile = boardEl.children[idx];
-      if (!tile) return null;
-      return tile.getBoundingClientRect();
+      if (fxEvent.immediateFlush) scheduleDamageAndCaptureSequence();
     }
 
     function queueMoveAnimation(fromR, fromC, toR, toC) {
@@ -3470,15 +3158,13 @@
       const dmg = Math.max(0, Number(amount) || 0);
       if (dmg <= 0) return;
       const rect = captureTileRect(r, c);
-      if (!rect) return;
-      pendingDamageAnims.push({ rect, amount: dmg });
+      if (rect) pendingDamageAnims.push({ rect, amount: dmg });
     }
 
     function queueCaptureAnimation(r, c, pieceObj) {
       if (!pieceObj || !pieceObj.type || !PIECE_DATA[pieceObj.type]) return;
       const rect = captureTileRect(r, c);
-      if (!rect) return;
-      pendingCaptureAnims.push({ rect, piece: { ...pieceObj } });
+      if (rect) pendingCaptureAnims.push({ rect, piece: { ...pieceObj } });
     }
 
     function buildDamageAndCaptureListFromSummary(summary) {
@@ -3487,25 +3173,13 @@
       if (summary.atkDmg > 0 && summary.atkPos) {
         const rect = captureTileRect(summary.atkPos.r, summary.atkPos.c);
         if (rect) {
-          items.push({
-            kind: 'damage',
-            rect,
-            amount: summary.atkDmg,
-            captured: summary.atkDmg >= (summary.atkPiece ? summary.atkPiece.hp : 1),
-            piece: summary.atkPiece
-          });
+          items.push({ rect, amount: summary.atkDmg, captured: summary.atkDmg >= (summary.atkPiece ? summary.atkPiece.hp : 1), piece: summary.atkPiece });
         }
       }
       if (summary.defDmg > 0 && summary.defPos) {
         const rect = captureTileRect(summary.defPos.r, summary.defPos.c);
         if (rect) {
-          items.push({
-            kind: 'damage',
-            rect,
-            amount: summary.defDmg,
-            captured: summary.defDmg >= (summary.defPiece ? summary.defPiece.hp : 1),
-            piece: summary.defPiece
-          });
+          items.push({ rect, amount: summary.defDmg, captured: summary.defDmg >= (summary.defPiece ? summary.defPiece.hp : 1), piece: summary.defPiece });
         }
       }
       return items;
@@ -3513,19 +3187,13 @@
 
     function runDamageNumberBadge(rect, amount) {
       const badge = document.createElement('div');
-      const isHeavy = amount > 2;
-      badge.className = `damage-fx-badge${isHeavy ? ' heavy' : ''}`;
+      badge.className = `damage-fx-badge${amount > 2 ? ' heavy' : ''}`;
       badge.textContent = `${amount}♥`;
       badge.style.left = `${rect.left + rect.width / 2}px`;
       badge.style.top = `${rect.top + rect.height / 2}px`;
-
       document.body.appendChild(badge);
-      badge.addEventListener('animationend', () => {
-        badge.remove();
-      }, { once: true });
-      setTimeout(() => {
-        if (badge.parentNode) badge.remove();
-      }, 1450);
+      badge.addEventListener('animationend', () => badge.remove(), { once: true });
+      setTimeout(() => { if (badge.parentNode) badge.remove(); }, 1450);
     }
 
     function runSingleMoveGhost(step) {
@@ -3549,12 +3217,8 @@
       ghost.appendChild(glyph);
 
       document.body.appendChild(ghost);
-      ghost.addEventListener('animationend', () => {
-        ghost.remove();
-      }, { once: true });
-      setTimeout(() => {
-        if (ghost.parentNode) ghost.remove();
-      }, 1450);
+      ghost.addEventListener('animationend', () => ghost.remove(), { once: true });
+      setTimeout(() => { if (ghost.parentNode) ghost.remove(); }, 1450);
     }
 
     function runSingleCaptureGhost(rect, pieceObj) {
@@ -3576,31 +3240,19 @@
       ghost.appendChild(glyph);
 
       document.body.appendChild(ghost);
-      ghost.addEventListener('animationend', () => {
-        ghost.remove();
-      }, { once: true });
-      setTimeout(() => {
-        if (ghost.parentNode) ghost.remove();
-      }, 1450);
+      ghost.addEventListener('animationend', () => ghost.remove(), { once: true });
+      setTimeout(() => { if (ghost.parentNode) ghost.remove(); }, 1450);
     }
-
-    const hiddenBoardTokensUntilAnim = new Set();
 
     function setPieceHiddenDuringCaptureMove(r, c, hidden) {
       const key = `${r},${c}`;
-      if (hidden) {
-        hiddenBoardTokensUntilAnim.add(key);
-      } else {
-        hiddenBoardTokensUntilAnim.delete(key);
-      }
+      if (hidden) hiddenBoardTokensUntilAnim.add(key);
+      else hiddenBoardTokensUntilAnim.delete(key);
       const boardEl = document.getElementById('board-grid');
       if (!boardEl || !boardEl.children) return;
       const tile = boardEl.children[r * 8 + c];
-      if (!tile) return;
-      const tok = tile.querySelector('.piece-token');
-      if (tok) {
-        tok.style.visibility = hidden ? 'hidden' : '';
-      }
+      const tok = tile ? tile.querySelector('.piece-token') : null;
+      if (tok) tok.style.visibility = hidden ? 'hidden' : '';
     }
 
     function scheduleDamageAndCaptureSequence(summaryForGuest = null) {
@@ -3610,21 +3262,15 @@
         pendingCaptureAnims.length === 0 &&
         pendingMoveSteps.length === 0 &&
         guestItems.length === 0
-      ) {
-        return;
-      }
+      ) return;
 
       const dmgBatch = pendingDamageAnims.splice(0, pendingDamageAnims.length);
       const moveBatch = pendingMoveSteps.splice(0, pendingMoveSteps.length);
       const capBatch = pendingCaptureAnims.splice(0, pendingCaptureAnims.length);
 
       for (const g of guestItems) {
-        if (g.amount > 0) {
-          dmgBatch.push({ rect: g.rect, amount: g.amount });
-        }
-        if (g.captured && g.piece) {
-          capBatch.push({ rect: g.rect, piece: g.piece });
-        }
+        if (g.amount > 0) dmgBatch.push({ rect: g.rect, amount: g.amount });
+        if (g.captured && g.piece) capBatch.push({ rect: g.rect, piece: g.piece });
       }
 
       if (captureDelayTimer) {
@@ -3659,9 +3305,7 @@
             if (m.originPos) setPieceHiddenDuringCaptureMove(m.originPos.r, m.originPos.c, false);
             runSingleMoveGhost(m);
             if (m.destPos) {
-              setTimeout(() => {
-                setPieceHiddenDuringCaptureMove(m.destPos.r, m.destPos.c, false);
-              }, 1300);
+              setTimeout(() => setPieceHiddenDuringCaptureMove(m.destPos.r, m.destPos.c, false), 1300);
             }
           });
         };
@@ -3679,9 +3323,7 @@
           }
           if (capBatch.length > 0) {
             capBatch.forEach((c) => runSingleCaptureGhost(c.rect, c.piece));
-            if (moveBatch.length > 0) {
-              setTimeout(runMoveAfterCapture, 1300);
-            }
+            if (moveBatch.length > 0) setTimeout(runMoveAfterCapture, 1300);
           } else {
             runMoveAfterCapture();
           }
@@ -3689,9 +3331,7 @@
 
         if (dmgBatch.length > 0) {
           dmgBatch.forEach((d) => runDamageNumberBadge(d.rect, d.amount));
-          if (capBatch.length > 0 || moveBatch.length > 0) {
-            setTimeout(runCaptureThenMove, 1300);
-          }
+          if (capBatch.length > 0 || moveBatch.length > 0) setTimeout(runCaptureThenMove, 1300);
         } else {
           runCaptureThenMove();
         }
@@ -3705,27 +3345,10 @@
         combatUI.waitingForOpponent ||
         combatUI.mode === 'summary' ||
         net.lastSummary
-      ) {
-        return;
-      }
+      ) return;
       if (pendingDamageAnims.length === 0 && pendingCaptureAnims.length === 0 && pendingMoveSteps.length === 0) return;
       if (captureDelayTimer) return;
       scheduleDamageAndCaptureSequence();
-    }
-
-    function runQueuedCaptureAnimationsNow() {
-      while (pendingDamageAnims.length > 0) {
-        const d = pendingDamageAnims.shift();
-        runDamageNumberBadge(d.rect, d.amount);
-      }
-      while (pendingMoveSteps.length > 0) {
-        const m = pendingMoveSteps.shift();
-        runSingleMoveGhost(m);
-      }
-      while (pendingCaptureAnims.length > 0) {
-        const item = pendingCaptureAnims.shift();
-        runSingleCaptureGhost(item.rect, item.piece);
-      }
     }
 
     function finalizeBothClosedCombatSummary() {
@@ -3751,9 +3374,7 @@
 
       renderAll();
       scheduleDamageAndCaptureSequence();
-      if (isRankedMode() && net.role === 'host') {
-        syncOnlineState();
-      }
+      if (isRankedMode() && net.role === 'host') syncOnlineState();
     }
 
     function doMove(fromR, fromC, toR, toC) {
@@ -3764,45 +3385,23 @@
       state.board[toR][toC] = piece;
       state.board[fromR][fromC] = null;
       finishPieceAction(piece);
-      const promoted = promotePawnIfCrossed(piece, toR, toC);
-      if (!promoted) {
+      if (!promotePawnIfCrossed(piece, toR)) {
         setStatus(`${PIECE_DATA[piece.type].name} moveu-se.`);
       }
-      sendMoveToApi({
-        kind: 'move',
-        fromR,
-        fromC,
-        toR,
-        toC,
-        piece: piece.type,
-        color: piece.color,
-        round: state.round
-      });
+      sendMoveToApi({ kind: 'move', fromR, fromC, toR, toC, piece: piece.type, color: piece.color, round: state.round });
       renderAll();
-      if (isRankedMode() && net.role === 'host') {
-        syncOnlineState();
-      }
+      if (isRankedMode() && net.role === 'host') syncOnlineState();
     }
 
     const CARD_VALUE_PIECE_ICON = {
-      1: '♘',
-      2: '♙',
-      3: '♙',
-      4: '♙',
-      5: '♙',
-      6: '♙',
-      7: '♙',
-      8: '♙',
-      9: '♙',
-      10: '♖',
-      11: '♗',
-      12: '♕',
-      13: '♔'
+      1: '♘', 2: '♙', 3: '♙', 4: '♙', 5: '♙', 6: '♙', 7: '♙', 8: '♙', 9: '♙',
+      10: '♖', 11: '♗', 12: '♕', 13: '♔'
     };
 
-    function renderCard(val, classes) {
-      const card = document.createElement('div');
-      card.className = `xeker-card ${classes}`;
+    function createCardElement(val, classes, asButton = false) {
+      const el = document.createElement(asButton ? 'button' : 'div');
+      if (asButton) el.type = 'button';
+      el.className = `xeker-card ${classes}`;
 
       const rankEl = document.createElement('span');
       rankEl.className = 'xeker-card-rank';
@@ -3812,9 +3411,13 @@
       pieceEl.className = 'xeker-card-piece';
       pieceEl.textContent = CARD_VALUE_PIECE_ICON[val] || '♙';
 
-      card.appendChild(rankEl);
-      card.appendChild(pieceEl);
-      return card;
+      el.appendChild(rankEl);
+      el.appendChild(pieceEl);
+      return el;
+    }
+
+    function renderCard(val, classes) {
+      return createCardElement(val, classes, false);
     }
 
     function renderCardBack(classes) {
@@ -3861,9 +3464,7 @@
     function showPostCombatSummary(summary, onDoneOverride = null) {
       combatCardLocked = false;
       armGhostClickGuard(240);
-      if (duelContext) {
-        duelContext.lastSummaryData = summary;
-      }
+      if (duelContext) duelContext.lastSummaryData = summary;
       combatUI.offlineClosed = { white: false, black: false };
       combatUI.waitingForOpponent = false;
 
@@ -3954,14 +3555,10 @@
       const defOriginPos = { r: duelContext.defR, c: duelContext.defC };
       const atkName = PIECE_DATA[atkPiece.type].name;
       const defName = PIECE_DATA[defPiece.type].name;
-      const cards4 = [...state.flop, atkCard];
-      const defCards4 = [...state.flop, defCard];
 
-      const atkHand = evaluateCombatHand(cards4, atkPiece);
-      const defHand = evaluateCombatHand(defCards4, defPiece);
-      const cmp = comparePokerHands(atkHand, defHand);
-
-      const attackWon = cmp > 0;
+      const atkHand = evaluateCombatHand([...state.flop, atkCard], atkPiece);
+      const defHand = evaluateCombatHand([...state.flop, defCard], defPiece);
+      const attackWon = comparePokerHands(atkHand, defHand) > 0;
       const winSide = attackWon ? 'atk' : 'def';
       const winHand = attackWon ? atkHand : defHand;
       const winColor = attackWon ? atkPiece.color : defPiece.color;
@@ -3974,31 +3571,24 @@
       const extras = [];
 
       if (attackWon) {
-        defDmg = 2;
-        if (winHand.cat === 3 || winHand.cat === 5) {
-          defDmg += 1;
-        }
+        defDmg = 2 + (winHand.cat === 3 || winHand.cat === 5 ? 1 : 0);
       } else {
         atkDmg = 1;
         defDmg = defPiece.type === 'R' ? 0 : 1;
-
         if (atkPiece.type === 'B') {
           atkDmg = 0;
           extras.push('Passiva do Bispo: sem dano se defenderem seu ataque');
         }
-        if (defPiece.type === 'R') {
-          extras.push('Passiva da Torre: 0♥ ao defender');
-        }
-        if (winHand.cat === 3 || winHand.cat === 5) {
-          atkDmg += 1;
-        }
+        if (defPiece.type === 'R') extras.push('Passiva da Torre: 0♥ ao defender');
+        if (winHand.cat === 3 || winHand.cat === 5) atkDmg += 1;
       }
 
-      if (winHand.cat === 1) {
+      if (winHand.cat === 1 || winHand.cat === 5) {
         const before = winPiece.hp;
         winPiece.hp = Math.min(winPiece.maxHp, winPiece.hp + 2);
         healedHp = winPiece.hp - before;
-      } else if (winHand.cat === 2) {
+      }
+      if (winHand.cat === 2) {
         state.players[winColor].gold += 4;
         extras.push('+♦4 (2 Pares)');
       } else if (winHand.cat === 4) {
@@ -4008,16 +3598,9 @@
           if (extraC !== null) state.players[winColor].hand.push(extraC);
         }
         extras.push('+1♣ e +1 carta (Sequência)');
-      } else if (winHand.cat === 5) {
-        const before = winPiece.hp;
-        winPiece.hp = Math.min(winPiece.maxHp, winPiece.hp + 2);
-        healedHp = winPiece.hp - before;
       } else if (winHand.cat === 6) {
-        if (winSide === 'atk') {
-          defDmg = defPiece.hp + 99;
-        } else {
-          atkDmg = atkPiece.hp + 99;
-        }
+        if (winSide === 'atk') defDmg = defPiece.hp + 99;
+        else atkDmg = atkPiece.hp + 99;
         state.players[winColor].gold += 8;
         extras.push('Abate imediato + ♦8 (Quadra)');
       }
@@ -4025,19 +3608,14 @@
       const actualAtkDmg = Math.min(atkPiece.hp, Math.max(0, atkDmg));
       const actualDefDmg = Math.min(defPiece.hp, Math.max(0, defDmg));
 
-      if (actualAtkDmg > 0) {
-        queueDamageAnimation(atkOriginPos.r, atkOriginPos.c, actualAtkDmg);
-      }
-      if (actualDefDmg > 0) {
-        queueDamageAnimation(defOriginPos.r, defOriginPos.c, actualDefDmg);
-      }
+      if (actualAtkDmg > 0) queueDamageAnimation(atkOriginPos.r, atkOriginPos.c, actualAtkDmg);
+      if (actualDefDmg > 0) queueDamageAnimation(defOriginPos.r, defOriginPos.c, actualDefDmg);
 
       atkPiece.hp -= atkDmg;
       defPiece.hp -= defDmg;
 
       const atkDead = atkPiece.hp <= 0;
       const defDead = defPiece.hp <= 0;
-
       let winnerSideEnd = null;
 
       if (defDead) {
@@ -4045,9 +3623,8 @@
         state.board[duelContext.defR][duelContext.defC] = null;
         const qHeal = applyQueenAbatePassive(atkPiece.color);
         if (qHeal > 0) extras.push(`Passiva da Rainha: +${qHeal}♥`);
-        if (defPiece.type === 'K') {
-          winnerSideEnd = atkPiece.color;
-        } else {
+        if (defPiece.type === 'K') winnerSideEnd = atkPiece.color;
+        else {
           const rwd = PIECE_DATA[defPiece.type].reward || 0;
           state.players[atkPiece.color].gold += rwd;
           extras.push(`Abate de ${defName}: +♦${rwd}`);
@@ -4059,9 +3636,8 @@
         state.board[duelContext.atkR][duelContext.atkC] = null;
         const qHeal = applyQueenAbatePassive(defPiece.color);
         if (qHeal > 0) extras.push(`Passiva da Rainha: +${qHeal}♥`);
-        if (atkPiece.type === 'K') {
-          winnerSideEnd = defPiece.color;
-        } else {
+        if (atkPiece.type === 'K') winnerSideEnd = defPiece.color;
+        else {
           const rwd = PIECE_DATA[atkPiece.type].reward || 0;
           state.players[defPiece.color].gold += rwd;
           extras.push(`Abate de ${atkName}: +♦${rwd}`);
@@ -4073,12 +3649,12 @@
           queueMoveStepAfterDamage(duelContext.atkR, duelContext.atkC, duelContext.defR, duelContext.defC, atkPiece);
           state.board[duelContext.defR][duelContext.defC] = atkPiece;
           state.board[duelContext.atkR][duelContext.atkC] = null;
-          promotePawnIfCrossed(atkPiece, duelContext.defR, duelContext.defC);
+          promotePawnIfCrossed(atkPiece, duelContext.defR);
         } else if (atkDead && !defDead) {
           queueMoveStepAfterDamage(duelContext.defR, duelContext.defC, duelContext.atkR, duelContext.atkC, defPiece);
           state.board[duelContext.atkR][duelContext.atkC] = defPiece;
           state.board[duelContext.defR][duelContext.defC] = null;
-          promotePawnIfCrossed(defPiece, duelContext.atkR, duelContext.atkC);
+          promotePawnIfCrossed(defPiece, duelContext.atkR);
         }
       }
 
@@ -4086,10 +3662,7 @@
       if (defCard !== null && defCard !== undefined) state.discard.push(defCard);
       dealFlop();
 
-      if (extraActions > 0 && state.turn === winColor) {
-        state.actions += extraActions;
-      }
-
+      if (extraActions > 0 && state.turn === winColor) state.actions += extraActions;
       finishPieceAction(atkPiece);
 
       const atkParts = [`Dano: -${actualAtkDmg}♥`];
@@ -4133,7 +3706,6 @@
 
       net.summaryClosed = { white: false, black: false };
       duelContext.lastSummaryData = summaryData;
-
       renderAll();
 
       if (isRankedMode() && net.role === 'host') {
@@ -4154,25 +3726,50 @@
       showPostCombatSummary(summaryData);
     }
 
-    function renderAttackerCardSelection(atkR, atkC, defR, defC, atkPiece, defPiece, atkPlayer, defPlayer, onSelectOverride = null) {
+    function renderCardSelectionRow(playerHand, promptText, promptClass, onPickIndex) {
       combatCardLocked = false;
       armGhostClickGuard(220);
       const body = document.getElementById('combat-body');
-      body.innerHTML = `<div class="text-xs font-bold text-[#f3d678] text-center">Atacante (${atkPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'}): escolha 1 carta da mão</div>`;
+      body.innerHTML = `<div class="text-xs font-bold ${promptClass} text-center">${promptText}</div>`;
 
-      const atkCardsRow = document.createElement('div');
-      atkCardsRow.className = 'flex justify-center gap-1.5 flex-wrap';
+      const row = document.createElement('div');
+      row.className = 'flex justify-center gap-1.5 flex-wrap';
 
-      const pickAttackerCardAtIndex = (idx) => {
+      const pickAt = (idx) => {
         if (combatCardLocked) return;
         combatCardLocked = true;
         stopCombatCountdown();
         armGhostClickGuard(350);
-        atkCardsRow.style.pointerEvents = 'none';
-        atkCardsRow.querySelectorAll('button').forEach((b) => {
+        row.style.pointerEvents = 'none';
+        row.querySelectorAll('button').forEach((b) => {
           b.disabled = true;
           b.style.pointerEvents = 'none';
         });
+        onPickIndex(idx);
+      };
+
+      playerHand.forEach((cVal, idx) => {
+        const btn = createCardElement(cVal, 'w-11 h-14 rounded-lg text-sm', true);
+        btn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          if (isGhostClickBlocked() || combatCardLocked) return;
+          pickAt(idx);
+        });
+        row.appendChild(btn);
+      });
+
+      body.appendChild(row);
+      openModal('combat-modal');
+
+      startCombatCountdown(promptClass.includes('red') ? 'pick_def' : 'pick_atk', () => {
+        if (combatCardLocked || playerHand.length === 0) return;
+        pickAt(Math.floor(Math.random() * playerHand.length));
+      });
+    }
+
+    function renderAttackerCardSelection(atkR, atkC, defR, defC, atkPiece, defPiece, atkPlayer, defPlayer, onSelectOverride = null) {
+      const promptText = `Atacante (${atkPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'}): escolha 1 carta da mão`;
+      renderCardSelectionRow(atkPlayer.hand, promptText, 'text-[#f3d678]', (idx) => {
         if (typeof onSelectOverride === 'function') {
           onSelectOverride(idx);
           return;
@@ -4194,69 +3791,23 @@
             stage: 'awaiting_defender'
           };
           syncOnlineState();
-          body.innerHTML = `<div class="text-xs text-amber-200 text-center py-2">Aguardando defensor (Pretas) escolher sua carta...</div>`;
+          document.getElementById('combat-body').innerHTML = `<div class="text-xs text-amber-200 text-center py-2">Aguardando defensor (Pretas) escolher sua carta...</div>`;
         } else if (state.mode === 'offline') {
-          body.innerHTML = `<div class="text-xs text-zinc-400 text-center py-2">Passe o aparelho para o defensor antes de revelar as cartas...</div>`;
+          document.getElementById('combat-body').innerHTML = `<div class="text-xs text-zinc-400 text-center py-2">Passe o aparelho para o defensor antes de revelar as cartas...</div>`;
           openCombatPrivacyPass(
             defPiece.color,
             'Passe o aparelho para o defensor escolher sua carta de defesa sem ver a mão do atacante.',
-            () => {
-              renderDefenderCardSelection(chosenAtk, defPiece, defPlayer);
-            }
+            () => renderDefenderCardSelection(chosenAtk, defPiece, defPlayer)
           );
         } else {
           renderDefenderCardSelection(chosenAtk, defPiece, defPlayer);
         }
-      };
-
-      atkPlayer.hand.forEach((cVal, idx) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'xeker-card w-11 h-14 rounded-lg text-sm';
-        const aRank = document.createElement('span');
-        aRank.className = 'xeker-card-rank';
-        aRank.textContent = RANK_TEXT[cVal] || '';
-        const aPiece = document.createElement('span');
-        aPiece.className = 'xeker-card-piece';
-        aPiece.textContent = CARD_VALUE_PIECE_ICON[cVal] || '♙';
-        btn.appendChild(aRank);
-        btn.appendChild(aPiece);
-        btn.addEventListener('click', (ev) => {
-          ev.stopPropagation();
-          if (isGhostClickBlocked() || combatCardLocked) return;
-          pickAttackerCardAtIndex(idx);
-        });
-        atkCardsRow.appendChild(btn);
-      });
-
-      body.appendChild(atkCardsRow);
-      openModal('combat-modal');
-
-      startCombatCountdown('pick_atk', () => {
-        if (combatCardLocked || atkPlayer.hand.length === 0) return;
-        const randIdx = Math.floor(Math.random() * atkPlayer.hand.length);
-        pickAttackerCardAtIndex(randIdx);
       });
     }
 
     function renderDefenderCardSelection(chosenAtk, defPiece, defPlayer, onSelectOverride = null) {
-      combatCardLocked = false;
-      armGhostClickGuard(220);
-      const body = document.getElementById('combat-body');
-      body.innerHTML = `<div class="text-xs font-bold text-red-300 text-center">Defensor (${defPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'}): escolha 1 carta para defender</div>`;
-      const defCardsRow = document.createElement('div');
-      defCardsRow.className = 'flex justify-center gap-1.5 flex-wrap';
-
-      const pickDefenderCardAtIndex = (dIdx) => {
-        if (combatCardLocked) return;
-        combatCardLocked = true;
-        stopCombatCountdown();
-        armGhostClickGuard(350);
-        defCardsRow.style.pointerEvents = 'none';
-        defCardsRow.querySelectorAll('button').forEach((b) => {
-          b.disabled = true;
-          b.style.pointerEvents = 'none';
-        });
+      const promptText = `Defensor (${defPiece.color === 'white' ? '♔ Brancas' : '♚ Pretas'}): escolha 1 carta para defender`;
+      renderCardSelectionRow(defPlayer.hand, promptText, 'text-red-300', (dIdx) => {
         if (typeof onSelectOverride === 'function') {
           onSelectOverride(dIdx);
           return;
@@ -4266,34 +3817,6 @@
         combatUI.waitingForOpponent = false;
         closeModal('waiting-opponent-modal');
         settleCombat(chosenAtk, chosenDef);
-      };
-
-      defPlayer.hand.forEach((dVal, dIdx) => {
-        const dBtn = document.createElement('button');
-        dBtn.type = 'button';
-        dBtn.className = 'xeker-card w-11 h-14 rounded-lg text-sm';
-        const dRank = document.createElement('span');
-        dRank.className = 'xeker-card-rank';
-        dRank.textContent = RANK_TEXT[dVal] || '';
-        const dPiece = document.createElement('span');
-        dPiece.className = 'xeker-card-piece';
-        dPiece.textContent = CARD_VALUE_PIECE_ICON[dVal] || '♙';
-        dBtn.appendChild(dRank);
-        dBtn.appendChild(dPiece);
-        dBtn.addEventListener('click', (ev) => {
-          ev.stopPropagation();
-          if (isGhostClickBlocked() || combatCardLocked) return;
-          pickDefenderCardAtIndex(dIdx);
-        });
-        defCardsRow.appendChild(dBtn);
-      });
-      body.appendChild(defCardsRow);
-      openModal('combat-modal');
-
-      startCombatCountdown('pick_def', () => {
-        if (combatCardLocked || defPlayer.hand.length === 0) return;
-        const randIdx = Math.floor(Math.random() * defPlayer.hand.length);
-        pickDefenderCardAtIndex(randIdx);
       });
     }
 
@@ -4340,9 +3863,7 @@
         const defSnap = { ...defPiece };
         const dmg = 2;
         const actualDmg = Math.min(defPiece.hp, dmg);
-        if (actualDmg > 0) {
-          queueDamageAnimation(defR, defC, actualDmg);
-        }
+        if (actualDmg > 0) queueDamageAnimation(defR, defC, actualDmg);
         defPiece.hp -= dmg;
         const dead = defPiece.hp <= 0;
         const extras = ['Flop renovado'];
@@ -4354,20 +3875,17 @@
           state.board[atkR][atkC] = null;
           const qH = applyQueenAbatePassive(atkPiece.color);
           if (qH > 0) extras.push(`Rainha +${qH}♥`);
-          if (defPiece.type === 'K') {
-            winnerSideEnd = atkPiece.color;
-          } else {
+          if (defPiece.type === 'K') winnerSideEnd = atkPiece.color;
+          else {
             const rwd = PIECE_DATA[defPiece.type].reward || 0;
             state.players[atkPiece.color].gold += rwd;
             extras.push(`+♦${rwd}`);
           }
-          if (!winnerSideEnd) promotePawnIfCrossed(atkPiece, defR, defC);
+          if (!winnerSideEnd) promotePawnIfCrossed(atkPiece, defR);
         }
         finishPieceAction(atkPiece);
         renderAll();
-        if (isRankedMode() && net.role === 'host') {
-          syncOnlineState();
-        }
+        if (isRankedMode() && net.role === 'host') syncOnlineState();
         openModal('combat-modal');
         showPostCombatSummary({
           atkCard: used,
@@ -4399,27 +3917,18 @@
       duelContext = { atkR, atkC, defR, defC, atkCard: null };
 
       if (isRankedMode() && net.role === 'host') {
+        net.pendingCombat = {
+          atkR, atkC, defR, defC,
+          atkPiece: { ...atkPiece },
+          defPiece: { ...defPiece },
+          atkHandCount: atkPlayer.hand.length,
+          defHandCount: defPlayer.hand.length,
+          stage: 'awaiting_attacker'
+        };
+        syncOnlineState();
         if (atkPiece.color === 'white') {
-          net.pendingCombat = {
-            atkR, atkC, defR, defC,
-            atkPiece: { ...atkPiece },
-            defPiece: { ...defPiece },
-            atkHandCount: atkPlayer.hand.length,
-            defHandCount: defPlayer.hand.length,
-            stage: 'awaiting_attacker'
-          };
-          syncOnlineState();
           renderAttackerCardSelection(atkR, atkC, defR, defC, atkPiece, defPiece, atkPlayer, defPlayer);
         } else {
-          net.pendingCombat = {
-            atkR, atkC, defR, defC,
-            atkPiece: { ...atkPiece },
-            defPiece: { ...defPiece },
-            atkHandCount: atkPlayer.hand.length,
-            defHandCount: defPlayer.hand.length,
-            stage: 'awaiting_attacker'
-          };
-          syncOnlineState();
           document.getElementById('combat-body').innerHTML = `<div class="text-xs text-amber-200 text-center py-2">Aguardando atacante (Pretas) escolher sua carta...</div>`;
           openModal('combat-modal');
           startCombatCountdown('pick_atk', null);
@@ -4432,9 +3941,7 @@
         openCombatPrivacyPass(
           atkPiece.color,
           'Passe o aparelho para o atacante escolher sua carta de combate sem que o outro jogador veja a mão.',
-          () => {
-            renderAttackerCardSelection(atkR, atkC, defR, defC, atkPiece, defPiece, atkPlayer, defPlayer);
-          }
+          () => renderAttackerCardSelection(atkR, atkC, defR, defC, atkPiece, defPiece, atkPlayer, defPlayer)
         );
       } else {
         renderAttackerCardSelection(atkR, atkC, defR, defC, atkPiece, defPiece, atkPlayer, defPlayer);
@@ -4448,9 +3955,7 @@
           if (dr === 0 && dc === 0) continue;
           const nr = tr + dr;
           const nc = tc + dc;
-          if (insideBoard(nr, nc) && !state.board[nr][nc]) {
-            dests.push({ r: nr, c: nc });
-          }
+          if (insideBoard(nr, nc) && !state.board[nr][nc]) dests.push({ r: nr, c: nc });
         }
       }
       return dests;
@@ -4464,9 +3969,7 @@
       const effective = copiedSkill || skillType;
       if (effective === 'B') return reach.allies;
       if (effective === 'R') return reach.allPieces;
-      if (effective === 'N') {
-        return reach.allPieces.filter((entry) => getKnightSkillDestinations(entry.r, entry.c).length > 0);
-      }
+      if (effective === 'N') return reach.allPieces.filter((entry) => getKnightSkillDestinations(entry.r, entry.c).length > 0);
       return reach.enemies;
     }
 
@@ -4527,9 +4030,7 @@
         }
         recordHostFxEvent({ damages: fxDamages, captures: fxCaptures, immediateFlush: true });
         finishPieceSkillAction(userPiece);
-        if (!endNow) {
-          setStatus(`♠ ${isCopied ? 'Rainha (Peão)' : 'Peão'} sacrificou-se causando 1♥ a ${hitCount} inimigo(s) (♦1 · 0♣).`);
-        }
+        if (!endNow) setStatus(`♠ ${isCopied ? 'Rainha (Peão)' : 'Peão'} sacrificou-se causando 1♥ a ${hitCount} inimigo(s) (♦1 · 0♣).`);
         renderAll();
         scheduleDamageAndCaptureSequence();
         if (isRankedMode() && net.role === 'host') syncOnlineState();
@@ -4600,7 +4101,7 @@
         recordHostFxEvent({ move: { fromR: targetR, fromC: targetC, toR: dest.r, toC: dest.c } });
         state.board[dest.r][dest.c] = movedTarget;
         state.board[targetR][targetC] = null;
-        promotePawnIfCrossed(movedTarget, dest.r, dest.c);
+        promotePawnIfCrossed(movedTarget, dest.r);
         finishPieceSkillAction(userPiece);
         setStatus(`♠ ${isCopied ? 'Rainha (Cavalo)' : 'Cavalo'} moveu ${PIECE_DATA[movedTarget.type].name} 1 casa (♦1 · 0♣).`);
         renderAll();
@@ -4645,16 +4146,7 @@
       }
       recordHostFxEvent({ damages: [{ r: targetR, c: targetC, amount: dmg }], captures: fxCaptures, immediateFlush: true });
       finishPieceSkillAction(userPiece);
-      sendMoveToApi({
-        kind: 'skill',
-        fromR: userR,
-        fromC: userC,
-        toR: targetR,
-        toC: targetC,
-        effType: skillType,
-        color: userPiece.color,
-        round: state.round
-      });
+      sendMoveToApi({ kind: 'skill', fromR: userR, fromC: userC, toR: targetR, toC: targetC, effType: skillType, color: userPiece.color, round: state.round });
       if (!ended) {
         setStatus(`♠ ${isCopied ? `Rainha (${PIECE_DATA[skillType].name})` : PIECE_DATA[userPiece.type].name} causou ${dmg}♥ em ${PIECE_DATA[enemy.type].name} (♦1 · 0♣).`);
       }
@@ -4703,43 +4195,22 @@
         if (isRankedMode() && net.role === 'guest') {
           state.selected = null;
           renderAll();
-          sendNet({
-            type: 'online_action',
-            action: { kind: 'skill', fromR: r, fromC: c, effType: piece.type, toR: r, toC: c, copiedFlag: false }
-          });
+          sendNet({ type: 'online_action', action: { kind: 'skill', fromR: r, fromC: c, effType: piece.type, toR: r, toC: c, copiedFlag: false } });
           return;
         }
         executeActiveSkill(r, c, piece.type, r, c, false);
         return;
       }
 
-      if (piece.type === 'Q') {
-        state.skillPhase = 'copy_target';
-        setStatus('♛ Rainha: toque em uma peça destacada em azul para copiar a ativa.');
-        renderAll();
-        return;
-      }
-
-      if (piece.type === 'R') {
-        state.skillPhase = 'swap_target';
-        setStatus('♜ Torre: toque em uma peça destacada em azul para trocar de posição.');
-        renderAll();
-        return;
-      }
-
-      if (piece.type === 'N') {
-        state.skillPhase = 'knight_move_target';
-        setStatus('♞ Cavalo: toque em uma peça destacada em azul para movê-la 1 casa.');
-        renderAll();
-        return;
-      }
-
-      state.skillPhase = 'enemy_target';
-      if (piece.type === 'K') {
-        setStatus('♚ Rei: toque em um inimigo azul para causar até 2 de dano não letal.');
-      } else {
-        setStatus(`♠ ${PIECE_DATA[piece.type].name}: toque em um inimigo azul (1♥ de dano).`);
-      }
+      const phaseByType = { Q: 'copy_target', R: 'swap_target', N: 'knight_move_target' };
+      const statusByType = {
+        Q: '♛ Rainha: toque em uma peça destacada em azul para copiar a ativa.',
+        R: '♜ Torre: toque em uma peça destacada em azul para trocar de posição.',
+        N: '♞ Cavalo: toque em uma peça destacada em azul para movê-la 1 casa.',
+        K: '♚ Rei: toque em um inimigo azul para causar até 2 de dano não letal.'
+      };
+      state.skillPhase = phaseByType[piece.type] || 'enemy_target';
+      setStatus(statusByType[piece.type] || `♠ ${PIECE_DATA[piece.type].name}: toque em um inimigo azul (1♥ de dano).`);
       renderAll();
     }
 
@@ -4762,10 +4233,7 @@
               state.skillPhase = null;
               state.copiedSkill = null;
               renderAll();
-              sendNet({
-                type: 'online_action',
-                action: { kind: 'skill', fromR: sr, fromC: sc, effType, toR: r, toC: c, copiedFlag }
-              });
+              sendNet({ type: 'online_action', action: { kind: 'skill', fromR: sr, fromC: sc, effType, toR: r, toC: c, copiedFlag } });
               return;
             }
             executeActiveSkill(sr, sc, effType, r, c, copiedFlag);
@@ -4786,10 +4254,7 @@
               state.selected = null;
               state.actionMode = null;
               renderAll();
-              sendNet({
-                type: 'online_action',
-                action: { kind: 'move', fromR: sr, fromC: sc, toR: r, toC: c }
-              });
+              sendNet({ type: 'online_action', action: { kind: 'move', fromR: sr, fromC: sc, toR: r, toC: c } });
               return;
             }
             doMove(sr, sc, r, c);
@@ -4800,10 +4265,7 @@
               state.selected = null;
               state.actionMode = null;
               renderAll();
-              sendNet({
-                type: 'online_action',
-                action: { kind: 'attack', fromR: sr, fromC: sc, toR: r, toC: c }
-              });
+              sendNet({ type: 'online_action', action: { kind: 'attack', fromR: sr, fromC: sc, toR: r, toC: c } });
               return;
             }
             startCombat(sr, sc, r, c);
@@ -4855,21 +4317,6 @@
       renderAll();
     }
 
-    function onSelectActionMode(mode) {
-      if (isGhostClickBlocked()) return;
-      if (!state || state.gameOver || !state.selected) return;
-      state.skillPhase = null;
-      state.copiedSkill = null;
-      if (state.actionMode === mode) {
-        state.actionMode = state.actions > 0 ? 'move' : null;
-        setStatus(state.actionMode === 'move' ? 'Modo padrão: toque em uma casa livre para mover.' : 'Ação desmarcada.');
-      } else {
-        state.actionMode = mode;
-        setStatus(mode === 'move' ? 'Escolha uma casa livre destacada.' : 'Escolha um inimigo em vermelho para atacar.');
-      }
-      renderAll();
-    }
-
     function onBuyCard() {
       if (isGhostClickBlocked()) return;
       if (!state || state.gameOver) return;
@@ -4881,7 +4328,6 @@
       }
 
       const player = state.players[state.turn];
-
       if (player.gold < 3) {
         setStatus('⚠️ Requer ♦3 de ouro para comprar carta.');
         return;
@@ -4900,9 +4346,7 @@
       player.hand.push(drawn);
       setStatus(`🃏 Comprou carta [${RANK_TEXT[drawn]}] por ♦3 e 0♣.`);
       renderAll();
-      if (isRankedMode() && net.role === 'host') {
-        syncOnlineState();
-      }
+      if (isRankedMode() && net.role === 'host') syncOnlineState();
     }
 
     function onEndTurn() {
@@ -4922,8 +4366,7 @@
       state.clocks.black = TURN_CLOCK_SECONDS;
 
       if (isRankedMode() && net.role === 'guest') {
-        const nextTurnText = getSideTurnText('white');
-        setStatus(`Passando para ${nextTurnText}...`);
+        setStatus(`Passando para ${getSideTurnText('white')}...`);
         renderAll();
         sendNet({ type: 'online_action', action: { kind: 'end_turn' } });
         return;
@@ -5020,9 +4463,7 @@
       const flopEl = document.getElementById('flop-container');
       flopEl.innerHTML = '';
       (Array.isArray(state.flop) ? state.flop : []).forEach((v) => {
-        if (RANK_TEXT[v]) {
-          flopEl.appendChild(renderCard(v, 'w-8 h-10 rounded-md text-xs'));
-        }
+        if (RANK_TEXT[v]) flopEl.appendChild(renderCard(v, 'w-8 h-10 rounded-md text-xs'));
       });
 
       let moveList = [];
@@ -5051,9 +4492,7 @@
           const tile = document.createElement('div');
           tile.className = `tile ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
 
-          if (state.selected && state.selected.r === r && state.selected.c === c) {
-            tile.classList.add('selected');
-          }
+          if (state.selected && state.selected.r === r && state.selected.c === c) tile.classList.add('selected');
           if (moveList.some((m) => m.r === r && m.c === c)) tile.classList.add('can-move');
           if (attackList.some((a) => a.r === r && a.c === c)) tile.classList.add('can-attack');
           if (skillList.some((s) => s.r === r && s.c === c)) tile.classList.add('can-skill');
@@ -5108,20 +4547,15 @@
 
       const activeBtn = document.getElementById('btn-board-active');
       if (activeBtn) {
-        if (!state.selected) {
+        const piece = state.selected && state.board[state.selected.r] && state.board[state.selected.r][state.selected.c];
+        if (!piece) {
           activeBtn.disabled = true;
           activeBtn.className = 'px-2.5 py-2 rounded-xl text-xs font-bold border bg-blue-500/10 border-blue-400/40 text-blue-200 disabled:opacity-35 active:scale-95 shrink-0';
         } else {
-          const piece = state.board[state.selected.r] && state.board[state.selected.r][state.selected.c];
-          if (!piece) {
-            activeBtn.disabled = true;
-            activeBtn.className = 'px-2.5 py-2 rounded-xl text-xs font-bold border bg-blue-500/10 border-blue-400/40 text-blue-200 disabled:opacity-35 active:scale-95 shrink-0';
-          } else {
-            const hasSkill = getValidSkillTargets(state.selected.r, state.selected.c, piece.type, null).length > 0;
-            const canSkill = Boolean(state.skillPhase) || (canActOnMyTurn && piece.color === state.turn && !piece.acted && activePlayer.gold >= 1 && hasSkill);
-            activeBtn.disabled = !canSkill;
-            activeBtn.className = `px-2.5 py-2 rounded-xl text-xs font-bold border ${state.skillPhase ? 'bg-blue-500/25 border-blue-400 text-blue-200' : 'bg-blue-500/10 border-blue-400/40 text-blue-200'} disabled:opacity-35 active:scale-95 shrink-0`;
-          }
+          const hasSkill = getValidSkillTargets(state.selected.r, state.selected.c, piece.type, null).length > 0;
+          const canSkill = Boolean(state.skillPhase) || (canActOnMyTurn && piece.color === state.turn && !piece.acted && activePlayer.gold >= 1 && hasSkill);
+          activeBtn.disabled = !canSkill;
+          activeBtn.className = `px-2.5 py-2 rounded-xl text-xs font-bold border ${state.skillPhase ? 'bg-blue-500/25 border-blue-400 text-blue-200' : 'bg-blue-500/10 border-blue-400/40 text-blue-200'} disabled:opacity-35 active:scale-95 shrink-0`;
         }
       }
 
@@ -5137,31 +4571,19 @@
         if (myHand.length === 0) {
           handBox.innerHTML = '<span class="text-xs text-zinc-500">Sem cartas na mão.</span>';
         } else {
-          myHand.forEach((v) => {
-            if (v === 0) {
-              handBox.appendChild(renderCardBack('w-11 h-14 shrink-0 rounded-lg text-base'));
-            } else {
-              handBox.appendChild(renderCard(v, 'w-11 h-14 shrink-0 rounded-lg text-base'));
-            }
-          });
+          myHand.forEach((v) => handBox.appendChild(v === 0 ? renderCardBack('w-11 h-14 shrink-0 rounded-lg text-base') : renderCard(v, 'w-11 h-14 shrink-0 rounded-lg text-base')));
         }
       } else if (state.mode === 'offline' && (passTurnOpen || combatModalOpen || combatPassOpen)) {
         if (activePlayer.hand.length === 0) {
           handBox.innerHTML = '<span class="text-xs text-zinc-500">Sem cartas na mão.</span>';
         } else {
-          activePlayer.hand.forEach(() => {
-            handBox.appendChild(renderCardBack('w-11 h-14 shrink-0 rounded-lg text-base'));
-          });
+          activePlayer.hand.forEach(() => handBox.appendChild(renderCardBack('w-11 h-14 shrink-0 rounded-lg text-base')));
         }
       } else {
-        const handToShow = activePlayer.hand;
-
-        if (handToShow.length === 0) {
+        if (activePlayer.hand.length === 0) {
           handBox.innerHTML = '<span class="text-xs text-zinc-500">Sem cartas na mão.</span>';
         } else {
-          handToShow.forEach((v) => {
-            handBox.appendChild(renderCard(v, 'w-11 h-14 shrink-0 rounded-lg text-base'));
-          });
+          activePlayer.hand.forEach((v) => handBox.appendChild(renderCard(v, 'w-11 h-14 shrink-0 rounded-lg text-base')));
         }
       }
 
@@ -5176,15 +4598,12 @@
 
     function renderRulebookPage() {
       const total = RULEBOOK_PAGES.length;
-      if (rulesIdx < 0) rulesIdx = 0;
-      if (rulesIdx >= total) rulesIdx = total - 1;
-
+      rulesIdx = Math.max(0, Math.min(total - 1, rulesIdx));
       const page = RULEBOOK_PAGES[rulesIdx];
       document.getElementById('rules-title').textContent = page.title;
       document.getElementById('rules-counter').textContent = `Página ${rulesIdx + 1} de ${total}`;
       document.getElementById('rules-page-label').textContent = `Página ${rulesIdx + 1} / ${total}`;
       document.getElementById('rules-content').innerHTML = page.html;
-
       document.getElementById('btn-rules-prev').disabled = rulesIdx === 0;
       document.getElementById('btn-rules-next').textContent = rulesIdx === total - 1 ? 'Fechar' : 'Próxima';
     }
@@ -5196,16 +4615,11 @@
     }
 
     function syncModeButtons() {
-      const offlineBtn = document.getElementById('btn-select-offline');
-      const rankedBtn = document.getElementById('btn-select-ranked');
-      const rulesBtn = document.getElementById('btn-open-rules');
-
       const litCls = 'py-2.5 px-2 rounded-xl text-xs font-bold border menu-btn-lit active:scale-95';
-      offlineBtn.className = litCls;
-      rankedBtn.className = litCls;
-      if (rulesBtn) {
-        rulesBtn.className = 'w-full py-2 rounded-xl border font-bold text-xs tracking-wide menu-btn-lit active:scale-95';
-      }
+      document.getElementById('btn-select-offline').className = litCls;
+      document.getElementById('btn-select-ranked').className = litCls;
+      const rulesBtn = document.getElementById('btn-open-rules');
+      if (rulesBtn) rulesBtn.className = 'w-full py-2 rounded-xl border font-bold text-xs tracking-wide menu-btn-lit active:scale-95';
     }
 
     function openSurrenderModal() {
@@ -5255,9 +4669,7 @@
         syncModeButtons();
         refreshRankedUI();
         startRankedOnlineCounter();
-        if (ranked.user) {
-          startLobbyListeners();
-        }
+        if (ranked.user) startLobbyListeners();
         openModal('ranked-modal');
       });
 
@@ -5289,14 +4701,10 @@
       async function switchGoogleAccount() {
         hideRankedFeedback();
         await leaveRankedQueue();
-        if (ranked.user && ranked.user.uid) {
-          await setUserOnlineStatus(false);
-        }
+        if (ranked.user && ranked.user.uid) await setUserOnlineStatus(false);
         stopPresenceHeartbeat();
         stopLobbyListeners();
-        try {
-          await signOut(auth);
-        } catch (_) {}
+        try { await signOut(auth); } catch (_) {}
         ranked.user = null;
         ranked.profile = null;
         localStorage.removeItem('xeker_guest_uid');
@@ -5367,18 +4775,14 @@
         pendingCombatPassAction = null;
         closeModal('combat-pass-modal');
         renderAll();
-        if (typeof cb === 'function') {
-          cb();
-        }
+        if (typeof cb === 'function') cb();
       });
     }
 
     window.addEventListener('beforeunload', () => {
       leaveRankedQueue();
       stopRankedOnlineCounter();
-      if (ranked.user && ranked.user.uid) {
-        setUserOnlineStatus(false);
-      }
+      if (ranked.user && ranked.user.uid) setUserOnlineStatus(false);
     });
 
     bindEvents();
