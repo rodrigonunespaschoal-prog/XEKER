@@ -357,6 +357,96 @@
       justify-content: center;
       animation: xekerPieceCaptureBurst 3000ms cubic-bezier(0.32, 0, 0.67, 1) forwards;
     }
+
+    /* Roda de mensagens e caixinha flutuante sobre o tabuleiro */
+    .board-stage {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: min(100%, 47dvh);
+      max-width: 100%;
+      aspect-ratio: 1 / 1;
+    }
+
+    @keyframes xekerFloatingBubbleFade {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -68%) scale(0.96);
+      }
+    }
+
+    .floating-msg-box {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 40;
+      pointer-events: none;
+      padding: 8px 16px;
+      border-radius: 14px;
+      background: rgba(17, 18, 23, 0.94);
+      border: 1.5px solid #f3d678;
+      color: #fff1b8;
+      font-family: 'Cinzel', serif;
+      font-weight: 800;
+      font-size: 0.95rem;
+      letter-spacing: 0.04em;
+      text-align: center;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.85), 0 0 16px rgba(212, 175, 55, 0.35);
+      animation: xekerFloatingBubbleFade 3000ms linear forwards;
+    }
+
+    .msg-wheel-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 5, 8, 0.72);
+      backdrop-filter: blur(3px);
+      z-index: 55;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .msg-wheel-overlay.open {
+      display: flex;
+    }
+
+    .msg-wheel-ring {
+      position: relative;
+      width: 248px;
+      height: 248px;
+      border-radius: 9999px;
+      background: radial-gradient(circle, rgba(212, 175, 55, 0.14) 0%, rgba(17, 18, 23, 0.96) 72%);
+      border: 1.5px solid rgba(243, 214, 120, 0.6);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.9), inset 0 0 20px rgba(212, 175, 55, 0.14);
+    }
+
+    .msg-wheel-option {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: #161820;
+      border: 1.5px solid rgba(243, 214, 120, 0.65);
+      color: #fff1b8;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.75);
+      cursor: pointer;
+    }
+    .msg-wheel-option:active:not(:disabled) {
+      transform: translate(-50%, -50%) scale(0.95);
+    }
+    .msg-wheel-option:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -387,6 +477,9 @@
       </div>
 
       <div class="flex items-center gap-1">
+        <button type="button" id="btn-open-msg-wheel" class="px-2 py-1 rounded-lg bg-[#d4af37]/15 border border-[#d4af37]/50 text-xs font-bold text-[#f3d678] active:scale-95" aria-label="Mensagens" title="Roda de Mensagens">
+          💬
+        </button>
         <button type="button" id="btn-top-rules" class="px-2 py-1 rounded-lg bg-[#161820] border border-white/15 text-xs font-bold text-zinc-200 active:scale-95" aria-label="Regras">
           ?
         </button>
@@ -417,7 +510,10 @@
 
     <!-- Centro: Tabuleiro 8x8 + Indicador de Vez Abaixo do Tabuleiro -->
     <main class="flex-1 min-h-0 px-1.5 py-0.5 flex flex-col items-center justify-center gap-1">
-      <div id="board-grid" class="xeker-board"></div>
+      <div class="board-stage">
+        <div id="board-grid" class="xeker-board"></div>
+        <div id="floating-msg-layer" class="pointer-events-none"></div>
+      </div>
       <div id="turn-banner" class="w-full max-w-[380px] px-3 py-1 rounded-xl bg-gradient-to-r from-[#f3d678]/35 via-[#d4af37]/30 to-[#f3d678]/35 border-2 border-[#fff1b8] text-center text-xs sm:text-sm font-black tracking-wide text-[#fff1b8] shadow-[0_0_20px_rgba(243,214,120,0.45)]">
         Vez das Brancas
       </div>
@@ -453,6 +549,27 @@
         Bem-vindo ao XEKER.
       </div>
     </section>
+  </div>
+
+  <!-- RODA DE MENSAGENS -->
+  <div id="msg-wheel-modal" class="msg-wheel-overlay">
+    <div class="flex flex-col items-center gap-3">
+      <div class="msg-wheel-ring">
+        <button type="button" data-msg="Boa Jogada" class="msg-wheel-option" style="top: 18%; left: 50%;">
+          Boa Jogada
+        </button>
+        <button type="button" data-msg="Se Lascou" class="msg-wheel-option" style="top: 74%; left: 24%;">
+          Se Lascou
+        </button>
+        <button type="button" data-msg="ZzZz" class="msg-wheel-option" style="top: 74%; left: 76%;">
+          ZzZz
+        </button>
+        <button type="button" id="btn-close-msg-wheel" class="w-16 h-16 rounded-full bg-[#111217] border border-[#d4af37]/60 text-[10px] font-bold text-zinc-300 flex flex-col items-center justify-center shadow-lg active:scale-95" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+          <span>Fechar</span>
+          <span id="msg-cooldown-label" class="text-[9px] font-mono text-amber-300 mt-0.5">Pronto</span>
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- MODAL MENU PRINCIPAL (ESTILO DARK LUXURY DOURADO) -->
@@ -790,6 +907,7 @@
     const MAX_HAND_SIZE = 6;
     const TURN_CLOCK_SECONDS = 60;
     const COMBAT_STEP_SECONDS = 15;
+    const MSG_COOLDOWN_MS = 30000;
 
     const RANK_TEXT = {
       1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7',
@@ -1002,6 +1120,8 @@
     let rulesIdx = 0;
     let timerId = null;
     let actionSeqCounter = 0;
+    let lastSentMessageAt = 0;
+    let msgCooldownInterval = null;
 
     const net = {
       role: null,
@@ -1046,6 +1166,60 @@
       offlineClosed: { white: false, black: false },
       waitingForOpponent: false
     };
+
+    function getRemainingMsgCooldownSec() {
+      if (!lastSentMessageAt) return 0;
+      const elapsed = Date.now() - lastSentMessageAt;
+      const remMs = MSG_COOLDOWN_MS - elapsed;
+      return remMs > 0 ? Math.ceil(remMs / 1000) : 0;
+    }
+
+    function updateMessageWheelCooldownUI() {
+      const remSec = getRemainingMsgCooldownSec();
+      const labelEl = document.getElementById('msg-cooldown-label');
+      const optionBtns = document.querySelectorAll('#msg-wheel-modal .msg-wheel-option');
+      if (remSec > 0) {
+        if (labelEl) labelEl.textContent = `${remSec}s`;
+        optionBtns.forEach((b) => { b.disabled = true; });
+      } else {
+        if (labelEl) labelEl.textContent = 'Pronto';
+        optionBtns.forEach((b) => { b.disabled = false; });
+      }
+    }
+
+    function showFloatingBoardMessage(text) {
+      const layer = document.getElementById('floating-msg-layer');
+      if (!layer) return;
+      layer.innerHTML = '';
+      const bubble = document.createElement('div');
+      bubble.className = 'floating-msg-box';
+      bubble.textContent = text;
+      layer.appendChild(bubble);
+      setTimeout(() => {
+        if (bubble.parentNode) bubble.remove();
+      }, 3050);
+    }
+
+    function sendWheelMessage(text) {
+      const remSec = getRemainingMsgCooldownSec();
+      if (remSec > 0) {
+        setStatus(`⚠️ Aguarde ${remSec}s para enviar outra mensagem.`);
+        return;
+      }
+      lastSentMessageAt = Date.now();
+      showFloatingBoardMessage(text);
+      document.getElementById('msg-wheel-modal').classList.remove('open');
+      updateMessageWheelCooldownUI();
+
+      if (msgCooldownInterval) clearInterval(msgCooldownInterval);
+      msgCooldownInterval = setInterval(() => {
+        updateMessageWheelCooldownUI();
+        if (getRemainingMsgCooldownSec() <= 0) {
+          clearInterval(msgCooldownInterval);
+          msgCooldownInterval = null;
+        }
+      }, 500);
+    }
 
     function getSideTurnText(side) {
       return side === 'black' ? 'Vez das Pretas' : 'Vez das Brancas';
@@ -2214,7 +2388,7 @@
         <div class="text-[10px] text-amber-200">Peça: ${formatPieceRep(atkP)}</div>
       `;
       document.getElementById('combat-def-glyph').textContent = PIECE_DATA[defPiece.type].white;
-      document.getElementById('combat-def-info').textContent = `${PIECE_DATA[defPiece.type].name} (${defPiece.hp}♥)`;
+      document.getElementById('combat-def-info').textContent = `${PIECE_DATA[defPiece.type].name} (${defP.hp}♥)`;
       document.getElementById('combat-def-sub').innerHTML = `
         <div>Peça: ${formatPieceRep(defP)}</div>
         <div class="text-[10px] text-red-300">Escolha sua carta</div>
@@ -2283,6 +2457,7 @@
 
     function closeAllModals() {
       document.querySelectorAll('.xeker-modal').forEach((el) => el.classList.remove('open'));
+      document.getElementById('msg-wheel-modal').classList.remove('open');
       armGhostClickGuard(240);
     }
 
@@ -4390,6 +4565,20 @@
     }
 
     function bindEvents() {
+      document.getElementById('btn-open-msg-wheel').addEventListener('click', () => {
+        updateMessageWheelCooldownUI();
+        document.getElementById('msg-wheel-modal').classList.add('open');
+      });
+      document.getElementById('btn-close-msg-wheel').addEventListener('click', () => {
+        document.getElementById('msg-wheel-modal').classList.remove('open');
+      });
+      document.querySelectorAll('#msg-wheel-modal .msg-wheel-option').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const msg = btn.getAttribute('data-msg');
+          if (msg) sendWheelMessage(msg);
+        });
+      });
+
       document.getElementById('btn-select-offline').addEventListener('click', () => {
         selectedMode = 'offline';
         syncModeButtons();
