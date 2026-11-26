@@ -616,13 +616,22 @@
   <div id="msg-wheel-modal" class="msg-wheel-overlay">
     <div class="flex flex-col items-center gap-3">
       <div class="msg-wheel-ring">
-        <button type="button" data-msg="Boa Jogada" class="msg-wheel-option" style="top: 18%; left: 50%;">
+        <button type="button" data-msg="Boa Jogada" class="msg-wheel-option" style="top: 12%; left: 50%;">
           Boa Jogada
         </button>
-        <button type="button" data-msg="Se Lascou" class="msg-wheel-option" style="top: 74%; left: 24%;">
+        <button type="button" data-msg="Essa Doeu" class="msg-wheel-option" style="top: 29%; left: 82%;">
+          Essa Doeu
+        </button>
+        <button type="button" data-msg="Cagão" class="msg-wheel-option" style="top: 74%; left: 78%;">
+          Cagão
+        </button>
+        <button type="button" data-msg="Abocanha Garoto" class="msg-wheel-option" style="top: 86%; left: 50%;">
+          Abocanha Garoto
+        </button>
+        <button type="button" data-msg="Se Lascou" class="msg-wheel-option" style="top: 74%; left: 22%;">
           Se Lascou
         </button>
-        <button type="button" data-msg="ZzZz" class="msg-wheel-option" style="top: 74%; left: 76%;">
+        <button type="button" data-msg="ZzZz" class="msg-wheel-option" style="top: 29%; left: 18%;">
           ZzZz
         </button>
         <button type="button" id="btn-close-msg-wheel" class="w-16 h-16 rounded-full bg-[#111217] border border-[#d4af37]/60 text-[10px] font-bold text-zinc-300 flex flex-col items-center justify-center shadow-lg active:scale-95" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
@@ -966,7 +975,7 @@
     const MAX_HAND_SIZE = 6;
     const TURN_CLOCK_SECONDS = 60;
     const COMBAT_STEP_SECONDS = 15;
-    const MSG_COOLDOWN_MS = 30000;
+    const MSG_COOLDOWN_MS = 15000;
 
     const RANK_TEXT = {
       1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7',
@@ -1436,7 +1445,9 @@
 
     function buildGuestSafeView() {
       if (!state) return null;
+      const fxPayload = buildFxPayloadForSync();
       return {
+        fxPayload,
         mode: state.mode,
         turn: state.turn,
         round: state.round,
@@ -2180,6 +2191,9 @@
 
     function applyGuestView(view) {
       if (!view) return;
+      if (view.fxPayload) {
+        applyRemoteFxPayload(view.fxPayload);
+      }
       closeModal('menu-modal');
       closeModal('ranked-modal');
       const prevSummary = net.lastSummary;
@@ -2352,6 +2366,14 @@
           closeModal('combat-modal');
           const summaryToAnimate = net.lastSummary;
           net.lastSummary = null;
+          if (summaryToAnimate && summaryToAnimate.moveToCapture) {
+            queueMoveAnimation(
+              summaryToAnimate.moveToCapture.fromR,
+              summaryToAnimate.moveToCapture.fromC,
+              summaryToAnimate.moveToCapture.toR,
+              summaryToAnimate.moveToCapture.toC
+            );
+          }
           if (state && state.gameOver && state.gameOverData) {
             endMatch(state.gameOverData.winnerSide, state.gameOverData.reason);
           }
@@ -3199,10 +3221,11 @@
     }
 
     // --- Animações de Dano (♥), Movimento e Captura (3s) ---
-    let pendingMoveAnim = null;
+    const pendingMoveAnims = [];
     const pendingCaptureAnims = [];
     const pendingDamageAnims = [];
     let captureDelayTimer = null;
+    let lastProcessedGuestFxId = null;
 
     function captureTileRect(r, c) {
       const boardEl = document.getElementById('board-grid');
@@ -3220,7 +3243,7 @@
       const dx = fromRect.left - toRect.left;
       const dy = fromRect.top - toRect.top;
       if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
-      pendingMoveAnim = { r: toR, c: toC, dx, dy };
+      pendingMoveAnims.push({ fromR, fromC, toR, toC, dx, dy });
     }
 
     function queueDamageAnimation(r, c, amount) {
@@ -3228,14 +3251,71 @@
       if (dmg <= 0) return;
       const rect = captureTileRect(r, c);
       if (!rect) return;
-      pendingDamageAnims.push({ rect, amount: dmg });
+      pendingDamageAnims.push({ r, c, rect, amount: dmg });
     }
 
     function queueCaptureAnimation(r, c, pieceObj) {
       if (!pieceObj || !pieceObj.type || !PIECE_DATA[pieceObj.type]) return;
       const rect = captureTileRect(r, c);
       if (!rect) return;
-      pendingCaptureAnims.push({ rect, piece: { ...pieceObj } });
+      pendingCaptureAnims.push({ r, c, rect, piece: { ...pieceObj } });
+    }
+
+    function buildFxPayloadForSync() {
+      const moves = pendingMoveAnims.map((m) => ({ fromR: m.fromR, fromC: m.fromC, toR: m.toR, toC: m.toC }));
+      const damages = pendingDamageAnims.map((d) => ({ r: d.r, c: d.c, amount: d.amount }));
+      const captures = pendingCaptureAnims.map((c) => ({ r: c.r, c: c.c, piece: { ...c.piece } }));
+      if (moves.length === 0 && damages.length === 0 && captures.length === 0) return null;
+      return {
+        id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        moves,
+        damages,
+        captures
+      };
+    }
+
+    function applyRemoteFxPayload(fx) {
+      if (!fx || !fx.id || fx.id === lastProcessedGuestFxId) return;
+      lastProcessedGuestFxId = fx.id;
+
+      if (Array.isArray(fx.moves)) {
+        for (const m of fx.moves) {
+          queueMoveAnimation(m.fromR, m.fromC, m.toR, m.toC);
+        }
+      }
+      if (Array.isArray(fx.damages)) {
+        for (const d of fx.damages) {
+          queueDamageAnimation(d.r, d.c, d.amount);
+        }
+      }
+      if (Array.isArray(fx.captures)) {
+        for (const c of fx.captures) {
+          queueCaptureAnimation(c.r, c.c, c.piece);
+        }
+      }
+    }
+
+    function triggerMoveAnimationAtTile(r, c, moveObj) {
+      const boardEl = document.getElementById('board-grid');
+      if (!boardEl || !boardEl.children) return;
+      const tile = boardEl.children[r * 8 + c];
+      const token = tile ? tile.querySelector('.piece-token') : null;
+      if (!token) return;
+      token.classList.remove('piece-anim-move');
+      void token.offsetWidth;
+      token.style.setProperty('--dx', `${moveObj.dx}px`);
+      token.style.setProperty('--dy', `${moveObj.dy}px`);
+      token.classList.add('piece-anim-move');
+      token.addEventListener('animationend', () => {
+        token.classList.remove('piece-anim-move');
+        token.style.removeProperty('--dx');
+        token.style.removeProperty('--dy');
+      }, { once: true });
+      setTimeout(() => {
+        token.classList.remove('piece-anim-move');
+        token.style.removeProperty('--dx');
+        token.style.removeProperty('--dy');
+      }, 3150);
     }
 
     function buildDamageAndCaptureListFromSummary(summary) {
@@ -3314,8 +3394,7 @@
 
     function scheduleDamageAndCaptureSequence(summaryForGuest = null) {
       const guestItems = buildDamageAndCaptureListFromSummary(summaryForGuest);
-      if (pendingDamageAnims.length === 0 && pendingCaptureAnims.length === 0 && guestItems.length === 0) return;
-
+      const moveBatch = pendingMoveAnims.splice(0, pendingMoveAnims.length);
       const dmgBatch = pendingDamageAnims.splice(0, pendingDamageAnims.length);
       const capBatch = pendingCaptureAnims.splice(0, pendingCaptureAnims.length);
 
@@ -3327,6 +3406,8 @@
           capBatch.push({ rect: g.rect, piece: g.piece });
         }
       }
+
+      if (moveBatch.length === 0 && dmgBatch.length === 0 && capBatch.length === 0) return;
 
       if (captureDelayTimer) {
         clearTimeout(captureDelayTimer);
@@ -3342,23 +3423,46 @@
           return;
         }
 
+        const runMovesThenCaptures = () => {
+          if (moveBatch.length > 0) {
+            moveBatch.forEach((m) => {
+              const fromRect = captureTileRect(m.fromR, m.fromC);
+              const toRect = captureTileRect(m.toR, m.toC);
+              const dx = fromRect && toRect ? (fromRect.left - toRect.left) : m.dx;
+              const dy = fromRect && toRect ? (fromRect.top - toRect.top) : m.dy;
+              triggerMoveAnimationAtTile(m.toR, m.toC, { dx, dy });
+            });
+            if (capBatch.length > 0) {
+              setTimeout(() => {
+                if (
+                  document.getElementById('combat-modal').classList.contains('open') ||
+                  document.getElementById('waiting-opponent-modal').classList.contains('open')
+                ) {
+                  return;
+                }
+                capBatch.forEach((c) => runSingleCaptureGhost(c.rect, c.piece));
+              }, 3000);
+            }
+          } else if (capBatch.length > 0) {
+            capBatch.forEach((c) => runSingleCaptureGhost(c.rect, c.piece));
+          }
+        };
+
         if (dmgBatch.length > 0) {
           dmgBatch.forEach((d) => runDamageNumberBadge(d.rect, d.amount));
-          if (capBatch.length > 0) {
-            setTimeout(() => {
-              if (
-                document.getElementById('combat-modal').classList.contains('open') ||
-                document.getElementById('waiting-opponent-modal').classList.contains('open')
-              ) {
-                return;
-              }
-              capBatch.forEach((c) => runSingleCaptureGhost(c.rect, c.piece));
-            }, 3000);
-          }
-        } else if (capBatch.length > 0) {
-          capBatch.forEach((c) => runSingleCaptureGhost(c.rect, c.piece));
+          setTimeout(() => {
+            if (
+              document.getElementById('combat-modal').classList.contains('open') ||
+              document.getElementById('waiting-opponent-modal').classList.contains('open')
+            ) {
+              return;
+            }
+            runMovesThenCaptures();
+          }, 3000);
+        } else {
+          runMovesThenCaptures();
         }
-      }, 1000);
+      }, 250);
     }
 
     function flushCaptureAnimations() {
@@ -3371,7 +3475,7 @@
       ) {
         return;
       }
-      if (pendingDamageAnims.length === 0 && pendingCaptureAnims.length === 0) return;
+      if (pendingMoveAnims.length === 0 && pendingDamageAnims.length === 0 && pendingCaptureAnims.length === 0) return;
       if (captureDelayTimer) return;
       scheduleDamageAndCaptureSequence();
     }
@@ -3380,6 +3484,10 @@
       while (pendingDamageAnims.length > 0) {
         const d = pendingDamageAnims.shift();
         runDamageNumberBadge(d.rect, d.amount);
+      }
+      while (pendingMoveAnims.length > 0) {
+        const m = pendingMoveAnims.shift();
+        triggerMoveAnimationAtTile(m.toR, m.toC, m);
       }
       while (pendingCaptureAnims.length > 0) {
         const item = pendingCaptureAnims.shift();
@@ -3687,6 +3795,7 @@
       const defDead = defPiece.hp <= 0;
 
       let winnerSideEnd = null;
+      let moveToCapture = null;
 
       if (defDead) {
         queueCaptureAnimation(duelContext.defR, duelContext.defC, defSnap);
@@ -3718,11 +3827,13 @@
 
       if (!winnerSideEnd) {
         if (defDead && !atkDead) {
+          moveToCapture = { fromR: duelContext.atkR, fromC: duelContext.atkC, toR: duelContext.defR, toC: duelContext.defC };
           queueMoveAnimation(duelContext.atkR, duelContext.atkC, duelContext.defR, duelContext.defC);
           state.board[duelContext.defR][duelContext.defC] = atkPiece;
           state.board[duelContext.atkR][duelContext.atkC] = null;
           promotePawnIfCrossed(atkPiece, duelContext.defR, duelContext.defC);
         } else if (atkDead && !defDead) {
+          moveToCapture = { fromR: duelContext.defR, fromC: duelContext.defC, toR: duelContext.atkR, toC: duelContext.atkC };
           queueMoveAnimation(duelContext.defR, duelContext.defC, duelContext.atkR, duelContext.atkC);
           state.board[duelContext.atkR][duelContext.atkC] = defPiece;
           state.board[duelContext.defR][duelContext.defC] = null;
@@ -3761,6 +3872,7 @@
         defPiece: defSnap,
         atkPos: atkOriginPos,
         defPos: defOriginPos,
+        moveToCapture,
         atkHeaderInfo: `${atkName} (${atkSnap.hp}♥)`,
         defHeaderInfo: `${defName} (${defSnap.hp}♥)`,
         atkRep: formatPieceRep(atkPiece),
@@ -4696,16 +4808,17 @@
             hpBadge.className = 'piece-badge-hp';
             hpBadge.textContent = String(hpVal);
 
-            if (pendingMoveAnim && pendingMoveAnim.r === r && pendingMoveAnim.c === c) {
-              token.style.setProperty('--dx', `${pendingMoveAnim.dx}px`);
-              token.style.setProperty('--dy', `${pendingMoveAnim.dy}px`);
+            const moveMatchIdx = pendingMoveAnims.findIndex((m) => m.toR === r && m.toC === c);
+            if (moveMatchIdx !== -1 && !pendingDamageAnims.length) {
+              const mObj = pendingMoveAnims.splice(moveMatchIdx, 1)[0];
+              token.style.setProperty('--dx', `${mObj.dx}px`);
+              token.style.setProperty('--dy', `${mObj.dy}px`);
               token.classList.add('piece-anim-move');
               token.addEventListener('animationend', () => {
                 token.classList.remove('piece-anim-move');
                 token.style.removeProperty('--dx');
                 token.style.removeProperty('--dy');
               }, { once: true });
-              pendingMoveAnim = null;
             }
 
             token.appendChild(rankBadge);
