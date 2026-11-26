@@ -431,17 +431,18 @@
     /* Caixa de informações abreviadas da peça selecionada */
     .selected-piece-box {
       width: 100%;
-      min-height: 30px;
-      padding: 4px 8px;
+      min-height: 54px;
+      padding: 6px 9px;
       border-radius: 10px;
       background: #161820;
       border: 1px solid rgba(212, 175, 55, 0.35);
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 3px;
       font-size: 10.5px;
-      line-height: 1.2;
+      line-height: 1.25;
       color: #e4e4e7;
       overflow: hidden;
     }
@@ -1377,8 +1378,9 @@
       }[piece.type] || '';
 
       box.innerHTML = `
-        <span class="font-bold text-[#fff1b8] shrink-0">${glyph} ${info.name} [${sideLabel}] ${piece.hp}/${piece.maxHp}♥ · Carta:${cardRank}${statusTag}</span>
-        <span class="text-zinc-300 truncate">${info.reachLabel} · ${shortActive} · ${shortPassive}</span>
+        <span class="font-bold text-[#fff1b8] truncate w-full">${glyph} ${info.name} [${sideLabel}] ${piece.hp}/${piece.maxHp}♥ · Carta:${cardRank}${statusTag}</span>
+        <span class="text-zinc-300 truncate w-full">${info.reachLabel} · ${shortActive}</span>
+        <span class="text-zinc-400 truncate w-full">${shortPassive}</span>
       `;
     }
 
