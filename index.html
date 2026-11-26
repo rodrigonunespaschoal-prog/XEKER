@@ -295,7 +295,7 @@
       box-shadow: none;
     }
 
-    /* Animações suaves de movimento e captura das peças (1.5s) */
+    /* Animações suaves de movimento e captura das peças (3s) */
     @keyframes xekerPieceSlide {
       0% {
         transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(1.08);
@@ -308,7 +308,7 @@
     }
 
     .piece-anim-move {
-      animation: xekerPieceSlide 1500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+      animation: xekerPieceSlide 3000ms cubic-bezier(0.22, 1, 0.36, 1) both;
       z-index: 25;
     }
 
@@ -338,7 +338,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      animation: xekerPieceCaptureBurst 1500ms cubic-bezier(0.32, 0, 0.67, 1) forwards;
+      animation: xekerPieceCaptureBurst 3000ms cubic-bezier(0.32, 0, 0.67, 1) forwards;
     }
   </style>
 </head>
@@ -538,6 +538,10 @@
 
       <!-- Conectado / Lobby -->
       <div id="ranked-logged-in" class="hidden space-y-2.5">
+        <button type="button" id="btn-switch-google-account" class="w-full py-2 px-3 rounded-xl bg-[#161820] border border-[#d4af37]/50 text-[#f3d678] font-bold text-xs active:scale-95 flex items-center justify-center gap-1.5 transition-all">
+          <span>🔄 Trocar conta Google</span>
+        </button>
+
         <div class="grid grid-cols-2 gap-1.5">
           <button type="button" id="btn-find-ranked" class="w-full py-2.5 px-2 rounded-xl border font-extrabold text-xs active:scale-95 flex items-center justify-center gap-1.5 transition-all ranked-btn-lit">
             <span id="btn-find-ranked-label">Buscar</span>
@@ -2707,9 +2711,10 @@
       state.copiedSkill = null;
     }
 
-    // --- Animações de Movimento e Captura (1500ms) ---
+    // --- Animações de Movimento e Captura (3s) ---
     let pendingMoveAnim = null;
     const pendingCaptureAnims = [];
+    let captureDelayTimer = null;
 
     function captureTileRect(r, c) {
       const boardEl = document.getElementById('board-grid');
@@ -2739,6 +2744,16 @@
 
     function flushCaptureAnimations() {
       if (document.getElementById('combat-modal').classList.contains('open')) return;
+      if (pendingCaptureAnims.length === 0) return;
+      if (captureDelayTimer) return;
+      captureDelayTimer = setTimeout(() => {
+        captureDelayTimer = null;
+        if (document.getElementById('combat-modal').classList.contains('open')) return;
+        runQueuedCaptureAnimationsNow();
+      }, 2000);
+    }
+
+    function runQueuedCaptureAnimationsNow() {
       while (pendingCaptureAnims.length > 0) {
         const item = pendingCaptureAnims.shift();
         const info = PIECE_DATA[item.piece.type];
@@ -2763,7 +2778,7 @@
         }, { once: true });
         setTimeout(() => {
           if (ghost.parentNode) ghost.remove();
-        }, 1600);
+        }, 3150);
       }
     }
 
@@ -4139,9 +4154,11 @@
         stopRankedOnlineCounter();
         closeModal('ranked-modal');
       });
-      document.getElementById('btn-google-login').addEventListener('click', async () => {
+
+      async function performGoogleLogin() {
         hideRankedFeedback();
         try {
+          googleProvider.setCustomParameters({ prompt: 'select_account' });
           await signInWithPopup(auth, googleProvider);
         } catch (err) {
           const code = err && err.code ? err.code : '';
@@ -4155,7 +4172,29 @@
             showRankedFeedback('Falha no login Google: ' + (err.message || code), true);
           }
         }
-      });
+      }
+
+      async function switchGoogleAccount() {
+        hideRankedFeedback();
+        await leaveRankedQueue();
+        if (ranked.user && ranked.user.uid) {
+          await setUserOnlineStatus(false);
+        }
+        stopPresenceHeartbeat();
+        stopLobbyListeners();
+        try {
+          await signOut(auth);
+        } catch (_) {}
+        ranked.user = null;
+        ranked.profile = null;
+        localStorage.removeItem('xeker_guest_uid');
+        refreshRankedUI();
+        await performGoogleLogin();
+      }
+
+      document.getElementById('btn-google-login').addEventListener('click', performGoogleLogin);
+      document.getElementById('btn-switch-google-account').addEventListener('click', switchGoogleAccount);
+
       document.getElementById('btn-set-offline').addEventListener('click', async () => {
         await leaveRankedQueue();
         await setUserOnlineStatus(false);
